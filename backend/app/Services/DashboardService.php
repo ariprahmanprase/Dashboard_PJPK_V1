@@ -328,4 +328,92 @@ class DashboardService
         }
         return $query;
     }
+
+    public function getRencanaAksiList(array $filters = []): array
+    {
+        $tahun = $filters['tahun'] ?? '2025';
+
+        $query = \App\Models\Renaksi::with(['indikator.pilar', 'opd']);
+
+        // Filter by tahun
+        if (!empty($filters['tahun'])) {
+            $query->where('tahun', $filters['tahun']);
+        }
+
+        // Filter by status renaksi
+        if (!empty($filters['status_renaksi'])) {
+            $query->where('status', $filters['status_renaksi']);
+        }
+
+        // Filter by pilar
+        if (!empty($filters['pilar_id'])) {
+            $query->whereHas('indikator', fn($q) => $q->where('pilar_id', $filters['pilar_id']));
+        }
+
+        // Filter by OPD
+        if (!empty($filters['opd_id'])) {
+            $query->where('opd_id', $filters['opd_id']);
+        }
+
+        // Filter by indikator
+        if (!empty($filters['indikator_id'])) {
+            $query->where('indikator_id', $filters['indikator_id']);
+        }
+
+        // Search by nama_kegiatan
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kegiatan', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('tahun', 'desc')
+            ->orderBy('id')
+            ->get()
+            ->map(fn($r, $i) => [
+                'no'          => $i + 1,
+                'id'          => $r->id,
+                'kode'        => $r->indikator->kode ?? '-',
+                'indikator'   => $r->indikator->nama_indikator ?? '-',
+                'pilar'       => $r->indikator->pilar->nama_pilar ?? '-',
+                'pilar_no'    => $r->indikator->pilar->no_pilar ?? 0,
+                'rencana_aksi'=> $r->nama_kegiatan,
+                'tahun'       => $r->tahun,
+                'status'      => $r->status,
+                'opd'         => $r->opd->nama_opd ?? '-',
+                'kolaborasi'  => $r->kolaborasi_opd,
+                'catatan'     => $r->keterangan,
+            ])
+            ->toArray();
+    }
+
+    public function getRencanaAksiSummary(array $filters = []): array
+    {
+        $query = \App\Models\Renaksi::query();
+
+        if (!empty($filters['tahun'])) {
+            $query->where('tahun', $filters['tahun']);
+        }
+        if (!empty($filters['pilar_id'])) {
+            $query->whereHas('indikator', fn($q) => $q->where('pilar_id', $filters['pilar_id']));
+        }
+        if (!empty($filters['opd_id'])) {
+            $query->where('opd_id', $filters['opd_id']);
+        }
+        if (!empty($filters['indikator_id'])) {
+            $query->where('indikator_id', $filters['indikator_id']);
+        }
+
+        $total = $query->count();
+        $terlaksana = (clone $query)->where('status', 'Terlaksana')->count();
+
+        return [
+            'total'           => $total,
+            'terlaksana'      => $terlaksana,
+            'tidak_terlaksana'=> $total - $terlaksana,
+            'persentase'      => $total > 0 ? round(($terlaksana / $total) * 100, 1) : 0,
+        ];
+    }
 }

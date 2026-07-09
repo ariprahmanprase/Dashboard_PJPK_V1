@@ -10,3 +10,19 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.log
+
+# Extracted documents
+*.txt
+*.docx
+*.xlsx
+
+# Sensitive files
+backend/.env
+
+# Dependencies
+backend/vendor/
+frontend/node_modules/
+
+# Build
+frontend/dist/
+backend/public/hot/

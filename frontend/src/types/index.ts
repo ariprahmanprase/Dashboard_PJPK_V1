@@ -133,3 +133,25 @@ export interface DashboardFilters {
   tahun?: string;
   status_tl?: string;
 }
+
+export interface RencanaAksiRow {
+  no: number;
+  id: number;
+  kode: string;
+  indikator: string;
+  pilar: string;
+  pilar_no: number;
+  rencana_aksi: string;
+  tahun: string;
+  status: string;
+  opd: string;
+  kolaborasi: string | null;
+  catatan: string | null;
+}
+
+export interface RencanaAksiSummary {
+  total: number;
+  terlaksana: number;
+  tidak_terlaksana: number;
+  persentase: number;
+}

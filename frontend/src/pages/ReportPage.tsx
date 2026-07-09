@@ -12,7 +12,7 @@ import BarPerPilar from '@/components/BarPerPilar';
 import BarPerOpd from '@/components/BarPerOpd';
 import SmallMultiple from '@/components/SmallMultiple';
 import HeatmapGrid from '@/components/HeatmapGrid';
-import GapRanking from '@/components/GapRanking';
+
 import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartPilarEntry } from '@/types';
 
 // ── Helpers ──────────────────────────────────────────
@@ -166,7 +166,7 @@ export default function ReportPage() {
     setRenaksiData([]);
 
     try {
-      const resp = await fetch(`/api/indikator/${row.kode}/renaksi`);
+      const resp = await fetch(`/api/indikator/${row.kode}/renaksi?tahun=${tahun}`);
       if (!resp.ok) throw new Error(`API ${resp.status}`);
       const json = await resp.json();
       setRenaksiData(json.renaksi ?? []);
@@ -210,7 +210,7 @@ export default function ReportPage() {
   const filtersObj = { tahun, opd_id: opdId, pilar_id: pilarId, indikator_id: indikatorId, status_tl: statusTl };
 
   return (
-    <div className="max-w-[1440px] mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div>
         <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Report</h2>
         <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -228,7 +228,7 @@ export default function ReportPage() {
 
       <ScoreCardGrid data={scorecards} loading={loading} activeKey={scorecardKey} onCardClick={handleScorecardClick} />
 
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="responsive-row">
         <div style={{ flex: '0 0 50%' }}>
           <ChartCombo data={chartData} loading={loading} />
         </div>
@@ -247,7 +247,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── Lapis 1: Strategic Overview ── */}
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="responsive-row">
         <div style={{ flex: '1 1 50%', minWidth: 0 }}>
           <BarPerPilar data={perPilar} loading={loading} />
         </div>
@@ -257,17 +257,16 @@ export default function ReportPage() {
       </div>
 
       {/* ── Lapis 2: Diagnostic ── */}
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <div style={{ flex: '1 1 60%', minWidth: 0 }}>
-          <SmallMultiple data={chartPerPilar} loading={loading} />
-        </div>
+      <div className="responsive-row">
         <div style={{ flex: '1 1 40%', minWidth: 0 }}>
           <HeatmapGrid data={heatmapData} loading={loading} />
         </div>
+        <div style={{ flex: '1 1 60%', minWidth: 0 }}>
+          <SmallMultiple data={chartPerPilar} loading={loading} />
+        </div>
       </div>
 
-      {/* ── Gap Ranking ── */}
-      <GapRanking data={tableData} loading={loading} />
+
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div className="flex items-center gap-2.5">

@@ -42,13 +42,14 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
 
   return (
     <div
-      className="rounded-xl border overflow-hidden"
+      className="rounded-xl border overflow-hidden table-wrap"
       style={{
         backgroundColor: 'var(--color-bg-secondary)',
         borderColor: 'var(--color-border)',
       }}
     >
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full text-sm" style={{ minWidth: 700 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
             {['Kode', 'Nama Indikator', 'OPD', 'Pilar', 'Status'].map(h => (
@@ -113,6 +114,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

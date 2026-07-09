@@ -20,7 +20,7 @@ class DashboardController extends Controller
         return response()->json($service->getTableData($filters));
     }
 
-    public function renaksi(string $kode)
+    public function renaksi(string $kode, \Illuminate\Http\Request $request)
     {
         $indikator = \App\Models\Indikator::where('kode', $kode)->first();
 
@@ -28,9 +28,15 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Indikator tidak ditemukan'], 404);
         }
 
-        $renaksis = $indikator->renaksis()
-            ->with('opd')
-            ->orderBy('tahun', 'desc')
+        $query = $indikator->renaksis()
+            ->with('opd');
+
+        // Filter by tahun if provided
+        if ($tahun = $request->query('tahun')) {
+            $query->where('tahun', $tahun);
+        }
+
+        $renaksis = $query->orderBy('tahun', 'desc')
             ->orderBy('id')
             ->get()
             ->map(fn($r, $i) => [
@@ -91,5 +97,17 @@ class DashboardController extends Controller
     {
         $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun', 'status_tl']);
         return response()->json($service->getChartPerPilar($filters));
+    }
+
+    public function rencanaAksiSummary(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun']);
+        return response()->json($service->getRencanaAksiSummary($filters));
+    }
+
+    public function rencanaAksiList(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun', 'status_renaksi', 'search']);
+        return response()->json($service->getRencanaAksiList($filters));
     }
 }

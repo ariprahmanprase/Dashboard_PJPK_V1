@@ -1,18 +1,38 @@
 import { useState } from 'react';
-import Sidebar from './Sidebar';
+import Sidebar, { type PageName } from './Sidebar';
 import Header from './Header';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+interface Props {
+  children: React.ReactNode;
+  activePage: PageName;
+  onNavigate: (page: PageName) => void;
+}
+
+export default function Layout({ children, activePage, onNavigate }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const sidebarW = collapsed ? 64 : 256;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <Sidebar collapsed={collapsed} />
+      <Sidebar
+        collapsed={collapsed}
+        activePage={activePage}
+        onNavigate={onNavigate}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+        onToggle={() => setCollapsed(!collapsed)}
+      />
+
       <div
-        className="min-h-screen transition-all duration-300 ease-in-out"
-        style={{ marginLeft: collapsed ? 64 : 256 }}
+        className="min-h-screen transition-all duration-300 ease-in-out layout-content"
+        style={{
+          marginLeft: `${sidebarW}px`,
+          marginRight: collapsed ? `${sidebarW}px` : '0px',
+        }}
       >
-        <Header collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+        <Header onMobileMenu={() => setMobileOpen(true)} />
         <main style={{ padding: '1.5rem' }}>
           {children}
         </main>
