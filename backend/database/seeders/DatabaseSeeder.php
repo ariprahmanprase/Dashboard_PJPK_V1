@@ -2,24 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Jalankan SQL dump data lengkap
+        $sql = database_path('seeders/sql/pjpk_data.sql');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        if (file_exists($sql)) {
+            DB::unprepared(file_get_contents($sql));
+            $this->command->info('✅ Data PJPK berhasil di-import!');
+        } else {
+            $this->command->warn('⚠️  File SQL tidak ditemukan: ' . $sql);
+        }
     }
 }
