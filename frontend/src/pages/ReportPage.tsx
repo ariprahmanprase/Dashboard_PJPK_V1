@@ -5,6 +5,7 @@ import ScoreCardGrid from '@/components/ScoreCardGrid';
 import type { ScorecardKey } from '@/components/ScoreCardGrid';
 import DataTable from '@/components/DataTable';
 import RenaksiModal from '@/components/RenaksiModal';
+import StatusDetailModal from '@/components/StatusDetailModal';
 import ChartCombo from '@/components/ChartCombo';
 import PieRenaksi from '@/components/PieRenaksi';
 import PieStatus from '@/components/PieStatus';
@@ -55,6 +56,12 @@ export default function ReportPage() {
   const [renaksiData, setRenaksiData] = useState<RenaksiItem[]>([]);
   const [renaksiLoading, setRenaksiLoading] = useState(false);
   const [modalMode, setModalMode] = useState<'indikator' | 'all'>('indikator');
+
+  // Modal status detail states
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusModalTitle, setStatusModalTitle] = useState('');
+  const [statusDetailData, setStatusDetailData] = useState<TableRow[]>([]);
+  const [statusDetailLoading, setStatusDetailLoading] = useState(false);
 
   // Chart states
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -156,6 +163,28 @@ export default function ReportPage() {
     fetchDataFor(newState);
   }
 
+  // ── PieStatus click (popup modal) ──────────────
+  async function handlePieStatusClick(status: string) {
+    setStatusModalTitle(status);
+    setStatusModalOpen(true);
+    setStatusDetailLoading(true);
+    setStatusDetailData([]);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('tahun', '2025');
+      params.set('status_tl', status);
+      const resp = await fetch(`/api/dashboard/table?${params}`);
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
+      const json: TableRow[] = await resp.json();
+      setStatusDetailData(json);
+    } catch (err) {
+      console.error('[PJPK] status detail fetch error:', err);
+    } finally {
+      setStatusDetailLoading(false);
+    }
+  }
+
   // ── Rencana Aksi modal handler ────────────────────
   async function handleRowClick(row: TableRow) {
     setModalMode('indikator');
@@ -242,6 +271,7 @@ export default function ReportPage() {
             alert={scorecards?.alert ?? 0}
             belumDiisi={(scorecards?.total_indikator ?? 0) - (scorecards?.on_track ?? 0) - (scorecards?.warning ?? 0) - (scorecards?.alert ?? 0)}
             loading={loading}
+            onSliceClick={handlePieStatusClick}
           />
         </div>
       </div>
@@ -291,6 +321,15 @@ export default function ReportPage() {
         data={renaksiData}
         loading={renaksiLoading}
         mode={modalMode}
+      />
+
+      <StatusDetailModal
+        open={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        title={statusModalTitle}
+        subtitle={`Indikator dengan status ${statusModalTitle} (Tahun 2025)`}
+        data={statusDetailData}
+        loading={statusDetailLoading}
       />
     </div>
   );

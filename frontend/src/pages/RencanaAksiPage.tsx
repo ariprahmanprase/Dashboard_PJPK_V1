@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, FileText, Loader2, FileX, CheckCircle2, XCircle, BarChart3, ListChecks } from 'lucide-react';
+import { Search, Filter, FileText, Loader2, FileX, CheckCircle2, XCircle, BarChart3, ListChecks, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { RencanaAksiRow, RencanaAksiSummary, FilterOptions } from '@/types';
 
 // ── Helpers ──────────────────────────────────────────
@@ -12,7 +12,7 @@ async function apiFetch<T>(url: string): Promise<T> {
 // ── Component ────────────────────────────────────────
 export default function RencanaAksiPage() {
   // Filters
-  const [tahun, setTahun] = useState('2025');
+  const [tahun, setTahun] = useState('');
   const [pilarId, setPilarId] = useState('');
   const [opdId, setOpdId] = useState('');
   const [statusRenaksi, setStatusRenaksi] = useState('');
@@ -23,6 +23,9 @@ export default function RencanaAksiPage() {
   const [summary, setSummary] = useState<RencanaAksiSummary | null>(null);
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Sort
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Modal for renaksi detail
   const [selected, setSelected] = useState<RencanaAksiRow | null>(null);
@@ -59,6 +62,16 @@ export default function RencanaAksiPage() {
   useEffect(() => {
     fetchData();
   }, [tahun, pilarId, opdId, statusRenaksi, search]);
+
+  // ── Sort data ─────────────────────────────────────
+  const sortedData = useMemo(() => {
+    if (!data.length) return data;
+    return [...data].sort((a, b) => {
+      const aTahun = parseInt(a.tahun, 10);
+      const bTahun = parseInt(b.tahun, 10);
+      return sortOrder === 'asc' ? aTahun - bTahun : bTahun - aTahun;
+    });
+  }, [data, sortOrder]);
 
   // ── Styles ────────────────────────────────────────
   const baseSelect: React.CSSProperties = {
@@ -142,7 +155,8 @@ export default function RencanaAksiPage() {
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Filter</p>
         </div>
         <div className="filter-full" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', alignItems: 'center' }}>
-          <select value={tahun} onChange={e => setTahun(e.target.value)} style={{ ...baseSelect, minWidth: 100 }} className="mobile-full">
+          <select value={tahun} onChange={e => setTahun(e.target.value)} style={{ ...baseSelect, minWidth: 130 }} className="mobile-full">
+            <option value="">Semua Tahun</option>
             {filterOptions?.tahun.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select value={pilarId} onChange={e => setPilarId(e.target.value)} style={{ ...baseSelect, minWidth: 200 }}>
@@ -199,19 +213,32 @@ export default function RencanaAksiPage() {
         <div className="rounded-xl border overflow-hidden"
           style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
           <div className="overflow-x-auto">
-          <table className="w-full text-sm" style={{ minWidth: 800 }}>
+          <table className="w-full text-sm" style={{ minWidth: 900 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['No', 'Kode', 'Indikator', 'Pilar', 'Rencana Aksi', 'OPD', 'Status', 'Catatan'].map(h => (
-                  <th key={h} className="text-left font-medium uppercase tracking-wider"
-                    style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>
-                    {h}
-                  </th>
-                ))}
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>No</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Kode</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Indikator</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Pilar</th>
+                <th
+                  className="text-left font-medium uppercase tracking-wider select-none"
+                  style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                >
+                  Tahun{' '}
+                  {sortOrder === 'asc'
+                    ? <ArrowUp size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                    : <ArrowDown size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                  }
+                </th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Rencana Aksi</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>OPD</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Status</th>
+                <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Catatan</th>
               </tr>
             </thead>
             <tbody>
-              {data.map((row) => (
+              {sortedData.map((row) => (
                 <tr key={row.id}
                   style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
@@ -221,6 +248,7 @@ export default function RencanaAksiPage() {
                   <td className="font-mono" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.kode}</td>
                   <td className="font-medium truncate" style={{ color: 'var(--color-text)', padding: '0.75rem 1.25rem', maxWidth: 240 }}>{row.indikator}</td>
                   <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.pilar}</td>
+                  <td className="font-mono" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.tahun}</td>
                   <td className="truncate" style={{ color: 'var(--color-text)', padding: '0.75rem 1.25rem', maxWidth: 300 }}>{row.rencana_aksi}</td>
                   <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.opd}</td>
                   <td style={{ padding: '0.75rem 1.25rem' }}>
@@ -251,7 +279,7 @@ export default function RencanaAksiPage() {
       {/* Tabel footer */}
       {!loading && data.length > 0 && (
         <p className="text-xs text-right" style={{ color: 'var(--color-text-secondary)', opacity: 0.6 }}>
-          Menampilkan {data.length} rencana aksi
+          Menampilkan {sortedData.length} rencana aksi
         </p>
       )}
 

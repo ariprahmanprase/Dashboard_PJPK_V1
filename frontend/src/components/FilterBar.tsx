@@ -28,7 +28,7 @@ export default function FilterBar({ options, filters, onFilterChange }: Props) {
       </select>
       <select value={filters.pilar_id || ''} onChange={e => onFilterChange('pilar_id', e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
         <option value="">Semua Pilar</option>
-        {options?.pilar.map(p => <option key={p.id} value={p.id}>Pilar {p.no_pilar}</option>)}
+        {options?.pilar.map(p => <option key={p.id} value={p.id}>Pilar {p.no_pilar} — {p.nama_pilar}</option>)}
       </select>
       <select value={filters.indikator_id || ''} onChange={e => onFilterChange('indikator_id', e.target.value)} style={{ ...baseSelect, minWidth: 280 }}>
         <option value="">Semua Indikator</option>

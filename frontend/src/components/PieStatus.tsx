@@ -7,11 +7,12 @@ interface Props {
   alert: number;
   belumDiisi: number;
   loading: boolean;
+  onSliceClick?: (status: string) => void;
 }
 
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#94a3b8'];
 
-export default function PieStatus({ onTrack, warning, alert, belumDiisi, loading }: Props) {
+export default function PieStatus({ onTrack, warning, alert, belumDiisi, loading, onSliceClick }: Props) {
   if (loading) {
     return (
       <div
@@ -77,6 +78,8 @@ export default function PieStatus({ onTrack, warning, alert, belumDiisi, loading
             outerRadius={75}
             paddingAngle={3}
             dataKey="value"
+            onClick={(entry) => onSliceClick?.(entry.name)}
+            style={{ cursor: 'pointer' }}
           >
             {chartData.map((_, i) => (
               <Cell key={i} fill={COLORS[i]} />
