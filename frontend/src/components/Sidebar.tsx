@@ -24,7 +24,7 @@ export default function Sidebar({ collapsed, activePage, onNavigate, mobileOpen,
     <>
       {/* Desktop: always visible, fixed left */}
       <aside
-        className="fixed left-0 top-0 h-full z-50 flex-col transition-all duration-300 ease-in-out border-r hidden md:flex"
+        className="fixed left-0 top-0 h-full z-50 flex-col transition-all duration-300 ease-in-out border-r hidden lg:flex"
         style={{
           width: sidebarWidth,
           backgroundColor: 'var(--color-sidebar-bg)',
@@ -41,16 +41,16 @@ export default function Sidebar({ collapsed, activePage, onNavigate, mobileOpen,
         />
       </aside>
 
-      {/* Mobile: overlay */}
+      {/* Tablet & Mobile: overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40"
+          className="lg:hidden fixed inset-0 z-40"
           style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
           onClick={onMobileClose}
         />
       )}
       <aside
-        className="fixed left-0 top-0 h-full z-50 flex-col transition-transform duration-300 ease-in-out border-r md:hidden flex"
+        className="fixed left-0 top-0 h-full z-50 flex-col transition-transform duration-300 ease-in-out border-r lg:hidden flex"
         style={{
           width: 256,
           backgroundColor: 'var(--color-sidebar-bg)',
@@ -111,16 +111,16 @@ function SidebarContent({
             </div>
             {/* Collapse toggle — desktop */}
             <span
-              className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors hidden md:flex items-center justify-center shrink-0"
+              className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors hidden lg:flex items-center justify-center shrink-0"
               style={{ color: 'var(--color-sidebar-muted)' }}
               onClick={(e) => { e.stopPropagation(); onToggle(); }}
             >
               <PanelLeftClose size={18} />
             </span>
-            {/* Mobile close */}
+            {/* Tablet & Mobile close */}
             <span
               onClick={(e) => { e.stopPropagation(); onMobileClose(); }}
-              className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors md:hidden flex items-center justify-center shrink-0"
+              className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors lg:hidden flex items-center justify-center shrink-0"
               style={{ color: 'var(--color-sidebar-muted)' }}
             >
               <X size={18} />
@@ -129,7 +129,7 @@ function SidebarContent({
         ) : (
           <>
             <img src="/sidoarjoo.png" alt="Logo" style={{ width: 28, height: 28 }} className="object-contain rounded shrink-0" />
-            <span className="hidden md:block" style={{ color: 'var(--color-sidebar-muted)' }}>
+            <span className="hidden lg:block" style={{ color: 'var(--color-sidebar-muted)' }}>
               <PanelLeftOpen size={14} />
             </span>
           </>

@@ -87,20 +87,20 @@ body {
   min-height: 100vh;
 }
 
-/* Mobile: content area should not have sidebar margin */
-@media (max-width: 767px) {
+/* Tablet & Mobile: content area should not have sidebar margin */
+@media (max-width: 1023px) {
   .layout-content {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
 }
 
-/* Responsive row: flex-row on desktop, flex-col on mobile */
+/* Responsive row: flex-row on desktop (≥1024px), flex-col on tablet & mobile */
 .responsive-row {
   display: flex;
   gap: 1rem;
 }
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .responsive-row {
     flex-direction: column !important;
   }

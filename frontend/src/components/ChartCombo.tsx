@@ -80,9 +80,9 @@ export default function ChartCombo({ data, loading }: Props) {
               fontSize: '0.8125rem',
               color: 'var(--color-text)',
             }}
-            formatter={(value: number, name: string) => {
-              const label = name === 'avg_target' ? 'Target' : 'Capaian';
-              return [value != null ? value.toLocaleString() : '-', label];
+            formatter={(_value: unknown, _name: unknown) => {
+              const label = String(_name) === 'avg_target' ? 'Target' : 'Capaian';
+              return [_value != null ? Number(_value).toLocaleString() : '-', label];
             }}
             labelFormatter={label => `Tahun ${label}`}
           />

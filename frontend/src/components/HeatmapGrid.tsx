@@ -65,8 +65,8 @@ export default function HeatmapGrid({ data, loading }: Props) {
                   </span>
                 </td>
                 {TAHUN.map(thn => {
-                  const warna = (row as Record<string, string>)[`warna_${thn}`] || 'Abu';
-                  const status = (row as Record<string, string>)[`status_${thn}`] || '-';
+                  const warna = (row as unknown as Record<string, string>)[`warna_${thn}`] || 'Abu';
+                  const status = (row as unknown as Record<string, string>)[`status_${thn}`] || '-';
                   return (
                     <td key={thn} style={{ padding: '1px', textAlign: 'center' }}>
                       <div

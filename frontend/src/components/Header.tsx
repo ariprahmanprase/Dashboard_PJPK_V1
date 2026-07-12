@@ -25,7 +25,7 @@ export default function Header({ onMobileMenu }: Props) {
         {/* Mobile hamburger */}
         <button
           onClick={onMobileMenu}
-          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors md:hidden"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors lg:hidden"
           style={{ color: 'var(--color-text-secondary)' }}
           title="Buka menu"
         >

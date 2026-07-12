@@ -74,7 +74,7 @@ export default function PieRenaksi({ data, loading, onSliceClick }: Props) {
             outerRadius={75}
             paddingAngle={3}
             dataKey="value"
-            onClick={(entry) => onSliceClick?.(entry.name)}
+            onClick={(entry) => { if (entry?.name) onSliceClick?.(entry.name); }}
             style={{ cursor: 'pointer' }}
           >
             {chartData.map((_, i) => (
@@ -89,7 +89,7 @@ export default function PieRenaksi({ data, loading, onSliceClick }: Props) {
               fontSize: '0.75rem',
               color: 'var(--color-text)',
             }}
-            formatter={(value: number) => [`${value} Rencana`, '']}
+            formatter={(_value: unknown) => [`${_value ?? 0} Rencana`, '']}
           />
           <Legend
             verticalAlign="bottom"

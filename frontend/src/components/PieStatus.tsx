@@ -78,7 +78,7 @@ export default function PieStatus({ onTrack, warning, alert, belumDiisi, loading
             outerRadius={75}
             paddingAngle={3}
             dataKey="value"
-            onClick={(entry) => onSliceClick?.(entry.name)}
+            onClick={(entry) => { if (entry?.name) onSliceClick?.(entry.name); }}
             style={{ cursor: 'pointer' }}
           >
             {chartData.map((_, i) => (
@@ -93,7 +93,7 @@ export default function PieStatus({ onTrack, warning, alert, belumDiisi, loading
               fontSize: '0.75rem',
               color: 'var(--color-text)',
             }}
-            formatter={(value: number) => [`${value} indikator`, '']}
+            formatter={(_value: unknown) => [`${_value ?? 0} indikator`, '']}
           />
           <Legend
             verticalAlign="bottom"
