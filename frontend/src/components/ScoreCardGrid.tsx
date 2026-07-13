@@ -1,7 +1,7 @@
 import ScoreCard from './ScoreCard';
 import type { Scorecards } from '@/types';
 
-export type ScorecardKey = 'total_indikator' | 'total_opd' | 'on_track' | 'warning' | 'alert' | 'target_belum' | 'capaian_belum';
+export type ScorecardKey = 'total_indikator' | 'total_opd' | 'on_track' | 'warning' | 'alert' | 'capaian_belum';
 
 interface Props {
   data: Scorecards | null;
@@ -17,14 +17,13 @@ export default function ScoreCardGrid({ data, loading, activeKey, onCardClick }:
     { label: 'On Track', value: data.on_track, variant: 'success' as const, key: 'on_track' as ScorecardKey },
     { label: 'Warning', value: data.warning, variant: 'warning' as const, key: 'warning' as ScorecardKey },
     { label: 'Alert', value: data.alert, variant: 'danger' as const, key: 'alert' as ScorecardKey },
-    { label: 'Target Belum Diinput', value: data.target_belum_diinput, variant: 'default' as const, key: 'target_belum' as ScorecardKey },
     { label: 'Capaian Belum Diinput', value: data.capaian_belum_diinput, variant: 'default' as const, key: 'capaian_belum' as ScorecardKey },
   ] : [];
 
   if (loading && !data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7" style={{ gap: '0.75rem' }}>
-        {[...Array(7)].map((_, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }}>
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
             className="rounded-xl border p-5 animate-pulse"
@@ -42,7 +41,7 @@ export default function ScoreCardGrid({ data, loading, activeKey, onCardClick }:
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7" style={{ gap: '0.75rem' }}>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }}>
       {cards.map(c => (
         <ScoreCard
           key={c.key}

@@ -231,7 +231,6 @@ export default function ReportPage() {
 
   // ── Client-side filter ────────────────────────────
   const filteredTableData = useMemo(() => {
-    if (scorecardKey === 'target_belum') return tableData.filter(r => r.target === null);
     if (scorecardKey === 'capaian_belum') return tableData.filter(r => r.capaian === null);
     return tableData;
   }, [tableData, scorecardKey]);

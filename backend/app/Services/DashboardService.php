@@ -77,12 +77,6 @@ class DashboardService
         $alert = $byStatus['Alert'] ?? 0;
         $belumDiisi = $byStatus['Belum Diisi'] ?? 0;
 
-        // Target Belum Diinput (target is null)
-        $targetBelum = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
-            ->when($tahun, fn($q) => $q->where('tahun', $tahun))
-            ->whereNull('target')
-            ->count();
-
         // Capaian Belum Diinput (capaian is null)
         $capaianBelum = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
             ->when($tahun, fn($q) => $q->where('tahun', $tahun))
@@ -95,7 +89,6 @@ class DashboardService
             'on_track' => $onTrack,
             'warning' => $warning,
             'alert' => $alert,
-            'target_belum_diinput' => $targetBelum,
             'capaian_belum_diinput' => $capaianBelum,
         ];
     }

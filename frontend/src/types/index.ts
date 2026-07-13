@@ -30,7 +30,6 @@ export interface Scorecards {
   on_track: number;
   warning: number;
   alert: number;
-  target_belum_diinput: number;
   capaian_belum_diinput: number;
 }
 
