@@ -16,6 +16,19 @@ const statusColor: Record<string, string> = {
   Abu: '#94a3b8',
 };
 
+function formatNum(v: number | null): string {
+  return v != null ? v.toLocaleString('id-ID') : '-';
+}
+
+function buildTooltip(row: HeatmapRow, thn: string): string {
+  const target = (row as unknown as Record<string, number | null>)[`target_${thn}`];
+  const capaian = (row as unknown as Record<string, number | null>)[`capaian_${thn}`];
+  const gap = (row as unknown as Record<string, number | null>)[`gap_${thn}`];
+  const status = (row as unknown as Record<string, string>)[`status_${thn}`] || '-';
+
+  return `${row.kode} — ${thn}\nStatus: ${status}\nTarget: ${formatNum(target)}\nCapaian: ${formatNum(capaian)}\nGap: ${gap != null ? (gap >= 0 ? '+' : '') + gap.toLocaleString('id-ID') : '-'}`;
+}
+
 export default function HeatmapGrid({ data, loading }: Props) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
@@ -72,7 +85,7 @@ export default function HeatmapGrid({ data, loading }: Props) {
                       <div
                         title={`${row.kode} — ${thn}: ${status}`}
                         onMouseEnter={e => {
-                          setTooltip({ x: e.clientX, y: e.clientY, text: `${row.kode} — ${thn}: ${status}` });
+                          setTooltip({ x: e.clientX, y: e.clientY, text: buildTooltip(row, thn) });
                           (e.currentTarget as HTMLElement).style.transform = 'scale(1.3)';
                           (e.currentTarget as HTMLElement).style.zIndex = '10';
                           (e.currentTarget as HTMLElement).style.position = 'relative';
@@ -131,7 +144,7 @@ export default function HeatmapGrid({ data, loading }: Props) {
             color: 'var(--color-text)',
             zIndex: 60,
             pointerEvents: 'none',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'pre-line',
           }}
         >
           {tooltip.text}

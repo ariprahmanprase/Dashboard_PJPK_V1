@@ -15,6 +15,7 @@ export default function RencanaAksiPage() {
   const [tahun, setTahun] = useState('');
   const [pilarId, setPilarId] = useState('');
   const [opdId, setOpdId] = useState('');
+  const [indikatorId, setIndikatorId] = useState('');
   const [statusRenaksi, setStatusRenaksi] = useState('');
   const [search, setSearch] = useState('');
 
@@ -38,6 +39,7 @@ export default function RencanaAksiPage() {
       if (tahun) params.set('tahun', tahun);
       if (pilarId) params.set('pilar_id', pilarId);
       if (opdId) params.set('opd_id', opdId);
+      if (indikatorId) params.set('indikator_id', indikatorId);
       if (statusRenaksi) params.set('status_renaksi', statusRenaksi);
       if (search) params.set('search', search);
 
@@ -61,7 +63,7 @@ export default function RencanaAksiPage() {
 
   useEffect(() => {
     fetchData();
-  }, [tahun, pilarId, opdId, statusRenaksi, search]);
+  }, [tahun, pilarId, opdId, indikatorId, statusRenaksi, search]);
 
   // ── Sort data ─────────────────────────────────────
   const sortedData = useMemo(() => {
@@ -166,6 +168,12 @@ export default function RencanaAksiPage() {
           <select value={opdId} onChange={e => setOpdId(e.target.value)} style={{ ...baseSelect, minWidth: 160 }}>
             <option value="">Semua OPD</option>
             {filterOptions?.opd.map(o => <option key={o.id} value={o.id}>{o.kode_opd}</option>)}
+          </select>
+          <select value={indikatorId} onChange={e => setIndikatorId(e.target.value)} style={{ ...baseSelect, minWidth: 220 }}>
+            <option value="">Semua Indikator</option>
+            {filterOptions?.indikator.map(i => (
+              <option key={i.id} value={i.id}>{i.kode} — {i.nama_indikator.length > 40 ? i.nama_indikator.slice(0, 40) + '…' : i.nama_indikator}</option>
+            ))}
           </select>
           <select value={statusRenaksi} onChange={e => setStatusRenaksi(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
             <option value="">Semua Status</option>

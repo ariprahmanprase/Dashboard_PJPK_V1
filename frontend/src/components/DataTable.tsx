@@ -49,13 +49,15 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
       }}
     >
       <div className="overflow-x-auto">
-      <table className="w-full text-sm" style={{ minWidth: 700 }}>
+      <table className="w-full text-sm" style={{ minWidth: 1200 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-            {['Kode', 'Nama Indikator', 'OPD', 'Pilar', 'Status'].map(h => (
+            {['Kode', 'Nama Indikator', 'Pilar', 'OPD', 'Tahun', 'Target', 'Capaian', 'Gap', 'Status'].map(h => {
+              const isNumeric = ['Target', 'Capaian', 'Gap'].includes(h);
+              return (
               <th
                 key={h}
-                className="text-left font-medium uppercase tracking-wider"
+                className={`font-medium uppercase tracking-wider ${isNumeric ? 'text-right' : 'text-left'}`}
                 style={{
                   color: 'var(--color-text-secondary)',
                   fontSize: '0.688rem',
@@ -64,7 +66,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               >
                 {h}
               </th>
-            ))}
+            )})}
           </tr>
         </thead>
         <tbody>
@@ -94,9 +96,6 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               >
                 {row.nama_indikator}
               </td>
-              <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem' }}>
-                {row.nama_opd}
-              </td>
               <td
                 className="align-middle"
                 style={{
@@ -106,6 +105,57 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 }}
               >
                 {row.nama_pilar}
+              </td>
+              <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem' }}>
+                {row.nama_opd}
+              </td>
+              <td
+                className="font-mono align-middle"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.75rem',
+                  padding: '0.875rem 1.25rem',
+                }}
+              >
+                {row.tahun ?? '-'}
+              </td>
+              <td
+                className="font-mono align-middle text-right"
+                style={{
+                  color: 'var(--color-text)',
+                  padding: '0.875rem 1.25rem',
+                  fontSize: '0.75rem',
+                }}
+              >
+                {row.target != null ? row.target.toLocaleString('id-ID') : '-'}
+              </td>
+              <td
+                className="font-mono align-middle text-right"
+                style={{
+                  color: 'var(--color-text)',
+                  padding: '0.875rem 1.25rem',
+                  fontSize: '0.75rem',
+                }}
+              >
+                {row.capaian != null ? row.capaian.toLocaleString('id-ID') : '-'}
+              </td>
+              <td
+                className="font-mono align-middle text-right"
+                style={{
+                  padding: '0.875rem 1.25rem',
+                  fontSize: '0.75rem',
+                }}
+              >
+                {row.gap != null ? (
+                  <span style={{
+                    color:
+                      row.status_tl === 'On Track' ? 'var(--color-success, #22c55e)' :
+                      row.status_tl === 'Warning' ? 'var(--color-warning, #eab308)' :
+                      'var(--color-danger, #ef4444)',
+                  }}>
+                    {row.gap >= 0 ? '+' : ''}{row.gap.toLocaleString('id-ID')}
+                  </span>
+                ) : '-'}
               </td>
               <td className="align-middle" style={{ padding: '1rem 1.5rem' }}>
                 <StatusBadge status={row.status_tl} warna={row.warna_tl} />

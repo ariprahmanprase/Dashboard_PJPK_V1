@@ -9,6 +9,48 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DashboardService
 {
+    /**
+     * Hitung status_tl seragam: HIJAU ≥ Target, KUNING ≥ 90% Target, MERAH < 90% Target
+     */
+    private function calcStatusTL($target, $capaian): array
+    {
+        if ($capaian === null || $target === null) {
+            return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
+        }
+
+        if ($target == 0) {
+            return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
+        }
+
+        if ($capaian >= $target) {
+            return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
+        }
+        if ($capaian >= $target * 0.9) {
+            return ['status_tl' => 'Warning', 'warna_tl' => 'Kuning'];
+        }
+        return ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
+    }
+
+    /**
+     * Update semua target_capaians di DB dengan formula baru
+     */
+    public function recalculateAllStatus(): int
+    {
+        $updated = 0;
+        $rows = TargetCapaian::all();
+
+        foreach ($rows as $tc) {
+            $new = $this->calcStatusTL($tc->target, $tc->capaian);
+            if ($tc->status_tl !== $new['status_tl'] || $tc->warna_tl !== $new['warna_tl']) {
+                $tc->status_tl = $new['status_tl'];
+                $tc->warna_tl = $new['warna_tl'];
+                $tc->save();
+                $updated++;
+            }
+        }
+
+        return $updated;
+    }
     public function getScorecards(array $filters = []): array
     {
         // Default to tahun 2025 if not specified
@@ -71,17 +113,23 @@ class DashboardService
                 ->orderBy('tahun', 'desc')
                 ->first();
 
+            $target = $tc->target ?? null;
+            $capaian = $tc->capaian ?? null;
+            $status = $this->calcStatusTL($target, $capaian);
+            // Gap = capaian - target
+            $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
+
             return [
                 'kode' => $indikator->kode,
                 'nama_indikator' => $indikator->nama_indikator,
                 'nama_opd' => $indikator->opd->nama_opd ?? '-',
                 'nama_pilar' => $indikator->pilar->nama_pilar ?? '-',
-                'status_tl' => $tc->status_tl ?? 'Belum Diisi',
-                'warna_tl' => $tc->warna_tl ?? 'Abu',
-                'target' => $tc->target ?? null,
-                'capaian' => $tc->capaian ?? null,
-                'gap' => $tc->gap ?? null,
-                'pct_gap' => $tc->pct_gap ?? null,
+                'status_tl' => $status['status_tl'],
+                'warna_tl' => $status['warna_tl'],
+                'target' => $target,
+                'capaian' => $capaian,
+                'gap' => $gap,
+                'pct_gap' => ($gap !== null && $target != 0) ? round($gap / $target, 6) : null,
                 'satuan' => $indikator->satuan,
                 'tahun' => $tc->tahun ?? null,
             ];
@@ -228,7 +276,7 @@ class DashboardService
 
         $allData = \Illuminate\Support\Facades\DB::table('target_capaians')
             ->whereIn('indikator_id', $indikators->pluck('id'))
-            ->select('indikator_id', 'tahun', 'status_tl', 'warna_tl')
+            ->select('indikator_id', 'tahun', 'status_tl', 'warna_tl', 'target', 'capaian')
             ->get()
             ->groupBy('indikator_id');
 
@@ -243,6 +291,12 @@ class DashboardService
                 $match = $tc->firstWhere('tahun', $thn);
                 $row['status_' . $thn] = $match->status_tl ?? 'Belum Diisi';
                 $row['warna_' . $thn] = $match->warna_tl ?? 'Abu';
+                // Tambah target, capaian, gap per tahun untuk tooltip
+                $row['target_' . $thn] = $match->target ?? null;
+                $row['capaian_' . $thn] = $match->capaian ?? null;
+                $target = $match->target ?? null;
+                $capaian = $match->capaian ?? null;
+                $row['gap_' . $thn] = ($capaian !== null && $target !== null) ? round($capaian - $target, 4) : null;
             }
             return $row;
         })->toArray();

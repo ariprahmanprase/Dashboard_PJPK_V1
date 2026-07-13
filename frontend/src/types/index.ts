@@ -119,6 +119,21 @@ export interface HeatmapRow {
   warna_2028: string;
   status_2029: string;
   warna_2029: string;
+  target_2025: number | null;
+  capaian_2025: number | null;
+  gap_2025: number | null;
+  target_2026: number | null;
+  capaian_2026: number | null;
+  gap_2026: number | null;
+  target_2027: number | null;
+  capaian_2027: number | null;
+  gap_2027: number | null;
+  target_2028: number | null;
+  capaian_2028: number | null;
+  gap_2028: number | null;
+  target_2029: number | null;
+  capaian_2029: number | null;
+  gap_2029: number | null;
 }
 
 export interface ChartPilarEntry {

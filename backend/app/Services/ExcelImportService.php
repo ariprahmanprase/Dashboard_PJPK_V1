@@ -226,17 +226,13 @@ class ExcelImportService
         if ($capaian === null) return 'Belum Diisi';
         if ($target === null) return 'Belum Diisi';
 
-        if ($lowerBetter === 'Ya') {
-            // Lower is better: capaian <= target = On Track
-            if ($capaian <= $target) return 'On Track';
-            if ($capaian <= $target * 1.1) return 'Warning';
-            return 'Alert';
-        } else {
-            // Higher is better: capaian >= target = On Track
-            if ($capaian >= $target) return 'On Track';
-            if ($capaian >= $target * 0.9) return 'Warning';
-            return 'Alert';
-        }
+        // Seragam untuk semua indikator:
+        // HIJAU: capaian >= target
+        // KUNING: capaian < target tapi >= 90% target (kurang <= 10%)
+        // MERAH: capaian < 90% target (kurang > 10%)
+        if ($capaian >= $target) return 'On Track';
+        if ($capaian >= $target * 0.9) return 'Warning';
+        return 'Alert';
     }
 
     private function statusToWarna(string $status): string
