@@ -14,11 +14,7 @@ class DashboardService
      */
     private function calcStatusTL($target, $capaian): array
     {
-        if ($capaian === null || $target === null) {
-            return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
-        }
-
-        if ($target == 0) {
+        if ($capaian === null || $target === null || $target == 0) {
             return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
         }
 
@@ -32,7 +28,27 @@ class DashboardService
     }
 
     /**
-     * Update semua target_capaians di DB dengan formula baru
+     * Get indicator IDs filtered by COMPUTED status (not DB column).
+     * Fetches semua target_capaian, hitung ulang status, return IDs yang cocok.
+     */
+    private function getIndicatorIdsByComputedStatus(Builder $indikatorQuery, string $statusTl, ?string $tahun): array
+    {
+        $tahun = $tahun ?? '2025';
+        $ids = $indikatorQuery->pluck('id');
+
+        $tcs = TargetCapaian::whereIn('indikator_id', $ids)
+            ->where('tahun', $tahun)
+            ->select('indikator_id', 'target', 'capaian')
+            ->get();
+
+        return $tcs->filter(function ($tc) use ($statusTl) {
+            $s = $this->calcStatusTL($tc->target, $tc->capaian);
+            return $s['status_tl'] === $statusTl;
+        })->pluck('indikator_id')->unique()->values()->toArray();
+    }
+
+    /**
+     * Update semua target_capaians di DB (untuk backward compatibility)
      */
     public function recalculateAllStatus(): int
     {
@@ -51,37 +67,44 @@ class DashboardService
 
         return $updated;
     }
+
+    // ─────────────────────────────────────────────────────
+    //  SCORECARDS
+    // ─────────────────────────────────────────────────────
     public function getScorecards(array $filters = []): array
     {
-        // Default to tahun 2025 if not specified
         $tahun = $filters['tahun'] ?? '2025';
 
         $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
         $opdQuery = $this->applyFiltersToOpd($filters);
 
-        // Total Indikator
         $totalIndikator = $indikatorQuery->count();
-
-        // Total OPD (unique OPDs that have indikators matching filter)
         $totalOpd = $opdQuery->distinct('opds.id')->count();
 
-        // On Track, Warning, Alert, Belum Diisi based on specified tahun
-        $byStatus = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
-            ->when($tahun, fn($q) => $q->where('tahun', $tahun))
-            ->selectRaw('status_tl, COUNT(*) as count')
-            ->groupBy('status_tl')
-            ->pluck('count', 'status_tl');
+        // Fetch all target_capaians & compute status dinamis
+        $rows = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
+            ->where('tahun', $tahun)
+            ->select('target', 'capaian')
+            ->get();
 
-        $onTrack = $byStatus['On Track'] ?? 0;
-        $warning = $byStatus['Warning'] ?? 0;
-        $alert = $byStatus['Alert'] ?? 0;
-        $belumDiisi = $byStatus['Belum Diisi'] ?? 0;
+        $onTrack = 0;
+        $warning = 0;
+        $alert = 0;
+        $belumDiisi = 0;
+        $capaianBelum = 0;
 
-        // Capaian Belum Diinput (capaian is null)
-        $capaianBelum = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
-            ->when($tahun, fn($q) => $q->where('tahun', $tahun))
-            ->whereNull('capaian')
-            ->count();
+        foreach ($rows as $tc) {
+            if ($tc->capaian === null) {
+                $capaianBelum++;
+            }
+            $s = $this->calcStatusTL($tc->target, $tc->capaian);
+            match ($s['status_tl']) {
+                'On Track' => $onTrack++,
+                'Warning' => $warning++,
+                'Alert' => $alert++,
+                default => $belumDiisi++,
+            };
+        }
 
         return [
             'total_indikator' => $totalIndikator,
@@ -93,6 +116,9 @@ class DashboardService
         ];
     }
 
+    // ─────────────────────────────────────────────────────
+    //  TABLE DATA
+    // ─────────────────────────────────────────────────────
     public function getTableData(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
@@ -109,7 +135,6 @@ class DashboardService
             $target = $tc->target ?? null;
             $capaian = $tc->capaian ?? null;
             $status = $this->calcStatusTL($target, $capaian);
-            // Gap = capaian - target
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
             return [
@@ -129,16 +154,14 @@ class DashboardService
         })->toArray();
     }
 
+    // ─────────────────────────────────────────────────────
+    //  CHART DATA (trend avg target vs capaian)
+    // ─────────────────────────────────────────────────────
     public function getChartData(array $filters = []): array
     {
         $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
 
         $query = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'));
-
-        // Apply status_tl filter directly on TargetCapaian
-        if (!empty($filters['status_tl'])) {
-            $query->where('status_tl', $filters['status_tl']);
-        }
 
         return $query
             ->selectRaw('tahun, ROUND(AVG(target), 2) as avg_target, ROUND(AVG(capaian), 2) as avg_capaian, COUNT(*) as count')
@@ -148,18 +171,19 @@ class DashboardService
             ->toArray();
     }
 
+    // ─────────────────────────────────────────────────────
+    //  PIE RENAKSI
+    // ─────────────────────────────────────────────────────
     public function getRenaksiPieData(array $filters = []): array
     {
         $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
         $totalIndikator = $indikatorQuery->count();
         $indikatorIds = $indikatorQuery->pluck('id');
 
-        // Count indikators that have at least one renaksi
         $indikatorDenganRenaksi = \App\Models\Renaksi::whereIn('indikator_id', $indikatorIds)
             ->distinct('indikator_id')
             ->count('indikator_id');
 
-        // Count renaksi by status
         $byStatus = \App\Models\Renaksi::whereIn('indikator_id', $indikatorIds)
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
@@ -182,7 +206,6 @@ class DashboardService
             ->orderBy('tahun', 'desc')
             ->orderBy('id');
 
-        // Optional: filter by renaksi status
         if (!empty($filters['status_renaksi'])) {
             $query->where('status', $filters['status_renaksi']);
         }
@@ -200,68 +223,87 @@ class DashboardService
             ->toArray();
     }
 
+    // ─────────────────────────────────────────────────────
+    //  PER PILAR (stacked bar) — computed status
+    // ─────────────────────────────────────────────────────
     public function getPerPilar(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
-        $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
-        $indikatorIds = $indikatorQuery->pluck('id');
+        $indikatorQuery = $this->applyFilters(Indikator::query()->with('pilar'), $filters);
+        $indikators = $indikatorQuery->get();
 
-        $rows = \Illuminate\Support\Facades\DB::table('target_capaians')
-            ->join('indikators', 'target_capaians.indikator_id', '=', 'indikators.id')
-            ->join('pilars', 'indikators.pilar_id', '=', 'pilars.id')
-            ->whereIn('target_capaians.indikator_id', $indikatorIds)
-            ->where('target_capaians.tahun', $tahun)
-            ->selectRaw("pilars.nama_pilar as pilar, target_capaians.status_tl, COUNT(*) as count")
-            ->groupBy('pilars.nama_pilar', 'target_capaians.status_tl')
-            ->orderBy('pilars.no_pilar')
-            ->get();
+        $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
+            ->where('tahun', $tahun)
+            ->select('indikator_id', 'target', 'capaian')
+            ->get()
+            ->keyBy('indikator_id');
 
         $grouped = [];
-        foreach ($rows as $r) {
-            $grouped[$r->pilar] ??= ['pilar' => $r->pilar, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
-            $key = match ($r->status_tl) {
+        foreach ($indikators as $ind) {
+            $pilar = $ind->pilar->nama_pilar ?? '-';
+            $noPilar = $ind->pilar->no_pilar ?? 0;
+            $tc = $tcs->get($ind->id);
+
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null);
+
+            if (!isset($grouped[$pilar])) {
+                $grouped[$pilar] = ['pilar' => $pilar, 'no_pilar' => $noPilar, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+            }
+            $key = match ($s['status_tl']) {
                 'On Track' => 'on_track',
                 'Warning' => 'warning',
                 'Alert' => 'alert',
                 default => 'belum_diisi',
             };
-            $grouped[$r->pilar][$key] = $r->count;
+            $grouped[$pilar][$key]++;
         }
 
-        return array_values($grouped);
+        // Sort by pilar number
+        usort($grouped, fn($a, $b) => $a['no_pilar'] <=> $b['no_pilar']);
+        return array_map(fn($g) => ['pilar' => $g['pilar'], 'on_track' => $g['on_track'], 'warning' => $g['warning'], 'alert' => $g['alert'], 'belum_diisi' => $g['belum_diisi']], $grouped);
     }
 
+    // ─────────────────────────────────────────────────────
+    //  PER OPD (stacked bar) — computed status
+    // ─────────────────────────────────────────────────────
     public function getPerOpd(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
-        $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
-        $indikatorIds = $indikatorQuery->pluck('id');
+        $indikatorQuery = $this->applyFilters(Indikator::query()->with('opd'), $filters);
+        $indikators = $indikatorQuery->get();
 
-        $rows = \Illuminate\Support\Facades\DB::table('target_capaians')
-            ->join('indikators', 'target_capaians.indikator_id', '=', 'indikators.id')
-            ->join('opds', 'indikators.opd_id', '=', 'opds.id')
-            ->whereIn('target_capaians.indikator_id', $indikatorIds)
-            ->where('target_capaians.tahun', $tahun)
-            ->selectRaw("opds.nama_opd as opd, target_capaians.status_tl, COUNT(*) as count")
-            ->groupBy('opds.nama_opd', 'target_capaians.status_tl')
-            ->orderBy('opds.nama_opd')
-            ->get();
+        $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
+            ->where('tahun', $tahun)
+            ->select('indikator_id', 'target', 'capaian')
+            ->get()
+            ->keyBy('indikator_id');
 
         $grouped = [];
-        foreach ($rows as $r) {
-            $grouped[$r->opd] ??= ['opd' => $r->opd, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
-            $key = match ($r->status_tl) {
+        foreach ($indikators as $ind) {
+            $opd = $ind->opd->nama_opd ?? '-';
+            $tc = $tcs->get($ind->id);
+
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null);
+
+            if (!isset($grouped[$opd])) {
+                $grouped[$opd] = ['opd' => $opd, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+            }
+            $key = match ($s['status_tl']) {
                 'On Track' => 'on_track',
                 'Warning' => 'warning',
                 'Alert' => 'alert',
                 default => 'belum_diisi',
             };
-            $grouped[$r->opd][$key] = $r->count;
+            $grouped[$opd][$key]++;
         }
 
+        ksort($grouped);
         return array_values($grouped);
     }
 
+    // ─────────────────────────────────────────────────────
+    //  HEATMAP — computed status
+    // ─────────────────────────────────────────────────────
     public function getHeatmap(array $filters = []): array
     {
         $indikatorQuery = $this->applyFilters(Indikator::query()->with('pilar'), $filters);
@@ -269,7 +311,7 @@ class DashboardService
 
         $allData = \Illuminate\Support\Facades\DB::table('target_capaians')
             ->whereIn('indikator_id', $indikators->pluck('id'))
-            ->select('indikator_id', 'tahun', 'status_tl', 'warna_tl', 'target', 'capaian')
+            ->select('indikator_id', 'tahun', 'target', 'capaian')
             ->get()
             ->groupBy('indikator_id');
 
@@ -282,28 +324,28 @@ class DashboardService
             $tc = $allData->get($ind->id, collect());
             foreach (['2025', '2026', '2027', '2028', '2029'] as $thn) {
                 $match = $tc->firstWhere('tahun', $thn);
-                $row['status_' . $thn] = $match->status_tl ?? 'Belum Diisi';
-                $row['warna_' . $thn] = $match->warna_tl ?? 'Abu';
-                // Tambah target, capaian, gap per tahun untuk tooltip
-                $row['target_' . $thn] = $match->target ?? null;
-                $row['capaian_' . $thn] = $match->capaian ?? null;
                 $target = $match->target ?? null;
                 $capaian = $match->capaian ?? null;
+                $s = $this->calcStatusTL($target, $capaian);
+                $row['status_' . $thn] = $s['status_tl'];
+                $row['warna_' . $thn] = $s['warna_tl'];
+                $row['target_' . $thn] = $target;
+                $row['capaian_' . $thn] = $capaian;
                 $row['gap_' . $thn] = ($capaian !== null && $target !== null) ? round($capaian - $target, 4) : null;
             }
             return $row;
         })->toArray();
     }
 
+    // ─────────────────────────────────────────────────────
+    //  CHART PER PILAR (small multiples)
+    // ─────────────────────────────────────────────────────
     public function getChartPerPilar(array $filters = []): array
     {
         $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
         $indikators = $indikatorQuery->with('pilar')->get();
 
         $tcQuery = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'));
-        if (!empty($filters['status_tl'])) {
-            $tcQuery->where('status_tl', $filters['status_tl']);
-        }
 
         $allData = $tcQuery
             ->selectRaw('indikator_id, tahun, AVG(target) as avg_target, AVG(capaian) as avg_capaian')
@@ -335,6 +377,9 @@ class DashboardService
         return $result;
     }
 
+    // ─────────────────────────────────────────────────────
+    //  FILTERS
+    // ─────────────────────────────────────────────────────
     private function applyFilters(Builder $query, array $filters): Builder
     {
         if (!empty($filters['opd_id'])) {
@@ -347,12 +392,14 @@ class DashboardService
             $query->where('id', $filters['indikator_id']);
         }
         if (!empty($filters['status_tl'])) {
-            // Filter indicators by their target_capaian status for a given tahun
+            // Compute status dari target & capaian, bukan dari kolom DB
             $tahun = $filters['tahun'] ?? null;
-            $query->whereHas('targetCapaians', function ($q) use ($filters, $tahun) {
-                $q->where('status_tl', $filters['status_tl']);
-                if ($tahun) $q->where('tahun', $tahun);
-            });
+            $matchingIds = $this->getIndicatorIdsByComputedStatus(
+                clone $query,
+                $filters['status_tl'],
+                $tahun
+            );
+            $query->whereIn('id', $matchingIds ?: [0]);
         }
         return $query;
     }
@@ -368,46 +415,41 @@ class DashboardService
                 if (!empty($filters['pilar_id'])) $q->where('pilar_id', $filters['pilar_id']);
                 if (!empty($filters['indikator_id'])) $q->where('id', $filters['indikator_id']);
                 if (!empty($filters['status_tl'])) {
-                    $tahun = $filters['tahun'] ?? 2025;
-                    $q->whereHas('targetCapaians', fn($tc) => $tc->where('status_tl', $filters['status_tl'])->where('tahun', $tahun));
+                    $tahun = $filters['tahun'] ?? '2025';
+                    $matchingIds = $this->getIndicatorIdsByComputedStatus(
+                        \App\Models\Indikator::query(),
+                        $filters['status_tl'],
+                        $tahun
+                    );
+                    $q->whereIn('id', $matchingIds ?: [0]);
                 }
             });
         }
         return $query;
     }
 
+    // ─────────────────────────────────────────────────────
+    //  RENCANA AKSI
+    // ─────────────────────────────────────────────────────
     public function getRencanaAksiList(array $filters = []): array
     {
-        $tahun = $filters['tahun'] ?? '2025';
-
         $query = \App\Models\Renaksi::with(['indikator.pilar', 'opd']);
 
-        // Filter by tahun
         if (!empty($filters['tahun'])) {
             $query->where('tahun', $filters['tahun']);
         }
-
-        // Filter by status renaksi
         if (!empty($filters['status_renaksi'])) {
             $query->where('status', $filters['status_renaksi']);
         }
-
-        // Filter by pilar
         if (!empty($filters['pilar_id'])) {
             $query->whereHas('indikator', fn($q) => $q->where('pilar_id', $filters['pilar_id']));
         }
-
-        // Filter by OPD
         if (!empty($filters['opd_id'])) {
             $query->where('opd_id', $filters['opd_id']);
         }
-
-        // Filter by indikator
         if (!empty($filters['indikator_id'])) {
             $query->where('indikator_id', $filters['indikator_id']);
         }
-
-        // Search by nama_kegiatan
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
