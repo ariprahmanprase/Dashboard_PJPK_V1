@@ -10,7 +10,7 @@ class Opd extends Model
 
     public function indikators()
     {
-        return $this->hasMany(Indikator::class);
+        return $this->belongsToMany(Indikator::class, 'indikator_opd');
     }
 
     public function renaksis()

@@ -37,6 +37,7 @@ export interface TableRow {
   kode: string;
   nama_indikator: string;
   nama_opd: string;
+  opd_list: string[];
   nama_pilar: string;
   status_tl: string;
   warna_tl: string;
@@ -46,6 +47,11 @@ export interface TableRow {
   pct_gap: number | null;
   satuan: string;
   tahun: string | null;
+  sumber_data: string;
+  baseline_2024: number | null;
+  dokrenda: string;
+  kendala: string | null;
+  inovasi: string | null;
 }
 
 export interface RenaksiItem {
@@ -168,4 +174,16 @@ export interface RencanaAksiSummary {
   terlaksana: number;
   tidak_terlaksana: number;
   persentase: number;
+}
+
+export interface IndikatorDetail {
+  kode: string;
+  nama_indikator: string;
+  pilar: string;
+  opd_list: string[];
+  sumber_data: string;
+  baseline_2024: number | null;
+  dokrenda: string;
+  kendala: string | null;
+  inovasi: string | null;
 }

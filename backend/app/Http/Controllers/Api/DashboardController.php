@@ -110,4 +110,13 @@ class DashboardController extends Controller
         $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun', 'status_renaksi', 'search']);
         return response()->json($service->getRencanaAksiList($filters));
     }
+
+    public function indikatorDetail(string $kode, DashboardService $service)
+    {
+        $detail = $service->getIndikatorDetail($kode);
+        if (!$detail) {
+            return response()->json(['message' => 'Indikator tidak ditemukan'], 404);
+        }
+        return response()->json($detail);
+    }
 }

@@ -92,6 +92,12 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 style={{
                   color: 'var(--color-text)',
                   padding: '0.875rem 1.25rem',
+                  fontSize: '0.8125rem',
+                  maxWidth: '260px',
+                  minWidth: '160px',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.3,
                 }}
               >
                 {row.nama_indikator}
@@ -106,7 +112,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               >
                 {row.nama_pilar}
               </td>
-              <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem' }}>
+              <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem', fontSize: '0.75rem', maxWidth: '220px', wordWrap: 'break-word' }}>
                 {row.nama_opd}
               </td>
               <td

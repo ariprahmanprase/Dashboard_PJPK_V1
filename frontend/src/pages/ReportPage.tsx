@@ -5,6 +5,7 @@ import ScoreCardGrid from '@/components/ScoreCardGrid';
 import type { ScorecardKey } from '@/components/ScoreCardGrid';
 import DataTable from '@/components/DataTable';
 import RenaksiModal from '@/components/RenaksiModal';
+import IndikatorDetailModal from '@/components/IndikatorDetailModal';
 import StatusDetailModal from '@/components/StatusDetailModal';
 import ChartCombo from '@/components/ChartCombo';
 import PieRenaksi from '@/components/PieRenaksi';
@@ -13,6 +14,7 @@ import BarPerPilar from '@/components/BarPerPilar';
 import BarPerOpd from '@/components/BarPerOpd';
 import SmallMultiple from '@/components/SmallMultiple';
 import HeatmapGrid from '@/components/HeatmapGrid';
+import PyramidTargetCapaian from '@/components/PyramidTargetCapaian';
 
 import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartPilarEntry } from '@/types';
 
@@ -185,25 +187,13 @@ export default function ReportPage() {
     }
   }
 
-  // ── Rencana Aksi modal handler ────────────────────
-  async function handleRowClick(row: TableRow) {
-    setModalMode('indikator');
-    setModalKode(row.kode);
-    setModalNama(row.nama_indikator);
-    setModalOpen(true);
-    setRenaksiLoading(true);
-    setRenaksiData([]);
+  // ── Indikator Detail modal (klik baris tabel) ─────
+  const [indikatorDetailOpen, setIndikatorDetailOpen] = useState(false);
+  const [indikatorDetailKode, setIndikatorDetailKode] = useState('');
 
-    try {
-      const resp = await fetch(`/api/indikator/${row.kode}/renaksi?tahun=${tahun}`);
-      if (!resp.ok) throw new Error(`API ${resp.status}`);
-      const json = await resp.json();
-      setRenaksiData(json.renaksi ?? []);
-    } catch (err) {
-      console.error('[PJPK] renaksi fetch error:', err);
-    } finally {
-      setRenaksiLoading(false);
-    }
+  function handleRowClick(row: TableRow) {
+    setIndikatorDetailKode(row.kode);
+    setIndikatorDetailOpen(true);
   }
 
   async function handlePieClick(status: string) {
@@ -275,6 +265,9 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {/* ── Piramida Target vs Capaian ── */}
+      <PyramidTargetCapaian data={chartPerPilar} tahun={tahun} loading={loading} />
+
       {/* ── Lapis 1: Strategic Overview ── */}
       <div className="responsive-row">
         <div style={{ flex: '1 1 50%', minWidth: 0 }}>
@@ -329,6 +322,12 @@ export default function ReportPage() {
         subtitle={`Indikator dengan status ${statusModalTitle} (Tahun 2025)`}
         data={statusDetailData}
         loading={statusDetailLoading}
+      />
+
+      <IndikatorDetailModal
+        open={indikatorDetailOpen}
+        onClose={() => setIndikatorDetailOpen(false)}
+        kode={indikatorDetailKode}
       />
     </div>
   );

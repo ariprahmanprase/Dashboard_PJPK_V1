@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/filters', FilterController::class);
 Route::get('/dashboard/scorecards', [DashboardController::class, 'scorecards']);
 Route::get('/dashboard/table', [DashboardController::class, 'table']);
+Route::get('/indikator/{kode}/detail', [DashboardController::class, 'indikatorDetail']);
 Route::get('/indikator/{kode}/renaksi', [DashboardController::class, 'renaksi']);
 Route::get('/dashboard/chart', [DashboardController::class, 'chart']);
 Route::get('/dashboard/renaksi-pie', [DashboardController::class, 'renaksiPie']);

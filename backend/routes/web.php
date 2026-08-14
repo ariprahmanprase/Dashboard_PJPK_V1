@@ -9,7 +9,7 @@ Route::get('/', function () {
 });
 
 Route::get('/import', function (ExcelImportService $service) {
-    $file = 'C:/xampp/htdocs/PJPK_V1_Dashboard/PJPK V1.xlsx';
+    $file = 'C:/Arip/STIESIA/Dokumen PJPK Sidoarjo/Monitoring PJPK Kab. Sidoarjo Indikator.xlsx';
     if (!file_exists($file)) {
         return response()->json(['error' => 'File not found: ' . $file], 404);
     }

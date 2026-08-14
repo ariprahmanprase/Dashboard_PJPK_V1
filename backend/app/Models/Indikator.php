@@ -8,7 +8,8 @@ class Indikator extends Model
 {
     protected $fillable = [
         'kode', 'no_urut', 'pilar_id', 'opd_id',
-        'nama_indikator', 'satuan', 'lower_better',
+        'nama_indikator', 'satuan',
+        'sumber_data', 'baseline_2024', 'dokrenda', 'kendala', 'inovasi',
     ];
 
     public function pilar()
@@ -16,9 +17,25 @@ class Indikator extends Model
         return $this->belongsTo(Pilar::class);
     }
 
-    public function opd()
+    public function opds()
     {
-        return $this->belongsTo(Opd::class);
+        return $this->belongsToMany(Opd::class, 'indikator_opd');
+    }
+
+    /**
+     * Accessor: nama_opd sebagai comma-separated dari pivot.
+     * Dipakai buat backward compatibility di getTableData dll.
+     */
+    public function getNamaOpdAttribute(): string
+    {
+        if ($this->relationLoaded('opds')) {
+            return $this->opds->pluck('nama_opd')->join(', ');
+        }
+        // fallback: single opd_id kalau opds belum diload
+        if ($this->opd_id && $opd = Opd::find($this->opd_id)) {
+            return $opd->nama_opd;
+        }
+        return '-';
     }
 
     public function targetCapaians()

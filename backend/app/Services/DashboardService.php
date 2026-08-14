@@ -122,7 +122,7 @@ class DashboardService
     public function getTableData(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
-        $indikatorQuery = $this->applyFilters(Indikator::query()->with(['pilar', 'opd']), $filters);
+        $indikatorQuery = $this->applyFilters(Indikator::query()->with(['pilar', 'opds']), $filters);
 
         $results = $indikatorQuery->orderBy('kode')->get();
 
@@ -138,18 +138,24 @@ class DashboardService
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
             return [
-                'kode' => $indikator->kode,
-                'nama_indikator' => $indikator->nama_indikator,
-                'nama_opd' => $indikator->opd->nama_opd ?? '-',
-                'nama_pilar' => $indikator->pilar->nama_pilar ?? '-',
-                'status_tl' => $status['status_tl'],
-                'warna_tl' => $status['warna_tl'],
-                'target' => $target,
-                'capaian' => $capaian,
-                'gap' => $gap,
-                'pct_gap' => ($gap !== null && $target != 0) ? round($gap / $target, 6) : null,
-                'satuan' => $indikator->satuan,
-                'tahun' => $tc->tahun ?? null,
+                'kode'            => $indikator->kode,
+                'nama_indikator'  => $indikator->nama_indikator,
+                'nama_opd'        => $indikator->nama_opd,           // accessor: join dari pivot
+                'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
+                'nama_pilar'      => $indikator->pilar->nama_pilar ?? '-',
+                'status_tl'       => $status['status_tl'],
+                'warna_tl'        => $status['warna_tl'],
+                'target'          => $target,
+                'capaian'         => $capaian,
+                'gap'             => $gap,
+                'pct_gap'         => ($gap !== null && $target != 0) ? round($gap / $target, 6) : null,
+                'satuan'          => $indikator->satuan,
+                'tahun'           => $tc->tahun ?? null,
+                'sumber_data'     => $indikator->sumber_data,
+                'baseline_2024'   => $indikator->baseline_2024,
+                'dokrenda'        => $indikator->dokrenda,
+                'kendala'         => $indikator->kendala,
+                'inovasi'         => $indikator->inovasi,
             ];
         })->toArray();
     }
@@ -269,7 +275,7 @@ class DashboardService
     public function getPerOpd(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
-        $indikatorQuery = $this->applyFilters(Indikator::query()->with('opd'), $filters);
+        $indikatorQuery = $this->applyFilters(Indikator::query()->with('opds'), $filters);
         $indikators = $indikatorQuery->get();
 
         $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
@@ -280,21 +286,22 @@ class DashboardService
 
         $grouped = [];
         foreach ($indikators as $ind) {
-            $opd = $ind->opd->nama_opd ?? '-';
             $tc = $tcs->get($ind->id);
-
             $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null);
 
-            if (!isset($grouped[$opd])) {
-                $grouped[$opd] = ['opd' => $opd, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+            foreach ($ind->opds as $opd) {
+                $opdName = $opd->nama_opd;
+                if (!isset($grouped[$opdName])) {
+                    $grouped[$opdName] = ['opd' => $opdName, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+                }
+                $key = match ($s['status_tl']) {
+                    'On Track' => 'on_track',
+                    'Warning' => 'warning',
+                    'Alert' => 'alert',
+                    default => 'belum_diisi',
+                };
+                $grouped[$opdName][$key]++;
             }
-            $key = match ($s['status_tl']) {
-                'On Track' => 'on_track',
-                'Warning' => 'warning',
-                'Alert' => 'alert',
-                default => 'belum_diisi',
-            };
-            $grouped[$opd][$key]++;
         }
 
         ksort($grouped);
@@ -383,7 +390,9 @@ class DashboardService
     private function applyFilters(Builder $query, array $filters): Builder
     {
         if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+            $query->whereHas('opds', function ($q) use ($filters) {
+                $q->where('opds.id', $filters['opd_id']);
+            });
         }
         if (!empty($filters['pilar_id'])) {
             $query->where('pilar_id', $filters['pilar_id']);
@@ -426,6 +435,68 @@ class DashboardService
             });
         }
         return $query;
+    }
+
+    // ─────────────────────────────────────────────────────
+    //  INDIKATOR DETAIL (popup baru)
+    // ─────────────────────────────────────────────────────
+    public function getIndikatorDetail(string $kode): ?array
+    {
+        $indikator = Indikator::where('kode', $kode)
+            ->with(['pilar', 'opds', 'renaksis.opd'])
+            ->first();
+
+        if (!$indikator) return null;
+
+        // Target & capaian per tahun (2025-2029)
+        $tcs = TargetCapaian::where('indikator_id', $indikator->id)
+            ->orderBy('tahun')
+            ->get()
+            ->keyBy('tahun');
+
+        $targetCapaians = [];
+        foreach (['2025', '2026', '2027', '2028', '2029'] as $thn) {
+            $tc = $tcs->get($thn);
+            $t = $tc->target ?? null;
+            $c = $tc->capaian ?? null;
+            $s = $this->calcStatusTL($t, $c);
+            $gap = ($c !== null && $t !== null) ? round($c - $t, 6) : null;
+            $pctGap = ($gap !== null && $t != 0) ? round($gap / $t, 6) : null;
+
+            $targetCapaians[] = [
+                'tahun'     => $thn,
+                'target'    => $t,
+                'capaian'   => $c,
+                'gap'       => $gap,
+                'pct_gap'   => $pctGap,
+                'status_tl' => $s['status_tl'],
+                'warna_tl'  => $s['warna_tl'],
+            ];
+        }
+
+        // Renaksi terkait
+        $renaksi = $indikator->renaksis->map(fn($r) => [
+            'nama_kegiatan' => $r->nama_kegiatan,
+            'tahun'         => $r->tahun,
+            'status'        => $r->status,
+            'keterangan'    => $r->keterangan,
+            'opd'           => $r->opd->nama_opd ?? '-',
+        ])->values()->toArray();
+
+        return [
+            'kode'            => $indikator->kode,
+            'nama_indikator'  => $indikator->nama_indikator,
+            'pilar'           => $indikator->pilar->nama_pilar ?? '-',
+            'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
+            'satuan'          => $indikator->satuan,
+            'sumber_data'     => $indikator->sumber_data,
+            'baseline_2024'   => $indikator->baseline_2024,
+            'dokrenda'        => $indikator->dokrenda,
+            'kendala'         => $indikator->kendala,
+            'inovasi'         => $indikator->inovasi,
+            'target_capaians' => $targetCapaians,
+            'renaksi'         => $renaksi,
+        ];
     }
 
     // ─────────────────────────────────────────────────────
