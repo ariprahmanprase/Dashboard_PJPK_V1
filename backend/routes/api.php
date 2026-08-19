@@ -1,8 +1,20 @@
 <?php
 
+use App\Http\Controllers\Api\AdminRenaksiProgramController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FilterController;
 use Illuminate\Support\Facades\Route;
+
+// Auth (area /admin)
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me', [AuthController::class, 'me']);
+
+    Route::get('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'index']);
+    Route::put('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'update']);
+});
 
 Route::get('/filters', FilterController::class);
 Route::get('/dashboard/scorecards', [DashboardController::class, 'scorecards']);

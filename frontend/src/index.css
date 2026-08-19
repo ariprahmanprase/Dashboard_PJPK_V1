@@ -69,9 +69,10 @@
   color: #ffffff;
 }
 
+/* Reset ringan: hanya margin. Padding JANGAN di-reset global —
+   akan menimpa semua class spacing Tailwind (p-*, px-*, gap-*). */
 * {
   margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
