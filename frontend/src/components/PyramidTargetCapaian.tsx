@@ -126,12 +126,12 @@ export default function PyramidTargetCapaian({ data, tahun, loading }: Props) {
                 borderRadius: '0.5rem',
                 fontSize: '0.75rem',
               }}
-              formatter={(value: number, name: string) => [
-                Math.abs(value).toLocaleString('id-ID', { maximumFractionDigits: 2 }),
+              formatter={(value, name) => [
+                Math.abs(Number(value ?? 0)).toLocaleString('id-ID', { maximumFractionDigits: 2 }),
                 name === 'target' ? 'Target' : 'Capaian',
               ]}
-              labelFormatter={(label: string, payload: unknown[]) => {
-                const d = (payload as { payload: { fullPilar: string } }[])[0]?.payload;
+              labelFormatter={(label, payload) => {
+                const d = (payload as unknown as { payload?: { fullPilar?: string } }[])[0]?.payload;
                 return d?.fullPilar ?? label;
               }}
             />
