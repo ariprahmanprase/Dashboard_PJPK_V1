@@ -194,6 +194,7 @@ export interface RenaksiProgramRow {
   dinas: string;
   kode_program: string;
   rencana_aksi: string;
+  jenis_target: 'kuantitatif' | 'kualitatif';
   target: string;
   realisasi: string;
   kendala: string | null;

@@ -627,14 +627,74 @@ class DashboardService
                 'dinas'         => $r->dinas_text ?? '-',
                 'kode_program'  => $r->kode_program ?? '-',
                 'rencana_aksi'  => $r->rencana_aksi ?? '-',
-                'target'        => $r->target ?? '-',
-                'realisasi'     => $r->realisasi ?? '-',
+                'jenis_target'  => $r->jenis_target ?? 'kualitatif',
+                'target'        => $this->formatTarget($r),
+                'realisasi'     => $this->formatRealisasi($r),
                 'kendala'       => $r->kendala,
                 'catatan'       => $r->catatan,
                 'indikator'     => $r->indikator_list,
                 'status'        => $r->status,
             ])
             ->toArray();
+    }
+
+    /**
+     * Format tampilan target: kuantitatif -> "120 Orang", kualitatif -> teks lama.
+     */
+    private function formatTarget($r): string
+    {
+        if ($r->jenis_target === 'kuantitatif') {
+            if ($r->target_nilai === null) {
+                return '-';
+            }
+            $satuan = $r->target_satuan ? ' ' . $this->formatSatuan($r->target_satuan) : '';
+            return $this->formatAngka($r->target_nilai) . $satuan;
+        }
+
+        return $r->target ?? '-';
+    }
+
+    /**
+     * Format tampilan realisasi: kuantitatif -> "100 Orang" (satuan ikut target),
+     * kualitatif -> teks lama.
+     */
+    private function formatRealisasi($r): string
+    {
+        if ($r->jenis_target === 'kuantitatif') {
+            if ($r->realisasi_nilai === null) {
+                return '-';
+            }
+            $satuan = $r->target_satuan ? ' ' . $this->formatSatuan($r->target_satuan) : '';
+            return $this->formatAngka($r->realisasi_nilai) . $satuan;
+        }
+
+        return $r->realisasi ?? '-';
+    }
+
+    /**
+     * Kapitalisasi satuan: singkatan umum tetap huruf besar (NIB, RT RW, Ha),
+     * selainnya kapital di awal kata.
+     */
+    private function formatSatuan(string $satuan): string
+    {
+        $kapital = ['nib' => 'NIB', 'rt rw' => 'RT RW', '%' => '%'];
+        $lower = strtolower($satuan);
+
+        return $kapital[$lower] ?? ucwords($lower);
+    }
+
+    /**
+     * Format angka gaya Indonesia: 29176 -> "29.176", 47.17 -> "47,17".
+     */
+    private function formatAngka($nilai): string
+    {
+        $n = (float) $nilai;
+        // bulat -> tanpa desimal, desimal -> 2 digit koma
+        if (floor($n) == $n) {
+            return number_format($n, 0, ',', '.');
+        }
+
+        return rtrim(rtrim(number_format($n, 2, ',', '.'), '0'), ',');
     }
 
     public function getRenaksiProgramSummary(array $filters = []): array
