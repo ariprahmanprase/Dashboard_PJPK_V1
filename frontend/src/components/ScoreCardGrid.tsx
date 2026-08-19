@@ -8,17 +8,32 @@ interface Props {
   loading: boolean;
   activeKey: ScorecardKey | null;
   onCardClick: (key: ScorecardKey) => void;
+  customLabels?: Record<string, string>;
+  hiddenKeys?: string[];
 }
 
-export default function ScoreCardGrid({ data, loading, activeKey, onCardClick }: Props) {
-  const cards = data ? [
-    { label: 'Total Indikator', value: data.total_indikator, variant: 'info' as const, key: 'total_indikator' as ScorecardKey },
-    { label: 'Total OPD', value: data.total_opd, variant: 'info' as const, key: 'total_opd' as ScorecardKey },
-    { label: 'On Track', value: data.on_track, variant: 'success' as const, key: 'on_track' as ScorecardKey },
-    { label: 'Warning', value: data.warning, variant: 'warning' as const, key: 'warning' as ScorecardKey },
-    { label: 'Alert', value: data.alert, variant: 'danger' as const, key: 'alert' as ScorecardKey },
-    { label: 'Capaian Belum Diinput', value: data.capaian_belum_diinput, variant: 'default' as const, key: 'capaian_belum' as ScorecardKey },
+const DEFAULT_LABELS: Record<string, string> = {
+  total_indikator: 'Total Indikator',
+  total_opd: 'Total OPD',
+  on_track: 'On Track',
+  warning: 'Warning',
+  alert: 'Alert',
+  capaian_belum: 'Capaian Belum Diinput',
+};
+
+export default function ScoreCardGrid({ data, loading, activeKey, onCardClick, customLabels = {}, hiddenKeys = [] }: Props) {
+  const labels = { ...DEFAULT_LABELS, ...customLabels };
+
+  const allCards: Array<{key: ScorecardKey; label: string; value: number; variant: 'info' | 'success' | 'warning' | 'danger' | 'default'}> = data ? [
+    { key: 'total_indikator', label: labels.total_indikator || 'Total', value: data.total_indikator, variant: 'info' },
+    { key: 'total_opd', label: labels.total_opd || 'Total OPD', value: data.total_opd, variant: 'info' },
+    { key: 'on_track', label: labels.on_track || 'On Track', value: data.on_track, variant: 'success' },
+    { key: 'warning', label: labels.warning || 'Warning', value: data.warning, variant: 'warning' },
+    { key: 'alert', label: labels.alert || 'Alert', value: data.alert, variant: 'danger' },
+    { key: 'capaian_belum', label: labels.capaian_belum || 'Belum Diinput', value: data.capaian_belum_diinput, variant: 'default' },
   ] : [];
+
+  const visibleCards = allCards.filter(c => !hiddenKeys.includes(c.key));
 
   if (loading && !data) {
     return (
@@ -42,7 +57,7 @@ export default function ScoreCardGrid({ data, loading, activeKey, onCardClick }:
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }}>
-      {cards.map(c => (
+      {visibleCards.map(c => (
         <ScoreCard
           key={c.key}
           label={c.label}

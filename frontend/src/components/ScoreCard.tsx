@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   label: string;
-  value: number;
+  value: number | string;
   variant: 'default' | 'success' | 'warning' | 'danger' | 'info';
   active?: boolean;
   onClick?: () => void;

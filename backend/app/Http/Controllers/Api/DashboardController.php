@@ -111,6 +111,28 @@ class DashboardController extends Controller
         return response()->json($service->getRencanaAksiList($filters));
     }
 
+    public function renaksiProgramList(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['opd_id', 'indikator_id', 'status_renaksi', 'search', 'tahun', 'dinas']);
+        return response()->json($service->getRenaksiProgramList($filters));
+    }
+
+    public function renaksiProgramSummary(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['opd_id', 'dinas', 'tahun']);
+        return response()->json($service->getRenaksiProgramSummary($filters));
+    }
+
+    public function renaksiProgramDinas(Request $request, DashboardService $service)
+    {
+        return response()->json($service->getRenaksiProgramDinas());
+    }
+
+    public function renaksiProgramIndikators(DashboardService $service)
+    {
+        return response()->json($service->getRenaksiProgramIndikators());
+    }
+
     public function indikatorDetail(string $kode, DashboardService $service)
     {
         $detail = $service->getIndikatorDetail($kode);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Indikator;
 use App\Models\Opd;
+use App\Models\RenaksiProgram;
 use App\Models\TargetCapaian;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -575,5 +576,129 @@ class DashboardService
             'tidak_terlaksana'=> $total - $terlaksana,
             'persentase'      => $total > 0 ? round(($terlaksana / $total) * 100, 1) : 0,
         ];
+    }
+
+    // ─────────────────────────────────────────────────────
+    //  RENCANA AKSI PROGRAM (dari Excel)
+    // ─────────────────────────────────────────────────────
+    public function getRenaksiProgramList(array $filters = []): array
+    {
+        $query = RenaksiProgram::with(['opd', 'indikator1', 'indikator2', 'indikator3', 'indikator4']);
+
+        // Filter by tahun
+        if (!empty($filters['tahun'])) {
+            $query->where('tahun', $filters['tahun']);
+        }
+        // Filter by dinas (text from Excel)
+        if (!empty($filters['dinas'])) {
+            $query->where('dinas_text', $filters['dinas']);
+        }
+        // Filter by OPD id (fallback)
+        if (!empty($filters['opd_id'])) {
+            $query->where('opd_id', $filters['opd_id']);
+        }
+        if (!empty($filters['indikator_id'])) {
+            $indikatorId = $filters['indikator_id'];
+            $query->where(function ($q) use ($indikatorId) {
+                $q->where('indikator_1_id', $indikatorId)
+                  ->orWhere('indikator_2_id', $indikatorId)
+                  ->orWhere('indikator_3_id', $indikatorId)
+                  ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+        if (!empty($filters['status_renaksi'])) {
+            $query->where('status', $filters['status_renaksi']);
+        }
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('rencana_aksi', 'like', "%{$search}%")
+                  ->orWhere('kode_program', 'like', "%{$search}%")
+                  ->orWhere('program', 'like', "%{$search}%")
+                  ->orWhere('catatan', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('no')
+            ->get()
+            ->map(fn($r, $i) => [
+                'no'            => $r->no ?? $i + 1,
+                'tahun'         => $r->tahun ?? '2025',
+                'dinas'         => $r->dinas_text ?? '-',
+                'kode_program'  => $r->kode_program ?? '-',
+                'rencana_aksi'  => $r->rencana_aksi ?? '-',
+                'target'        => $r->target ?? '-',
+                'realisasi'     => $r->realisasi ?? '-',
+                'kendala'       => $r->kendala,
+                'catatan'       => $r->catatan,
+                'indikator'     => $r->indikator_list,
+                'status'        => $r->status,
+            ])
+            ->toArray();
+    }
+
+    public function getRenaksiProgramSummary(array $filters = []): array
+    {
+        $query = RenaksiProgram::query();
+
+        if (!empty($filters['tahun'])) {
+            $query->where('tahun', $filters['tahun']);
+        }
+        if (!empty($filters['dinas'])) {
+            $query->where('dinas_text', $filters['dinas']);
+        }
+        if (!empty($filters['opd_id'])) {
+            $query->where('opd_id', $filters['opd_id']);
+        }
+
+        $total = $query->count();
+        $terlaksana = (clone $query)->where('status', 'Terlaksana')->count();
+        $tidakTerlaksana = (clone $query)->where('status', 'Tidak Terlaksana')->count();
+        $totalDinas = (clone $query)
+            ->whereNotNull('dinas_text')
+            ->where('dinas_text', '!=', '')
+            ->where('dinas_text', '!=', '-')
+            ->distinct()
+            ->count('dinas_text');
+
+        return [
+            'total'           => $total,
+            'total_dinas'     => $totalDinas,
+            'terlaksana'      => $terlaksana,
+            'tidak_terlaksana'=> $tidakTerlaksana,
+            'persentase'      => $total > 0 ? round(($terlaksana / $total) * 100, 1) : 0,
+        ];
+    }
+
+    public function getRenaksiProgramDinas(): array
+    {
+        $dinas = RenaksiProgram::select('dinas_text')
+            ->whereNotNull('dinas_text')
+            ->where('dinas_text', '!=', '')
+            ->where('dinas_text', '!=', '-')
+            ->distinct()
+            ->orderBy('dinas_text')
+            ->pluck('dinas_text')
+            ->toArray();
+
+        return $dinas;
+    }
+
+    /**
+     * Daftar indikator yang benar-benar dipakai di renaksi_programs
+     * (union dari 4 kolom indikator_N_id).
+     */
+    public function getRenaksiProgramIndikators(): array
+    {
+        $ids = collect(['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'])
+            ->flatMap(fn($col) => RenaksiProgram::whereNotNull($col)->distinct()->pluck($col))
+            ->unique()
+            ->values();
+
+        return Indikator::whereIn('id', $ids)
+            ->select('id', 'kode', 'nama_indikator')
+            ->orderBy('no_urut')
+            ->get()
+            ->toArray();
     }
 }

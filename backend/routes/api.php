@@ -18,3 +18,7 @@ Route::get('/dashboard/heatmap', [DashboardController::class, 'heatmap']);
 Route::get('/dashboard/chart-per-pilar', [DashboardController::class, 'chartPerPilar']);
 Route::get('/dashboard/rencana-aksi-summary', [DashboardController::class, 'rencanaAksiSummary']);
 Route::get('/dashboard/rencana-aksi-list', [DashboardController::class, 'rencanaAksiList']);
+Route::get('/dashboard/renaksi-program-list', [DashboardController::class, 'renaksiProgramList']);
+Route::get('/dashboard/renaksi-program-summary', [DashboardController::class, 'renaksiProgramSummary']);
+Route::get('/dashboard/renaksi-program-dinas', [DashboardController::class, 'renaksiProgramDinas']);
+Route::get('/dashboard/renaksi-program-indikators', [DashboardController::class, 'renaksiProgramIndikators']);

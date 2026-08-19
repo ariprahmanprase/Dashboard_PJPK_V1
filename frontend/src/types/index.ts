@@ -187,3 +187,25 @@ export interface IndikatorDetail {
   kendala: string | null;
   inovasi: string | null;
 }
+
+export interface RenaksiProgramRow {
+  no: number;
+  tahun: string;
+  dinas: string;
+  kode_program: string;
+  rencana_aksi: string;
+  target: string;
+  realisasi: string;
+  kendala: string | null;
+  catatan: string | null;
+  indikator: string[];
+  status: string;
+}
+
+export interface RenaksiProgramSummary {
+  total: number;
+  total_dinas: number;
+  terlaksana: number;
+  tidak_terlaksana: number;
+  persentase: number;
+}
