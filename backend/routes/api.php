@@ -15,15 +15,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
 
     Route::get('/admin/renaksi-programs/satuan-options', [AdminRenaksiProgramController::class, 'satuanOptions']);
+    Route::get('/admin/renaksi-programs/opd-options', [AdminRenaksiProgramController::class, 'opdOptions']);
+    Route::get('/admin/renaksi-programs/indikator-options', [AdminRenaksiProgramController::class, 'indikatorOptions']);
     Route::get('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'index']);
+    Route::post('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'store']);
     Route::put('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'update']);
+    Route::delete('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'destroy']);
+
+    // Pilar options — super admin & admin analis (untuk form edit di Admin Report)
+    Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);
 
     // Kelola user & indikator — khusus super admin
     Route::middleware('super_admin')->group(function () {
         Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
         Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
 
-        Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);
         Route::put('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'update'])
             ->where('indikator', '[A-Za-z0-9\-]+');
         Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])

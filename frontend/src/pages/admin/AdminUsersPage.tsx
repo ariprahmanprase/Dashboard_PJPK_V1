@@ -90,6 +90,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
             <option value="">Semua Role</option>
             <option value="super_admin">Super Admin</option>
             <option value="admin_opd">Admin OPD</option>
+            <option value="admin_analis">Admin Analis</option>
           </select>
 
           <select
@@ -282,19 +283,24 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
 }
 
 function RoleBadge({ role }: { role: AdminUserRow['role'] }) {
-  const isSuper = role === 'super_admin';
+  const style =
+    role === 'super_admin'
+      ? { bg: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', label: 'Super Admin' }
+      : role === 'admin_analis'
+        ? { bg: 'rgba(168, 85, 247, 0.12)', color: '#9333ea', label: 'Admin Analis' }
+        : { bg: 'rgba(100, 116, 139, 0.12)', color: 'var(--color-text-secondary)', label: 'Admin OPD' };
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-lg font-medium whitespace-nowrap"
       style={{
         padding: '0.25rem 0.75rem',
         fontSize: '0.75rem',
-        backgroundColor: isSuper ? 'rgba(59, 130, 246, 0.12)' : 'rgba(100, 116, 139, 0.12)',
-        color: isSuper ? '#2563eb' : 'var(--color-text-secondary)',
+        backgroundColor: style.bg,
+        color: style.color,
       }}
     >
-      {isSuper ? <UserCheck size={12} /> : <Users size={12} />}
-      {isSuper ? 'Super Admin' : 'Admin OPD'}
+      {role === 'super_admin' ? <UserCheck size={12} /> : <Users size={12} />}
+      {style.label}
     </span>
   );
 }
@@ -359,7 +365,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [name, setName] = useState(item?.name ?? '');
   const [email, setEmail] = useState(item?.email ?? '');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'super_admin' | 'admin_opd'>(item?.role ?? 'admin_opd');
+  const [role, setRole] = useState<'super_admin' | 'admin_opd' | 'admin_analis'>(item?.role ?? 'admin_opd');
   const [opdId, setOpdId] = useState<string>(item?.opd_id ? String(item.opd_id) : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -459,12 +465,13 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
             <Field label="Role">
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value as 'super_admin' | 'admin_opd')}
+                onChange={(e) => setRole(e.target.value as 'super_admin' | 'admin_opd' | 'admin_analis')}
                 disabled={isSelf}
                 className={inputClass}
                 style={inputStyle}
               >
                 <option value="admin_opd">Admin OPD</option>
+                <option value="admin_analis">Admin Analis</option>
                 <option value="super_admin">Super Admin</option>
               </select>
             </Field>

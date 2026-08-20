@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2, FileX, CheckCircle2, XCircle } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import RenaksiProgramModal from './RenaksiProgramModal';
 
 interface Props {
@@ -51,10 +52,10 @@ export default function RenaksiProgramTable({ data, loading, onRowClick }: Props
         style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" style={{ minWidth: 900 }}>
+          <table className="w-full text-sm" style={{ minWidth: 1100 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['No', 'Dinas', 'Kode Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Status'].map(h => (
+                {['No', 'Dinas', 'Kode Program', 'Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Status'].map(h => (
                   <th
                     key={h}
                     className="text-left font-medium uppercase tracking-wider"
@@ -94,6 +95,12 @@ export default function RenaksiProgramTable({ data, loading, onRowClick }: Props
                     style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 100 }}
                   >
                     <span className="line-clamp-2">{row.kode_program}</span>
+                  </td>
+                  <td
+                    className="align-middle"
+                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}
+                  >
+                    <span className="line-clamp-2">{row.program}</span>
                   </td>
                   <td
                     className="align-middle font-medium"
@@ -144,17 +151,16 @@ export default function RenaksiProgramTable({ data, loading, onRowClick }: Props
                   </td>
                   <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
                     <span
-                      className="inline-block font-medium rounded-lg"
+                      className="inline-flex items-center font-medium rounded-lg"
                       style={{
                         padding: '0.25rem 0.75rem',
                         fontSize: '0.75rem',
-                        backgroundColor:
-                          row.status === 'Terlaksana' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: row.status === 'Terlaksana' ? '#16a34a' : '#dc2626',
+                        backgroundColor: renaksiStatusStyle(row.status).bg,
+                        color: renaksiStatusStyle(row.status).color,
                       }}
                     >
-                      {row.status === 'Terlaksana' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                      <span className="ml-1">{row.status}</span>
+                      {row.status === 'Tidak Tercapai' ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
+                      <span className="ml-1">{renaksiStatusStyle(row.status).label}</span>
                     </span>
                   </td>
                 </tr>

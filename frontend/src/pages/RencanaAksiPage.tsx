@@ -4,6 +4,7 @@ import FilterBar from '@/components/FilterBar';
 import ScoreCard from '@/components/ScoreCard';
 import type { RenaksiProgramRow, RenaksiProgramSummary, FilterOptions, RencanaAksiRow, RencanaAksiSummary, IndikatorOption } from '@/types';
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
 // ── Helpers ──────────────────────────────────────────
 async function apiFetch<T>(url: string): Promise<T> {
@@ -187,9 +188,9 @@ export default function RencanaAksiPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5" style={{ gap: '0.75rem' }}>
           <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" />
           <ScoreCard label="Total Dinas" value={programSummary?.total_dinas ?? 0} variant="info" />
-          <ScoreCard label="Terlaksana" value={programSummary?.terlaksana ?? 0} variant="success" />
-          <ScoreCard label="Tidak Terlaksana" value={programSummary?.tidak_terlaksana ?? 0} variant="danger" />
-          <ScoreCard label="Persentase" value={programSummary ? `${programSummary.persentase}%` : '0%'} variant="warning" />
+          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" />
+          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" />
+          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" />
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" style={{ gap: '0.75rem' }}>
@@ -248,8 +249,10 @@ export default function RencanaAksiPage() {
           {/* Status - show for both */}
           <select value={statusRenaksi} onChange={e => setStatusRenaksi(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
             <option value="">Semua Status</option>
-            <option value="Terlaksana">Terlaksana</option>
-            <option value="Tidak Terlaksana">Tidak Terlaksana</option>
+            <option value="Tercapai">Tercapai</option>
+            <option value="Hampir Tercapai">Hampir Tercapai</option>
+            <option value="Tidak Tercapai">Tidak Tercapai</option>
+            <option value="Belum diisi">Belum diisi</option>
           </select>
 
           {/* Search */}
@@ -366,10 +369,10 @@ export default function RencanaAksiPage() {
                               fontSize: '0.688rem',
                               fontWeight: 600,
                               textTransform: 'uppercase',
-                              backgroundColor: row.status === 'Terlaksana' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                              color: row.status === 'Terlaksana' ? '#16a34a' : '#dc2626',
+                              backgroundColor: renaksiStatusStyle(row.status).bg,
+                              color: renaksiStatusStyle(row.status).color,
                             }}>
-                              {row.status}
+                              {renaksiStatusStyle(row.status).label}
                             </span>
                           </td>
                           <td className="truncate" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}>
@@ -416,10 +419,10 @@ export default function RencanaAksiPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Header */}
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg" style={{ backgroundColor: selected.status === 'Terlaksana' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)' }}>
-                  {selected.status === 'Terlaksana'
-                    ? <CheckCircle2 size={20} style={{ color: '#16a34a' }} />
-                    : <XCircle size={20} style={{ color: '#dc2626' }} />
+                <div className="p-2 rounded-lg" style={{ backgroundColor: renaksiStatusStyle(selected.status).bg }}>
+                  {selected.status === 'Tidak Tercapai'
+                    ? <XCircle size={20} style={{ color: renaksiStatusStyle(selected.status).color }} />
+                    : <CheckCircle2 size={20} style={{ color: renaksiStatusStyle(selected.status).color }} />
                   }
                 </div>
                 <div>
@@ -455,10 +458,10 @@ export default function RencanaAksiPage() {
                       fontSize: '0.688rem',
                       fontWeight: 600,
                       textTransform: 'uppercase',
-                      backgroundColor: selected.status === 'Terlaksana' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: selected.status === 'Terlaksana' ? '#16a34a' : '#dc2626',
+                      backgroundColor: renaksiStatusStyle(selected.status).bg,
+                      color: renaksiStatusStyle(selected.status).color,
                     }}>
-                      {selected.status}
+                      {renaksiStatusStyle(selected.status).label}
                     </span>
                   </div>
                 </div>

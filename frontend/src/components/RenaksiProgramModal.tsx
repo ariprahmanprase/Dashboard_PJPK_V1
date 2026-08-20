@@ -1,5 +1,6 @@
-import { X, CheckCircle2, XCircle } from 'lucide-react';
+import { X, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
 interface Props {
   open: boolean;
@@ -9,6 +10,9 @@ interface Props {
 
 export default function RenaksiProgramModal({ open, onClose, data }: Props) {
   if (!open || !data) return null;
+
+  const st = renaksiStatusStyle(data.status);
+  const tercapai = data.status === 'Tercapai' || data.status === 'Hampir Tercapai';
 
   return (
     <div
@@ -37,16 +41,14 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-lg"
-              style={{
-                backgroundColor: data.status === 'Terlaksana'
-                  ? 'rgba(34, 197, 94, 0.15)'
-                  : 'rgba(239, 68, 68, 0.15)',
-              }}
+              style={{ backgroundColor: st.bg }}
             >
-              {data.status === 'Terlaksana' ? (
-                <CheckCircle2 size={20} style={{ color: '#16a34a' }} />
+              {data.status === 'Belum diisi' ? (
+                <Clock size={20} style={{ color: st.color }} />
+              ) : tercapai ? (
+                <CheckCircle2 size={20} style={{ color: st.color }} />
               ) : (
-                <XCircle size={20} style={{ color: '#dc2626' }} />
+                <XCircle size={20} style={{ color: st.color }} />
               )}
             </div>
             <div>
@@ -54,11 +56,14 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
                 className="text-xs font-semibold uppercase tracking-wider"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
-                {data.dinas} — {data.kode_program} — Tahun {data.tahun}
+                {data.dinas} — {data.kode_program}
               </p>
               <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)' }}>
-                {data.rencana_aksi}
+                {data.program}
               </h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                {data.rencana_aksi}
+              </p>
             </div>
           </div>
           <button
@@ -74,6 +79,17 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
         <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)', padding: '1.5rem' }}>
           {/* Main Info */}
           <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-wider mb-1"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Tahun
+              </p>
+              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+                {data.tahun}
+              </p>
+            </div>
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-1"
@@ -96,37 +112,32 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
                 {data.realisasi}
               </p>
             </div>
+            <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-wider mb-1"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Status
+              </p>
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
+                style={{ backgroundColor: st.bg, color: st.color }}
+              >
+                {data.status === 'Belum diisi' ? (
+                  <Clock size={14} />
+                ) : tercapai ? (
+                  <CheckCircle2 size={14} />
+                ) : (
+                  <XCircle size={14} />
+                )}
+                {st.label}
+              </span>
+            </div>
           </div>
 
-          {/* Status */}
-          <div className="mb-6">
-            <p
-              className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Status
-            </p>
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
-              style={{
-                backgroundColor: data.status === 'Terlaksana'
-                  ? 'rgba(34, 197, 94, 0.15)'
-                  : 'rgba(239, 68, 68, 0.15)',
-                color: data.status === 'Terlaksana' ? '#16a34a' : '#dc2626',
-              }}
-            >
-              {data.status === 'Terlaksana' ? (
-                <CheckCircle2 size={14} />
-              ) : (
-                <XCircle size={14} />
-              )}
-              {data.status}
-            </span>
-          </div>
-
-          {/* Additional Info */}
+          {/* Additional Info — susun vertikal ke bawah */}
           <div
-            className="grid grid-cols-3 gap-6 pt-6"
+            className="flex flex-col gap-6 pt-8 mt-2"
             style={{ borderTop: '1px solid var(--color-border)' }}
           >
             <div>

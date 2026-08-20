@@ -16,6 +16,7 @@ class User extends Authenticatable
 
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_ADMIN_OPD = 'admin_opd';
+    public const ROLE_ADMIN_ANALIS = 'admin_analis';
 
     /**
      * The attributes that are mass assignable.
@@ -66,5 +67,10 @@ class User extends Authenticatable
     public function isAdminOpd(): bool
     {
         return $this->role === self::ROLE_ADMIN_OPD;
+    }
+
+    public function isAdminAnalis(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_ANALIS;
     }
 }

@@ -195,6 +195,7 @@ export interface RenaksiProgramRow {
   tahun: string;
   dinas: string;
   kode_program: string;
+  program: string;
   rencana_aksi: string;
   jenis_target: 'kuantitatif' | 'kualitatif';
   target: string;
@@ -208,7 +209,11 @@ export interface RenaksiProgramRow {
 export interface RenaksiProgramSummary {
   total: number;
   total_dinas: number;
-  terlaksana: number;
+  terlaksana: number; // Tercapai + Hampir Tercapai (kompatibilitas)
+  tercapai: number;
+  hampir_tercapai: number;
+  tidak_tercapai: number;
+  belum_diisi: number;
   tidak_terlaksana: number;
   persentase: number;
 }

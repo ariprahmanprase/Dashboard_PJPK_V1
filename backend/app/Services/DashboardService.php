@@ -628,6 +628,7 @@ class DashboardService
                 'tahun'         => $r->tahun ?? '2025',
                 'dinas'         => $r->dinas_text ?? '-',
                 'kode_program'  => $r->kode_program ?? '-',
+                'program'       => $r->program ?? '-',
                 'rencana_aksi'  => $r->rencana_aksi ?? '-',
                 'jenis_target'  => $r->jenis_target ?? 'kualitatif',
                 'target'        => $this->formatTarget($r),
@@ -714,8 +715,11 @@ class DashboardService
         }
 
         $total = $query->count();
-        $terlaksana = (clone $query)->where('status', 'Terlaksana')->count();
-        $tidakTerlaksana = (clone $query)->where('status', 'Tidak Terlaksana')->count();
+        // Skema status baru: Tercapai / Hampir Tercapai / Tidak Tercapai / Belum diisi
+        $tercapai = (clone $query)->where('status', 'Tercapai')->count();
+        $hampir = (clone $query)->where('status', 'Hampir Tercapai')->count();
+        $tidakTercapai = (clone $query)->where('status', 'Tidak Tercapai')->count();
+        $belumDiisi = (clone $query)->where('status', 'Belum diisi')->count();
         $totalDinas = (clone $query)
             ->whereNotNull('dinas_text')
             ->where('dinas_text', '!=', '')
@@ -726,9 +730,14 @@ class DashboardService
         return [
             'total'           => $total,
             'total_dinas'     => $totalDinas,
-            'terlaksana'      => $terlaksana,
-            'tidak_terlaksana'=> $tidakTerlaksana,
-            'persentase'      => $total > 0 ? round(($terlaksana / $total) * 100, 1) : 0,
+            // Key lama dipertahankan untuk kompatibilitas: 'terlaksana' = Tercapai + Hampir Tercapai
+            'terlaksana'      => $tercapai + $hampir,
+            'tercapai'        => $tercapai,
+            'hampir_tercapai' => $hampir,
+            'tidak_tercapai'  => $tidakTercapai,
+            'belum_diisi'     => $belumDiisi,
+            'tidak_terlaksana'=> $tidakTercapai,
+            'persentase'      => $total > 0 ? round((($tercapai + $hampir) / $total) * 100, 1) : 0,
         ];
     }
 
@@ -762,5 +771,19 @@ class DashboardService
             ->orderBy('no_urut')
             ->get()
             ->toArray();
+    }
+
+    /**
+     * Semua indikator untuk dropdown form admin.
+     * Jika $opdId diisi, hanya indikator yang dipegang OPD tsb (untuk admin OPD).
+     */
+    public function getAllIndikatorOptions(?int $opdId = null): array
+    {
+        $query = Indikator::select('id', 'kode', 'nama_indikator')->orderBy('no_urut');
+        if ($opdId !== null) {
+            $query->whereHas('opds', fn($q) => $q->where('opds.id', $opdId));
+        }
+
+        return $query->get()->toArray();
     }
 }

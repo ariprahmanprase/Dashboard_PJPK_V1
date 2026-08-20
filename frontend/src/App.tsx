@@ -62,6 +62,7 @@ function AdminArea() {
 
   const handleLogout = () => setUser(null);
 
+  // Kelola user khusus super admin
   if (page === 'users' && user.role === 'super_admin') {
     return <AdminUsersPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
   }
@@ -70,5 +71,11 @@ function AdminArea() {
     return <AdminRenaksiPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
   }
 
+  // Admin OPD: hanya menu Admin Renaksi
+  if (user.role === 'admin_opd') {
+    return <AdminRenaksiPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  // Super admin & admin analis: Admin Report sebagai halaman default
   return <AdminReportPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
 }

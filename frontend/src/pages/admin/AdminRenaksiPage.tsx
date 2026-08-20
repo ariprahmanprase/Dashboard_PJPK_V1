@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CheckCircle2, Loader2, Pencil, Search, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Pencil, Plus, Search, Trash2, X, XCircle } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import {
+  createRenaksi,
+  deleteRenaksi,
+  fetchAdminIndikatorOptions,
   fetchAdminRenaksi,
   fetchIndikatorOptions,
+  fetchRenaksiOpdOptions,
   fetchSatuanOptions,
   updateRenaksi,
   type AdminRenaksi,
   type AdminUser,
   type IndikatorOption,
+  type OpdOption,
+  type RenaksiCreatePayload,
   type RenaksiUpdatePayload,
 } from '@/services/admin';
 
@@ -29,6 +36,10 @@ const selectStyle = {
 
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
   const isSuperAdmin = user.role === 'super_admin';
+  // Admin analis: lihat semua + isi realisasi — tanpa tambah/hapus & tanpa filter dinas
+  const isAnalis = user.role === 'admin_analis';
+  const canCreate = user.role !== 'admin_analis';
+  const canDelete = user.role !== 'admin_analis';
   const [items, setItems] = useState<AdminRenaksi[]>([]);
   const [indikatorOptions, setIndikatorOptions] = useState<IndikatorOption[]>([]);
   const [satuanOptions, setSatuanOptions] = useState<string[]>([]);
@@ -41,6 +52,10 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<AdminRenaksi | null>(null);
   const [editing, setEditing] = useState<AdminRenaksi | null>(null);
+  const [deleting, setDeleting] = useState<AdminRenaksi | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [opdOptions, setOpdOptions] = useState<OpdOption[]>([]);
+  const [allIndikatorOptions, setAllIndikatorOptions] = useState<IndikatorOption[]>([]);
 
   useEffect(() => {
     fetchIndikatorOptions()
@@ -49,12 +64,19 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     fetchSatuanOptions()
       .then(setSatuanOptions)
       .catch(() => setSatuanOptions([]));
+    // Untuk form tambah: admin OPD hanya melihat dinasnya & indikator dinasnya (terscope backend)
+    fetchRenaksiOpdOptions()
+      .then(setOpdOptions)
+      .catch(() => setOpdOptions([]));
+    fetchAdminIndikatorOptions()
+      .then(setAllIndikatorOptions)
+      .catch(() => setAllIndikatorOptions([]));
   }, []);
 
-  // Opsi dinas: renaksi tanpa filter dinas (super admin saja; admin OPD otomatis terscope backend)
+  // Opsi dinas: renaksi tanpa filter dinas (super admin & admin analis; admin OPD otomatis terscope backend)
   const [dinasOptions, setDinasOptions] = useState<string[]>([]);
   useEffect(() => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin && !isAnalis) return;
     fetchAdminRenaksi({ tahun })
       .then((list) => {
         const names = Array.from(new Set(list.map((r) => r.dinas).filter((d) => d && d !== '-')));
@@ -62,7 +84,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
         setDinasOptions(names);
       })
       .catch(() => setDinasOptions([]));
-  }, [isSuperAdmin, tahun]);
+  }, [isSuperAdmin, isAnalis, tahun]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -130,7 +152,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             ))}
           </select>
 
-          {isSuperAdmin && (
+          {(isSuperAdmin || isAnalis) && (
             <select
               value={dinas}
               onChange={(e) => setDinas(e.target.value)}
@@ -151,8 +173,10 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             style={selectStyle}
           >
             <option value="">Semua Status</option>
-            <option value="Terlaksana">Terlaksana</option>
-            <option value="Tidak Terlaksana">Tidak Terlaksana</option>
+            <option value="Tercapai">Tercapai</option>
+            <option value="Hampir Tercapai">Hampir Tercapai</option>
+            <option value="Tidak Tercapai">Tidak Tercapai</option>
+            <option value="Belum diisi">Belum diisi</option>
           </select>
 
           <div className="relative flex-1 sm:min-w-60">
@@ -176,6 +200,16 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           >
             {loading ? 'Memuat…' : `${visibleItems.length} renaksi`}
           </span>
+
+          {canCreate && (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 w-full sm:w-auto"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              <Plus size={15} /> Tambah Renaksi
+            </button>
+          )}
         </div>
 
         {error && (
@@ -211,7 +245,13 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             {/* Kartu (mobile & tablet) */}
             <div className="w-full flex flex-col gap-6 lg:hidden">
               {visibleItems.map((r) => (
-                <RenaksiCard key={r.id} item={r} onEdit={() => setEditing(r)} />
+                <RenaksiCard
+                  key={r.id}
+                  item={r}
+                  canDelete={canDelete}
+                  onEdit={() => setEditing(r)}
+                  onDelete={() => setDeleting(r)}
+                />
               ))}
             </div>
 
@@ -221,10 +261,10 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
               style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
             >
               <div className="overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: 1200 }}>
+                <table className="w-full text-sm" style={{ minWidth: 1400 }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['No', 'Dinas', 'Kode Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Status', 'Aksi'].map((h) => (
+                      {['No', 'Dinas', 'Kode Program', 'Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Status', 'Aksi'].map((h) => (
                         <th
                           key={h}
                           className="text-left font-medium uppercase tracking-wider"
@@ -264,6 +304,12 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
                           style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 100 }}
                         >
                           <span className="line-clamp-2">{r.kode_program ?? '-'}</span>
+                        </td>
+                        <td
+                          className="align-middle"
+                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}
+                        >
+                          <span className="line-clamp-2">{r.program ?? '-'}</span>
                         </td>
                         <td
                           className="align-middle font-medium"
@@ -316,16 +362,30 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
                           <StatusPill status={r.status} />
                         </td>
                         <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditing(r);
-                            }}
-                            className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-                            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', padding: '0.5rem 0.875rem' }}
-                          >
-                            <Pencil size={13} /> Edit
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditing(r);
+                              }}
+                              className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', padding: '0.5rem 0.875rem' }}
+                            >
+                              <Pencil size={13} /> Edit
+                            </button>
+                            {canDelete && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleting(r);
+                                }}
+                                className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
+                                style={{ borderColor: '#fca5a5', color: '#dc2626', padding: '0.5rem 0.875rem' }}
+                              >
+                                <Trash2 size={13} /> Hapus
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -346,7 +406,9 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
         <EditModal
           item={editing}
           isSuperAdmin={isSuperAdmin}
-          indikatorOptions={indikatorOptions}
+          isAnalis={isAnalis}
+          // Analis & super admin: daftar semua indikator; admin OPD tidak bisa ubah indikator
+          indikatorOptions={isSuperAdmin || isAnalis ? allIndikatorOptions : indikatorOptions}
           satuanOptions={satuanOptions}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -355,11 +417,37 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           }}
         />
       )}
+
+      {creating && (
+        <CreateModal
+          defaultTahun={tahun}
+          isSuperAdmin={isSuperAdmin}
+          indikatorOptions={allIndikatorOptions}
+          satuanOptions={satuanOptions}
+          opdOptions={opdOptions}
+          onClose={() => setCreating(false)}
+          onSaved={() => {
+            setCreating(false);
+            load();
+          }}
+        />
+      )}
+
+      {deleting && (
+        <DeleteRenaksiModal
+          item={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={() => {
+            setDeleting(null);
+            load();
+          }}
+        />
+      )}
     </AdminLayout>
   );
 }
 
-function RenaksiCard({ item, onEdit }: { item: AdminRenaksi; onEdit: () => void }) {
+function RenaksiCard({ item, canDelete, onEdit, onDelete }: { item: AdminRenaksi; canDelete: boolean; onEdit: () => void; onDelete: () => void }) {
   return (
     <div
       className="rounded-xl border p-6 flex flex-col gap-6"
@@ -370,6 +458,7 @@ function RenaksiCard({ item, onEdit }: { item: AdminRenaksi; onEdit: () => void 
           <p className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
             #{item.no} · {item.dinas}
             {item.kode_program && item.kode_program !== '-' ? ` · ${item.kode_program}` : ''}
+            {item.program ? ` · ${item.program}` : ''}
           </p>
           <p className="text-sm font-medium mt-2.5 leading-relaxed" style={{ color: 'var(--color-text)' }}>
             {item.rencana_aksi}
@@ -399,13 +488,24 @@ function RenaksiCard({ item, onEdit }: { item: AdminRenaksi; onEdit: () => void 
         </div>
       </div>
 
-      <button
-        onClick={onEdit}
-        className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
-      >
-        <Pencil size={14} /> Isi Realisasi
-      </button>
+      <div className={`grid gap-3 ${canDelete ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <button
+          onClick={onEdit}
+          className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+        >
+          <Pencil size={14} /> Isi Realisasi
+        </button>
+        {canDelete && (
+          <button
+            onClick={onDelete}
+            className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
+            style={{ borderColor: '#fca5a5', color: '#dc2626' }}
+          >
+            <Trash2 size={14} /> Hapus
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -425,26 +525,27 @@ function formatNilai(r: AdminRenaksi, field: 'target' | 'realisasi'): string {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const ok = status === 'Terlaksana';
+  const st = renaksiStatusStyle(status);
   return (
     <span
       className="inline-flex items-center font-medium rounded-lg whitespace-nowrap shrink-0"
       style={{
         padding: '0.25rem 0.75rem',
         fontSize: '0.75rem',
-        backgroundColor: ok ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-        color: ok ? '#16a34a' : '#dc2626',
+        backgroundColor: st.bg,
+        color: st.color,
       }}
     >
-      {ok ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-      <span className="ml-1">{status}</span>
+      {status === 'Tidak Tercapai' ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
+      <span className="ml-1">{st.label}</span>
     </span>
   );
 }
 
 // ── Modal detail (klik baris) — gaya RenaksiProgramModal dashboard ──
 function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => void }) {
-  const ok = item.status === 'Terlaksana';
+  const st = renaksiStatusStyle(item.status);
+  const tercapai = item.status === 'Tercapai' || item.status === 'Hampir Tercapai';
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -469,12 +570,12 @@ function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => voi
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="p-2 rounded-lg shrink-0"
-              style={{ backgroundColor: ok ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)' }}
+              style={{ backgroundColor: st.bg }}
             >
-              {ok ? (
-                <CheckCircle2 size={20} style={{ color: '#16a34a' }} />
+              {tercapai || item.status === 'Belum diisi' ? (
+                <CheckCircle2 size={20} style={{ color: st.color }} />
               ) : (
-                <XCircle size={20} style={{ color: '#dc2626' }} />
+                <XCircle size={20} style={{ color: st.color }} />
               )}
             </div>
             <div className="min-w-0">
@@ -482,11 +583,14 @@ function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => voi
                 className="text-xs font-semibold uppercase tracking-wider"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
-                {item.dinas} — {item.kode_program ?? '-'} — Tahun {item.tahun}
+                {item.dinas} — {item.kode_program ?? '-'}
               </p>
               <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)' }}>
-                {item.rencana_aksi}
+                {item.program ?? '-'}
               </h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                {item.rencana_aksi}
+              </p>
             </div>
           </div>
           <button
@@ -503,6 +607,14 @@ function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => voi
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                Tahun
+              </p>
+              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+                {item.tahun}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Target
               </p>
               <p className="text-sm" style={{ color: 'var(--color-text)' }}>
@@ -517,26 +629,22 @@ function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => voi
                 {formatNilai(item, 'realisasi')}
               </p>
             </div>
-          </div>
-
-          <div className="mb-6">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-              Status
-            </p>
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
-              style={{
-                backgroundColor: ok ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                color: ok ? '#16a34a' : '#dc2626',
-              }}
-            >
-              {ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-              {item.status}
-            </span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                Status
+              </p>
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
+                style={{ backgroundColor: st.bg, color: st.color }}
+              >
+                {tercapai || item.status === 'Belum diisi' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                {st.label}
+              </span>
+            </div>
           </div>
 
           <div
-            className="grid grid-cols-3 gap-6 pt-6"
+            className="flex flex-col gap-6 pt-8 mt-2"
             style={{ borderTop: '1px solid var(--color-border)' }}
           >
             <div>
@@ -586,6 +694,8 @@ function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => voi
 interface EditModalProps {
   item: AdminRenaksi;
   isSuperAdmin: boolean;
+  /** Admin analis: semua field disabled kecuali Status & Indikator */
+  isAnalis?: boolean;
   indikatorOptions: IndikatorOption[];
   satuanOptions: string[];
   onClose: () => void;
@@ -594,7 +704,11 @@ interface EditModalProps {
 
 const SATUAN_CUSTOM = '__custom__';
 
-function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
+function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
+  // Field target/realisasi/kendala/catatan hanya bisa diubah super admin & admin OPD
+  const canEditFields = !isAnalis;
+  // Tautan indikator bisa diubah super admin & admin analis
+  const canEditIndikator = isSuperAdmin || isAnalis;
   const isKuantitatif = item.jenis_target === 'kuantitatif';
   const [status, setStatus] = useState(item.status);
   const [realisasiNilai, setRealisasiNilai] = useState(item.realisasi_nilai ?? '');
@@ -623,10 +737,13 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
     setError(null);
 
     const payload: RenaksiUpdatePayload = {
-      status,
       kendala: kendala || null,
       catatan: catatan || null,
     };
+    // Status manual hanya dikirim untuk renaksi kualitatif (kuantitatif dihitung backend)
+    if (!isKuantitatif) {
+      payload.status = status;
+    }
     if (isKuantitatif) {
       payload.realisasi_nilai = realisasiNilai === '' ? null : Number(realisasiNilai);
     } else {
@@ -640,6 +757,8 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
       } else {
         payload.target = targetTeks || null;
       }
+    }
+    if (canEditIndikator) {
       payload.indikator_ids = indikatorIds.filter((v): v is number => v !== '');
     }
 
@@ -678,7 +797,7 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
         >
           <div className="min-w-0">
             <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-              Isi Realisasi
+              {isAnalis ? 'Tentukan Status & Indikator' : 'Isi Realisasi'}
             </h2>
             <p className="text-xs sm:text-sm mt-2 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               {item.dinas} · {item.tahun} · {item.rencana_aksi}
@@ -759,6 +878,7 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
                 min="0"
                 value={realisasiNilai}
                 onChange={(e) => setRealisasiNilai(e.target.value)}
+                disabled={!canEditFields}
                 className={inputClass}
                 style={inputStyle}
                 placeholder="0"
@@ -769,6 +889,7 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
               <textarea
                 value={realisasiTeks}
                 onChange={(e) => setRealisasiTeks(e.target.value)}
+                disabled={!canEditFields}
                 rows={3}
                 className={inputClass}
                 style={inputStyle}
@@ -777,20 +898,41 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
             </Field>
           )}
 
-          <Field label="Status">
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as AdminRenaksi['status'])}
-              className={inputClass}
-              style={inputStyle}
-            >
-              <option value="Terlaksana">Terlaksana</option>
-              <option value="Tidak Terlaksana">Tidak Terlaksana</option>
-            </select>
-          </Field>
+          {isKuantitatif ? (
+            // Status kuantitatif dihitung otomatis backend dari target vs realisasi
+            <Field label="Status (otomatis)">
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                {renaksiStatusStyle(
+                  targetNilai === '' || realisasiNilai === ''
+                    ? 'Belum diisi'
+                    : Number(realisasiNilai) >= Number(targetNilai)
+                      ? 'Tercapai'
+                      : Number(realisasiNilai) >= Number(targetNilai) * 0.9
+                        ? 'Hampir Tercapai'
+                        : 'Tidak Tercapai',
+                ).label}
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                Dihitung otomatis dari target vs realisasi.
+              </p>
+            </Field>
+          ) : (
+            <Field label="Status">
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as AdminRenaksi['status'])}
+                className={inputClass}
+                style={inputStyle}
+              >
+                <option value="Belum diisi">Belum diisi</option>
+                <option value="Tercapai">Tercapai</option>
+                <option value="Tidak Tercapai">Tidak Tercapai</option>
+              </select>
+            </Field>
+          )}
 
-          {/* Tautan indikator — super admin boleh mengubah */}
-          {isSuperAdmin && (
+          {/* Tautan indikator — super admin & admin analis boleh mengubah */}
+          {canEditIndikator && (
             <Field label="Indikator terkait (maks. 4, kosongkan untuk menghapus)">
               <div className="flex flex-col gap-3">
                 {indikatorIds.map((val, slot) => (
@@ -827,6 +969,7 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
             <textarea
               value={kendala}
               onChange={(e) => setKendala(e.target.value)}
+              disabled={!canEditFields}
               rows={3}
               className={inputClass}
               style={inputStyle}
@@ -837,6 +980,7 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
             <textarea
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
+              disabled={!canEditFields}
               rows={3}
               className={inputClass}
               style={inputStyle}
@@ -872,6 +1016,480 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal tambah renaksi baru ───────────────────────
+interface CreateModalProps {
+  defaultTahun: string;
+  isSuperAdmin: boolean;
+  indikatorOptions: IndikatorOption[];
+  satuanOptions: string[];
+  opdOptions: OpdOption[];
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptions, opdOptions, onClose, onSaved }: CreateModalProps) {
+  const [tahun, setTahun] = useState(defaultTahun);
+  // Admin OPD: dinas otomatis terkunci ke dinasnya (backend juga memaksakan)
+  const [opdId, setOpdId] = useState<number | ''>(isSuperAdmin ? '' : (opdOptions[0]?.id ?? ''));
+  const [kodeProgram, setKodeProgram] = useState('');
+  const [program, setProgram] = useState('');
+  const [rencanaAksi, setRencanaAksi] = useState('');
+  const [jenisTarget, setJenisTarget] = useState<'kuantitatif' | 'kualitatif'>('kuantitatif');
+  const [targetNilai, setTargetNilai] = useState('');
+  const [satuanChoice, setSatuanChoice] = useState('');
+  const [satuanCustom, setSatuanCustom] = useState('');
+  const [targetTeks, setTargetTeks] = useState('');
+  const [realisasiNilai, setRealisasiNilai] = useState('');
+  const [realisasiTeks, setRealisasiTeks] = useState('');
+  const [kendala, setKendala] = useState('');
+  const [catatan, setCatatan] = useState('');
+  const [indikatorIds, setIndikatorIds] = useState<(number | '')[]>(['', '', '', '']);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    const payload: RenaksiCreatePayload = {
+      tahun,
+      opd_id: Number(opdId),
+      kode_program: kodeProgram || null,
+      program: program || null,
+      rencana_aksi: rencanaAksi,
+      jenis_target: jenisTarget,
+      kendala: kendala || null,
+      catatan: catatan || null,
+      indikator_ids: indikatorIds.filter((v): v is number => v !== ''),
+    };
+    if (jenisTarget === 'kuantitatif') {
+      payload.target_nilai = targetNilai === '' ? null : Number(targetNilai);
+      payload.target_satuan =
+        satuanChoice === SATUAN_CUSTOM ? satuanCustom.trim() || null : satuanChoice || null;
+    } else {
+      payload.target = targetTeks || null;
+    }
+    // Realisasi boleh diisi super admin & admin OPD (untuk kuantitatif menentukan status otomatis)
+    if (jenisTarget === 'kuantitatif') {
+      payload.realisasi_nilai = realisasiNilai === '' ? null : Number(realisasiNilai);
+    } else {
+      payload.realisasi = realisasiTeks || null;
+    }
+
+    try {
+      await createRenaksi(payload);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan.');
+      setSaving(false);
+    }
+  };
+
+  // Preview status otomatis untuk renaksi kuantitatif (admin OPD) — mengikuti rumus backend
+  const statusPreview = (() => {
+    if (jenisTarget !== 'kuantitatif') {
+      return { text: '—', keterangan: '' };
+    }
+    if (targetNilai === '' || realisasiNilai === '') {
+      return {
+        text: 'Belum diisi',
+        keterangan: 'Lengkapi target dan realisasi — status akan keluar otomatis berdasarkan rumus capaian.',
+      };
+    }
+    const t = Number(targetNilai);
+    const r = Number(realisasiNilai);
+    if (t <= 0) {
+      return { text: 'Belum diisi', keterangan: 'Target harus lebih dari 0 agar status bisa dihitung.' };
+    }
+    if (r >= t) {
+      return { text: 'Tercapai', keterangan: `Realisasi (${r}) ≥ 100% target (${t}).` };
+    }
+    if (r >= t * 0.9) {
+      return { text: 'Hampir Tercapai', keterangan: `Realisasi (${r}) ≥ 90% target (${t}).` };
+    }
+    return { text: 'Tidak Tercapai', keterangan: `Realisasi (${r}) < 90% target (${t}).` };
+  })();
+
+  const inputClass =
+    'rounded-lg border px-4 py-3 text-sm w-full outline-none transition-shadow focus:ring-2 focus:ring-blue-200 disabled:opacity-60 disabled:cursor-not-allowed';
+  const inputStyle = {
+    backgroundColor: 'var(--color-bg)',
+    borderColor: 'var(--color-border)',
+    color: 'var(--color-text)',
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-8"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl border max-h-[92vh] flex flex-col"
+        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header modal */}
+        <div
+          className="flex items-start justify-between gap-6 px-6 sm:px-8 pt-6 sm:pt-7 pb-5 border-b shrink-0"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+              Tambah Renaksi Baru
+            </h2>
+            <p className="text-xs sm:text-sm mt-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Menambahkan rencana aksi baru. Realisasi diisi kemudian{isSuperAdmin ? ' oleh admin OPD' : ''}.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            style={{ color: 'var(--color-text-secondary)' }}
+            aria-label="Tutup"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body modal (scrollable) */}
+        <form onSubmit={handleSubmit} className="overflow-y-auto px-6 sm:px-8 py-7 flex flex-col gap-7">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Field label="Tahun">
+              <select value={tahun} onChange={(e) => setTahun(e.target.value)} className={inputClass} style={inputStyle}>
+                {TAHUN_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Dinas / OPD">
+              <select
+                value={opdId}
+                onChange={(e) => setOpdId(e.target.value === '' ? '' : Number(e.target.value))}
+                required
+                disabled={!isSuperAdmin}
+                className={inputClass}
+                style={inputStyle}
+              >
+                <option value="">— Pilih dinas —</option>
+                {opdOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.nama_opd}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Field label="Kode Program">
+              <input
+                value={kodeProgram}
+                onChange={(e) => setKodeProgram(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="mis. 1.02.03"
+                maxLength={20}
+              />
+            </Field>
+            <Field label="Program">
+              <input
+                value={program}
+                onChange={(e) => setProgram(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="Nama program…"
+                maxLength={255}
+              />
+            </Field>
+          </div>
+
+          <Field label="Rencana Aksi">
+            <textarea
+              value={rencanaAksi}
+              onChange={(e) => setRencanaAksi(e.target.value)}
+              required
+              rows={3}
+              className={inputClass}
+              style={inputStyle}
+              placeholder="Uraian rencana aksi…"
+            />
+          </Field>
+
+          <Field label="Jenis Target">
+            <select
+              value={jenisTarget}
+              onChange={(e) => setJenisTarget(e.target.value as 'kuantitatif' | 'kualitatif')}
+              className={inputClass}
+              style={inputStyle}
+            >
+              <option value="kuantitatif">Kuantitatif (angka)</option>
+              <option value="kualitatif">Kualitatif (uraian)</option>
+            </select>
+          </Field>
+
+          {jenisTarget === 'kuantitatif' ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <Field label="Target">
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={targetNilai}
+                    onChange={(e) => setTargetNilai(e.target.value)}
+                    className={inputClass}
+                    style={inputStyle}
+                    placeholder="0"
+                  />
+                </Field>
+                <Field label="Satuan">
+                  <select
+                    value={satuanChoice}
+                    onChange={(e) => setSatuanChoice(e.target.value)}
+                    className={inputClass}
+                    style={inputStyle}
+                  >
+                    <option value="">— Pilih satuan —</option>
+                    {satuanOptions.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                    <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>
+                  </select>
+                  {satuanChoice === SATUAN_CUSTOM && (
+                    <input
+                      value={satuanCustom}
+                      onChange={(e) => setSatuanCustom(e.target.value)}
+                      className={inputClass}
+                      style={inputStyle}
+                      placeholder="Ketik satuan baru, mis. Dokumen"
+                      autoFocus
+                    />
+                  )}
+                </Field>
+              </div>
+              <Field label="Realisasi">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={realisasiNilai}
+                  onChange={(e) => setRealisasiNilai(e.target.value)}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="0"
+                />
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field label="Target kualitatif">
+                <textarea
+                  value={targetTeks}
+                  onChange={(e) => setTargetTeks(e.target.value)}
+                  rows={2}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="Uraian target…"
+                />
+              </Field>
+              <Field label="Realisasi">
+                <textarea
+                  value={realisasiTeks}
+                  onChange={(e) => setRealisasiTeks(e.target.value)}
+                  rows={2}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="Uraian realisasi…"
+                />
+              </Field>
+            </>
+          )}
+
+          {/* Status selalu otomatis: kuantitatif dari rumus, kualitatif dinilai admin analis */}
+          {jenisTarget === 'kuantitatif' ? (
+            <Field label="Status (otomatis)">
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                {statusPreview.text}
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                {statusPreview.keterangan}
+              </p>
+            </Field>
+          ) : (
+            <Field label="Status">
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                Status renaksi kualitatif akan diproses oleh admin analis.
+              </p>
+            </Field>
+          )}
+
+          {/* Indikator: super admin memilih; admin OPD hanya melihat keterangan (ditambahkan admin terkait) */}
+          {isSuperAdmin ? (
+            <Field label="Indikator terkait (maks. 4)">
+              <div className="flex flex-col gap-3">
+                {indikatorIds.map((val, slot) => (
+                  <select
+                    key={slot}
+                    value={val}
+                    onChange={(e) =>
+                      setIndikatorIds((prev) => {
+                        const next = [...prev];
+                        next[slot] = e.target.value === '' ? '' : Number(e.target.value);
+                        return next;
+                      })
+                    }
+                    className={inputClass}
+                    style={inputStyle}
+                  >
+                    <option value="">— Slot {slot + 1}: kosong —</option>
+                    {indikatorOptions.map((i) => (
+                      <option
+                        key={i.id}
+                        value={i.id}
+                        disabled={indikatorIds.includes(i.id) && val !== i.id}
+                      >
+                        {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
+                      </option>
+                    ))}
+                  </select>
+                ))}
+              </div>
+            </Field>
+          ) : (
+            <Field label="Indikator terkait">
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                Tautan indikator ditambahkan kemudian oleh admin analis.
+              </p>
+            </Field>
+          )}
+
+          <Field label="Kendala">
+            <textarea
+              value={kendala}
+              onChange={(e) => setKendala(e.target.value)}
+              rows={2}
+              className={inputClass}
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Catatan (opsional)">
+            <textarea
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              rows={2}
+              className={inputClass}
+              style={inputStyle}
+            />
+          </Field>
+
+          {error && (
+            <p
+              className="text-sm rounded-lg px-4 py-3.5 leading-relaxed"
+              style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}
+            >
+              {error}
+            </p>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-3 pb-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              {saving && <Loader2 className="animate-spin" size={14} />}
+              {saving ? 'Menyimpan…' : 'Simpan'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal konfirmasi hapus renaksi (super admin) ────
+function DeleteRenaksiModal({
+  item, onClose, onDeleted,
+}: {
+  item: AdminRenaksi;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteRenaksi(item.id);
+      onDeleted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus.');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-md rounded-2xl border p-7 flex flex-col gap-5"
+        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>Hapus renaksi?</h2>
+          <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            Apakah Anda yakin akan menghapus{' '}
+            <strong style={{ color: 'var(--color-text)' }}>{item.rencana_aksi}</strong> ({item.dinas}, Tahun{' '}
+            {item.tahun})? Data renaksi beserta target dan realisasinya akan dihapus permanen dan tidak bisa
+            dikembalikan.
+          </p>
+        </div>
+
+        {error && (
+          <p className="text-sm rounded-lg px-4 py-3.5" style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}>
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4">
+          <button
+            onClick={onClose}
+            className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#dc2626' }}
+          >
+            {deleting && <Loader2 className="animate-spin" size={14} />}
+            {deleting ? 'Menghapus…' : 'Ya, hapus'}
+          </button>
+        </div>
       </div>
     </div>
   );

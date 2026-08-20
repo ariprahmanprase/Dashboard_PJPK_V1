@@ -36,12 +36,17 @@ interface Props {
 }
 
 const MENUS: AdminMenuItem[] = [
-  { key: 'report', label: 'Admin Report', icon: FileText },
   { key: 'renaksi', label: 'Admin Renaksi', icon: ClipboardList },
+];
+
+// Menu khusus admin analis: report saja (tanpa kelola user)
+const ANALIS_MENUS: AdminMenuItem[] = [
+  { key: 'report', label: 'Admin Report', icon: FileText },
 ];
 
 // Menu khusus super admin
 const SUPER_MENUS: AdminMenuItem[] = [
+  { key: 'report', label: 'Admin Report', icon: FileText },
   { key: 'users', label: 'User', icon: Users },
 ];
 
@@ -197,7 +202,7 @@ function AdminSidebarContent({
             Menu
           </p>
         )}
-        {[...MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : [])].map((m) => {
+        {[...MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : [])].map((m) => {
           const Icon = m.icon;
           return (
             <a
@@ -222,7 +227,11 @@ function AdminSidebarContent({
               {user.name}
             </p>
             <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-sidebar-muted)' }}>
-              {user.role === 'admin_opd' && user.opd_nama ? user.opd_nama : 'Super Admin'}
+              {user.role === 'admin_opd' && user.opd_nama
+                ? user.opd_nama
+                : user.role === 'admin_analis'
+                  ? 'Admin Analis'
+                  : 'Super Admin'}
             </p>
           </div>
         )}

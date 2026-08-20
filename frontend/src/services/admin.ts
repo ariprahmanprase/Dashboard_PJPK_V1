@@ -2,7 +2,7 @@ export interface AdminUser {
   id: number;
   name: string;
   email: string;
-  role: 'super_admin' | 'admin_opd';
+  role: 'super_admin' | 'admin_opd' | 'admin_analis';
   opd_id: number | null;
   opd_nama: string | null;
 }
@@ -24,7 +24,7 @@ export interface AdminRenaksi {
   realisasi_nilai: string | null;
   kendala: string | null;
   catatan: string | null;
-  status: 'Terlaksana' | 'Tidak Terlaksana';
+  status: 'Tercapai' | 'Hampir Tercapai' | 'Tidak Tercapai' | 'Belum diisi';
   indikator: string[];
   indikator_ids: number[];
 }
@@ -137,7 +137,7 @@ export async function fetchSatuanOptions(): Promise<string[]> {
 }
 
 export interface RenaksiUpdatePayload {
-  status: string;
+  status?: string;
   realisasi?: string | null;
   realisasi_nilai?: number | null;
   target?: string | null;
@@ -155,13 +155,53 @@ export async function updateRenaksi(id: number, payload: RenaksiUpdatePayload): 
   });
 }
 
+export async function deleteRenaksi(id: number): Promise<void> {
+  await request(`/admin/renaksi-programs/${id}`, { method: 'DELETE' });
+}
+
+export interface RenaksiCreatePayload {
+  tahun: string;
+  opd_id: number;
+  kode_program?: string | null;
+  program?: string | null;
+  rencana_aksi: string;
+  jenis_target: 'kuantitatif' | 'kualitatif';
+  target?: string | null;
+  target_nilai?: number | null;
+  target_satuan?: string | null;
+  realisasi?: string | null;
+  realisasi_nilai?: number | null;
+  status?: string;
+  kendala?: string | null;
+  catatan?: string | null;
+  indikator_ids?: number[];
+}
+
+export async function createRenaksi(payload: RenaksiCreatePayload): Promise<void> {
+  await request('/admin/renaksi-programs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchRenaksiOpdOptions(): Promise<OpdOption[]> {
+  const data = await request<{ data: OpdOption[] }>('/admin/renaksi-programs/opd-options');
+  return data.data;
+}
+
+// Semua indikator untuk dropdown form — admin OPD otomatis terscope ke dinasnya di backend
+export async function fetchAdminIndikatorOptions(): Promise<IndikatorOption[]> {
+  const data = await request<{ data: IndikatorOption[] }>('/admin/renaksi-programs/indikator-options');
+  return data.data;
+}
+
 // ── Kelola User (super admin) ─────────────────────
 
 export interface AdminUserRow {
   id: number;
   name: string;
   email: string;
-  role: 'super_admin' | 'admin_opd';
+  role: 'super_admin' | 'admin_opd' | 'admin_analis';
   opd_id: number | null;
   opd_nama: string | null;
   created_at: string | null;
@@ -176,7 +216,7 @@ export interface UserPayload {
   name: string;
   email: string;
   password?: string;
-  role: 'super_admin' | 'admin_opd';
+  role: 'super_admin' | 'admin_opd' | 'admin_analis';
   opd_id?: number | null;
 }
 

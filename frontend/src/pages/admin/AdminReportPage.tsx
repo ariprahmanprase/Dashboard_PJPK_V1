@@ -23,6 +23,20 @@ async function apiFetch<T>(url: string): Promise<T> {
   return resp.json();
 }
 
+// Request dengan token auth — untuk endpoint admin (selain super admin dilepas dari middleware, tapi tetap butuh login)
+async function apiAuthFetch<T>(path: string): Promise<T> {
+  const token = localStorage.getItem('pjpk_admin_token');
+  const resp = await fetch(`/api${path}`, {
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(body?.message || `API ${resp.status}`);
+  return body as T;
+}
+
 interface Props {
   user: AdminUser;
   onLogout: () => void;
@@ -48,8 +62,15 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
   useEffect(() => {
     apiFetch<FilterOptions>('/api/filters').then(setFilterOptions).catch(() => {});
     fetchPilarOptions().then(setPilarOptions).catch(() => setPilarOptions([]));
-    fetchUserOpdOptions().then(setOpdOptions).catch(() => setOpdOptions([]));
-  }, []);
+    if (user.role === 'super_admin') {
+      fetchUserOpdOptions().then(setOpdOptions).catch(() => setOpdOptions([]));
+    } else {
+      // Admin analis: pakai endpoint renaksi opd-options (terbuka untuk semua role login)
+      apiAuthFetch<{ data: OpdOption[] }>('/admin/renaksi-programs/opd-options')
+        .then((d) => setOpdOptions(d.data))
+        .catch(() => setOpdOptions([]));
+    }
+  }, [user.role]);
 
   const load = useCallback(async (f: DashboardFilters) => {
     setLoading(true);
@@ -206,13 +227,15 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
                           >
                             <Pencil size={13} /> Edit
                           </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDeleting(row); }}
-                            className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
-                            style={{ borderColor: 'var(--color-border)', color: '#dc2626', padding: '0.5rem 0.875rem' }}
-                          >
-                            <Trash2 size={13} /> Hapus
-                          </button>
+                          {user.role === 'super_admin' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeleting(row); }}
+                              className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+                              style={{ borderColor: 'var(--color-border)', color: '#dc2626', padding: '0.5rem 0.875rem' }}
+                            >
+                              <Trash2 size={13} /> Hapus
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

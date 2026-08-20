@@ -58,7 +58,7 @@ class AdminUserController extends Controller
     {
         $validated = $this->validatePayload($request);
 
-        if ($validated['role'] === User::ROLE_SUPER_ADMIN) {
+        if ($validated['role'] !== User::ROLE_ADMIN_OPD) {
             $validated['opd_id'] = null;
         }
 
@@ -77,7 +77,7 @@ class AdminUserController extends Controller
     {
         $validated = $this->validatePayload($request, $user);
 
-        if ($validated['role'] === User::ROLE_SUPER_ADMIN) {
+        if ($validated['role'] !== User::ROLE_ADMIN_OPD) {
             $validated['opd_id'] = null;
         }
 
@@ -124,7 +124,7 @@ class AdminUserController extends Controller
                 Rule::unique('users', 'email')->ignore($user?->id),
             ],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:6'],
-            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN_OPD])],
+            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN_OPD, User::ROLE_ADMIN_ANALIS])],
             'opd_id' => [
                 Rule::requiredIf($request->input('role') === User::ROLE_ADMIN_OPD),
                 'nullable', 'integer', 'exists:opds,id',
