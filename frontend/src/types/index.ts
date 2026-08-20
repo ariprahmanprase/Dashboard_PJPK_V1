@@ -38,6 +38,8 @@ export interface TableRow {
   nama_indikator: string;
   nama_opd: string;
   opd_list: string[];
+  opd_ids?: number[];
+  pilar_id?: number | null;
   nama_pilar: string;
   status_tl: string;
   warna_tl: string;

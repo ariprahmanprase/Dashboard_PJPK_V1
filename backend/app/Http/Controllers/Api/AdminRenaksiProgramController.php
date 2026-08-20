@@ -29,6 +29,18 @@ class AdminRenaksiProgramController extends Controller
         if ($request->filled('tahun')) {
             $query->where('tahun', $request->input('tahun'));
         }
+        if ($request->filled('indikator_id')) {
+            $indikatorId = $request->integer('indikator_id');
+            $query->where(function ($q) use ($indikatorId) {
+                $q->where('indikator_1_id', $indikatorId)
+                  ->orWhere('indikator_2_id', $indikatorId)
+                  ->orWhere('indikator_3_id', $indikatorId)
+                  ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -57,9 +69,25 @@ class AdminRenaksiProgramController extends Controller
             'catatan'        => $r->catatan,
             'status'         => $r->status,
             'indikator'      => $r->indikator_list,
+            'indikator_ids'  => $r->indikator_id_list,
         ]);
 
         return response()->json(['data' => $items]);
+    }
+
+    /**
+     * Daftar satuan target yang sudah dipakai (untuk dropdown di form admin).
+     */
+    public function satuanOptions()
+    {
+        $satuan = RenaksiProgram::select('target_satuan')
+            ->whereNotNull('target_satuan')
+            ->where('target_satuan', '!=', '')
+            ->distinct()
+            ->orderBy('target_satuan')
+            ->pluck('target_satuan');
+
+        return response()->json(['data' => $satuan]);
     }
 
     /**
@@ -100,6 +128,24 @@ class AdminRenaksiProgramController extends Controller
         $validated = $request->validate($rules);
 
         $renaksiProgram->update($validated);
+
+        // Tautan indikator (1-4) hanya boleh diubah super admin
+        if ($user->isSuperAdmin() && $request->has('indikator_ids')) {
+            $ids = collect($request->input('indikator_ids', []))
+                ->filter(fn($v) => is_numeric($v))
+                ->map(fn($v) => (int) $v)
+                ->filter(fn($v) => \App\Models\Indikator::whereKey($v)->exists())
+                ->unique()
+                ->take(4)
+                ->values();
+
+            $renaksiProgram->update([
+                'indikator_1_id' => $ids[0] ?? null,
+                'indikator_2_id' => $ids[1] ?? null,
+                'indikator_3_id' => $ids[2] ?? null,
+                'indikator_4_id' => $ids[3] ?? null,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Data renaksi berhasil disimpan.',

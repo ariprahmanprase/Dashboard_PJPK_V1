@@ -64,4 +64,14 @@ class RenaksiProgram extends Model
         if ($this->indikator4) $indikators[] = $this->indikator4->nama_indikator;
         return $indikators;
     }
+
+    public function getIndikatorIdListAttribute()
+    {
+        return collect([
+            $this->indikator_1_id,
+            $this->indikator_2_id,
+            $this->indikator_3_id,
+            $this->indikator_4_id,
+        ])->filter()->values()->all();
+    }
 }

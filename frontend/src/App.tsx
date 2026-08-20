@@ -6,6 +6,9 @@ import ReportPage from '@/pages/ReportPage';
 import RencanaAksiPage from '@/pages/RencanaAksiPage';
 import AdminLoginPage from '@/pages/admin/AdminLoginPage';
 import AdminRenaksiPage from '@/pages/admin/AdminRenaksiPage';
+import AdminUsersPage from '@/pages/admin/AdminUsersPage';
+import AdminReportPage from '@/pages/admin/AdminReportPage';
+import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { fetchMe, getStoredUser, getToken, type AdminUser } from '@/services/admin';
 
 export default function App() {
@@ -32,6 +35,7 @@ export default function App() {
 function AdminArea() {
   const [user, setUser] = useState<AdminUser | null>(() => (getToken() ? getStoredUser() : null));
   const [checking, setChecking] = useState(() => getToken() !== null);
+  const [page, setPage] = useState<AdminPageName>('report');
 
   useEffect(() => {
     if (!getToken()) return;
@@ -56,5 +60,15 @@ function AdminArea() {
     return <AdminLoginPage onSuccess={() => setUser(getStoredUser())} />;
   }
 
-  return <AdminRenaksiPage user={user} onLogout={() => setUser(null)} />;
+  const handleLogout = () => setUser(null);
+
+  if (page === 'users' && user.role === 'super_admin') {
+    return <AdminUsersPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  if (page === 'renaksi') {
+    return <AdminRenaksiPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  return <AdminReportPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
 }

@@ -13,7 +13,7 @@ class DashboardService
     /**
      * Hitung status_tl seragam: HIJAU ≥ Target, KUNING ≥ 90% Target, MERAH < 90% Target
      */
-    private function calcStatusTL($target, $capaian): array
+    public function calcStatusTL($target, $capaian): array
     {
         if ($capaian === null || $target === null || $target == 0) {
             return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
@@ -143,6 +143,8 @@ class DashboardService
                 'nama_indikator'  => $indikator->nama_indikator,
                 'nama_opd'        => $indikator->nama_opd,           // accessor: join dari pivot
                 'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
+                'pilar_id'        => $indikator->pilar_id,
+                'opd_ids'         => $indikator->opds->pluck('id')->toArray(),
                 'nama_pilar'      => $indikator->pilar->nama_pilar ?? '-',
                 'status_tl'       => $status['status_tl'],
                 'warna_tl'        => $status['warna_tl'],

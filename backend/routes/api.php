@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\AdminIndikatorController;
 use App\Http\Controllers\Api\AdminRenaksiProgramController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FilterController;
@@ -12,8 +14,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
+    Route::get('/admin/renaksi-programs/satuan-options', [AdminRenaksiProgramController::class, 'satuanOptions']);
     Route::get('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'index']);
     Route::put('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'update']);
+
+    // Kelola user & indikator — khusus super admin
+    Route::middleware('super_admin')->group(function () {
+        Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
+        Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
+
+        Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);
+        Route::put('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'update'])
+            ->where('indikator', '[A-Za-z0-9\-]+');
+        Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])
+            ->where('indikator', '[A-Za-z0-9\-]+');
+    });
 });
 
 Route::get('/filters', FilterController::class);
