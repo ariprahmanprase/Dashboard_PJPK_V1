@@ -11,8 +11,26 @@ import AdminReportPage from '@/pages/admin/AdminReportPage';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { fetchMe, getStoredUser, getToken, type AdminUser } from '@/services/admin';
 
+function publicPageFromPath(): PageName {
+  return window.location.pathname.startsWith('/rencana-aksi') ? 'rencana-aksi' : 'report';
+}
+
 export default function App() {
-  const [page, setPage] = useState<PageName>('report');
+  // State di-inisialisasi dari URL — / langsung dashboard, /rencana-aksi halaman rencana aksi
+  const [page, setPageState] = useState<PageName>(publicPageFromPath);
+
+  // Sinkron URL saat navigasi; dukung tombol back/forward browser
+  const setPage = (p: PageName) => {
+    setPageState(p);
+    const path = p === 'report' ? '/' : '/rencana-aksi';
+    if (window.location.pathname !== path) window.history.pushState(null, '', path);
+  };
+
+  useEffect(() => {
+    const onPop = () => setPageState(publicPageFromPath());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // Area admin: /admin
   if (window.location.pathname.startsWith('/admin')) {
