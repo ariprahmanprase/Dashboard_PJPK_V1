@@ -36,7 +36,7 @@ const selectStyle = {
   color: 'var(--color-text)',
 };
 
-// AdminRenaksi â†’ RenaksiProgramRow (bentuk data yang dipakai tabel & modal detail dashboard)
+// AdminRenaksi → RenaksiProgramRow (bentuk data yang dipakai tabel & modal detail dashboard)
 // Format target/realisasi untuk tampilan tabel & modal (mengikuti jenis_target)
 function formatNilai(r: AdminRenaksi, field: 'target' | 'realisasi'): string {
   if (r.jenis_target === 'kuantitatif') {
@@ -73,7 +73,7 @@ function toProgramRow(r: AdminRenaksi): RenaksiProgramRow {
 
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
   const isSuperAdmin = user.role === 'super_admin';
-  // Admin analis: lihat semua + isi realisasi â€” tanpa tambah/hapus & tanpa filter dinas
+  // Admin analis: lihat semua + isi realisasi — tanpa tambah/hapus & tanpa filter dinas
   const isAnalis = user.role === 'admin_analis';
   const canCreate = user.role !== 'admin_analis';
   const canDelete = user.role !== 'admin_analis';
@@ -148,7 +148,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     }
   }, [tahun, search, indikatorId, pilarId, status]);
 
-  // Cascading: ganti pilar â†’ reset indikator bila tidak cocok
+  // Cascading: ganti pilar → reset indikator bila tidak cocok
   const handlePilarChange = (value: string) => {
     setPilarId(value);
     if (indikatorId) {
@@ -159,7 +159,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     }
   };
 
-  // Filter dinas di client (super admin) â€” backend hanya menerima opd_id, dinas_options bertipe teks
+  // Filter dinas di client (super admin) — backend hanya menerima opd_id, dinas_options bertipe teks
   const visibleItems = dinas ? items.filter((r) => r.dinas === dinas) : items;
 
   useEffect(() => {
@@ -215,7 +215,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
               .filter((i) => !pilarId || String(i.pilar_id) === pilarId)
               .map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + 'â€¦' : i.nama_indikator}
+                  {i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}
                 </option>
               ))}
           </select>
@@ -256,7 +256,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari rencana aksi / programâ€¦"
+              placeholder="Cari rencana aksi / program…"
               className="rounded-lg border pl-11 pr-4 py-3 text-sm w-full"
               style={selectStyle}
             />
@@ -266,7 +266,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             className="text-xs sm:text-sm whitespace-nowrap sm:ml-auto"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            {loading ? 'Memuatâ€¦' : `${visibleItems.length} renaksi`}
+            {loading ? 'Memuat…' : `${visibleItems.length} renaksi`}
           </span>
 
           {canCreate && (
@@ -289,7 +289,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </p>
         )}
 
-        {/* Content â€” tabel & modal detail persis seperti dashboard, + kolom Aksi */}
+        {/* Content — tabel & modal detail persis seperti dashboard, + kolom Aksi */}
         <RenaksiProgramTable
           data={visibleItems.map(toProgramRow)}
           loading={loading}
@@ -355,7 +355,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   );
 }
 
-// â”€â”€ Edit modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Edit modal ──────────────────────────────────────
 interface EditModalProps {
   item: AdminRenaksi;
   isSuperAdmin: boolean;
@@ -379,7 +379,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   const [realisasiNilai, setRealisasiNilai] = useState(item.realisasi_nilai ?? '');
   const [realisasiTeks, setRealisasiTeks] = useState(item.realisasi ?? '');
   const [targetNilai, setTargetNilai] = useState(item.target_nilai ?? '');
-  // Satuan: dropdown dari satuan yang sudah ada + opsi "Tambahkan satuanâ€¦" (input custom)
+  // Satuan: dropdown dari satuan yang sudah ada + opsi "Tambahkan satuan…" (input custom)
   const [satuanChoice, setSatuanChoice] = useState<string>(() =>
     item.target_satuan && !satuanOptions.includes(item.target_satuan) ? SATUAN_CUSTOM : (item.target_satuan ?? ''),
   );
@@ -465,7 +465,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
               {isAnalis ? 'Tentukan Status & Indikator' : 'Isi Realisasi'}
             </h2>
             <p className="text-xs sm:text-sm mt-2 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              {item.dinas} Â· {item.tahun} Â· {item.rencana_aksi}
+              {item.dinas} · {item.tahun} · {item.rencana_aksi}
             </p>
           </div>
           <button
@@ -503,11 +503,11 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                   className={inputClass}
                   style={inputStyle}
                 >
-                  <option value="">â€” Pilih satuan â€”</option>
+                  <option value="">— Pilih satuan —</option>
                   {satuanOptions.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  {isSuperAdmin && <option value={SATUAN_CUSTOM}>ï¼‹ Tambahkan satuanâ€¦</option>}
+                  {isSuperAdmin && <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>}
                 </select>
                 {isSuperAdmin && satuanChoice === SATUAN_CUSTOM && (
                   <input
@@ -558,7 +558,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                 rows={3}
                 className={inputClass}
                 style={inputStyle}
-                placeholder="Uraian realisasiâ€¦"
+                placeholder="Uraian realisasi…"
               />
             </Field>
           )}
@@ -596,7 +596,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
             </Field>
           )}
 
-          {/* Tautan indikator â€” super admin & admin analis boleh mengubah */}
+          {/* Tautan indikator — super admin & admin analis boleh mengubah */}
           {canEditIndikator && (
             <Field label="Indikator terkait (maks. 4, kosongkan untuk menghapus)">
               <div className="flex flex-col gap-3">
@@ -614,14 +614,14 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                     className={inputClass}
                     style={inputStyle}
                   >
-                    <option value="">â€” Slot {slot + 1}: kosong â€”</option>
+                    <option value="">— Slot {slot + 1}: kosong —</option>
                     {indikatorOptions.map((i) => (
                       <option
                         key={i.id}
                         value={i.id}
                         disabled={indikatorIds.includes(i.id) && val !== i.id}
                       >
-                        {i.kode ? `${i.kode} â€” ` : ''}{i.nama_indikator}
+                        {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
                       </option>
                     ))}
                   </select>
@@ -677,7 +677,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {saving && <Loader2 className="animate-spin" size={14} />}
-              {saving ? 'Menyimpanâ€¦' : 'Simpan'}
+              {saving ? 'Menyimpan…' : 'Simpan'}
             </button>
           </div>
         </form>
@@ -686,7 +686,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   );
 }
 
-// â”€â”€ Modal tambah renaksi baru â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Modal tambah renaksi baru ───────────────────────
 interface CreateModalProps {
   defaultTahun: string;
   isSuperAdmin: boolean;
@@ -756,15 +756,15 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
     }
   };
 
-  // Preview status otomatis untuk renaksi kuantitatif (admin OPD) â€” mengikuti rumus backend
+  // Preview status otomatis untuk renaksi kuantitatif (admin OPD) — mengikuti rumus backend
   const statusPreview = (() => {
     if (jenisTarget !== 'kuantitatif') {
-      return { text: 'â€”', keterangan: '' };
+      return { text: '—', keterangan: '' };
     }
     if (targetNilai === '' || realisasiNilai === '') {
       return {
         text: 'Belum diisi',
-        keterangan: 'Lengkapi target dan realisasi â€” status akan keluar otomatis berdasarkan rumus capaian.',
+        keterangan: 'Lengkapi target dan realisasi — status akan keluar otomatis berdasarkan rumus capaian.',
       };
     }
     const t = Number(targetNilai);
@@ -773,10 +773,10 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
       return { text: 'Belum diisi', keterangan: 'Target harus lebih dari 0 agar status bisa dihitung.' };
     }
     if (r >= t) {
-      return { text: 'Tercapai', keterangan: `Realisasi (${r}) â‰¥ 100% target (${t}).` };
+      return { text: 'Tercapai', keterangan: `Realisasi (${r}) ≥ 100% target (${t}).` };
     }
     if (r >= t * 0.9) {
-      return { text: 'Hampir Tercapai', keterangan: `Realisasi (${r}) â‰¥ 90% target (${t}).` };
+      return { text: 'Hampir Tercapai', keterangan: `Realisasi (${r}) ≥ 90% target (${t}).` };
     }
     return { text: 'Tidak Tercapai', keterangan: `Realisasi (${r}) < 90% target (${t}).` };
   })();
@@ -842,7 +842,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                 className={inputClass}
                 style={inputStyle}
               >
-                <option value="">â€” Pilih dinas â€”</option>
+                <option value="">— Pilih dinas —</option>
                 {opdOptions.map((o) => (
                   <option key={o.id} value={o.id}>{o.nama_opd}</option>
                 ))}
@@ -867,7 +867,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                 onChange={(e) => setProgram(e.target.value)}
                 className={inputClass}
                 style={inputStyle}
-                placeholder="Nama programâ€¦"
+                placeholder="Nama program…"
                 maxLength={255}
               />
             </Field>
@@ -881,7 +881,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               rows={3}
               className={inputClass}
               style={inputStyle}
-              placeholder="Uraian rencana aksiâ€¦"
+              placeholder="Uraian rencana aksi…"
             />
           </Field>
 
@@ -919,11 +919,11 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                     className={inputClass}
                     style={inputStyle}
                   >
-                    <option value="">â€” Pilih satuan â€”</option>
+                    <option value="">— Pilih satuan —</option>
                     {satuanOptions.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                    <option value={SATUAN_CUSTOM}>ï¼‹ Tambahkan satuanâ€¦</option>
+                    <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>
                   </select>
                   {satuanChoice === SATUAN_CUSTOM && (
                     <input
@@ -959,7 +959,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                   rows={2}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Uraian targetâ€¦"
+                  placeholder="Uraian target…"
                 />
               </Field>
               <Field label="Realisasi">
@@ -969,7 +969,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                   rows={2}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Uraian realisasiâ€¦"
+                  placeholder="Uraian realisasi…"
                 />
               </Field>
             </>
@@ -1010,14 +1010,14 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                   className={inputClass}
                   style={inputStyle}
                 >
-                  <option value="">â€” Slot {slot + 1}: kosong â€”</option>
+                  <option value="">— Slot {slot + 1}: kosong —</option>
                   {indikatorOptions.map((i) => (
                     <option
                       key={i.id}
                       value={i.id}
                       disabled={indikatorIds.includes(i.id) && val !== i.id}
                     >
-                      {i.kode ? `${i.kode} â€” ` : ''}{i.nama_indikator}
+                      {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
                     </option>
                   ))}
                 </select>
@@ -1075,7 +1075,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {saving && <Loader2 className="animate-spin" size={14} />}
-              {saving ? 'Menyimpanâ€¦' : 'Simpan'}
+              {saving ? 'Menyimpan…' : 'Simpan'}
             </button>
           </div>
         </form>
@@ -1084,7 +1084,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
   );
 }
 
-// â”€â”€ Modal konfirmasi hapus renaksi (super admin) â”€â”€â”€â”€
+// ── Modal konfirmasi hapus renaksi (super admin) ────
 function DeleteRenaksiModal({
   item, onClose, onDeleted,
 }: {
@@ -1149,7 +1149,7 @@ function DeleteRenaksiModal({
             style={{ backgroundColor: '#dc2626' }}
           >
             {deleting && <Loader2 className="animate-spin" size={14} />}
-            {deleting ? 'Menghapusâ€¦' : 'Ya, hapus'}
+            {deleting ? 'Menghapus…' : 'Ya, hapus'}
           </button>
         </div>
       </div>
