@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function PieRenaksi({ data, loading, onSliceClick }: Props) {
-  const COLORS = ['#22c55e', '#ef4444', '#94a3b8'];
+  const COLORS = ['#16a34a', '#ca8a04', '#dc2626', '#64748b'];
 
   if (loading) {
     return (
@@ -27,7 +27,7 @@ export default function PieRenaksi({ data, loading, onSliceClick }: Props) {
     );
   }
 
-  if (!data || (data.terlaksana === 0 && data.tidak_terlaksana === 0 && data.belum_input === 0)) {
+  if (!data || (data.tercapai === 0 && data.hampir_tercapai === 0 && data.tidak_tercapai === 0 && data.belum_diisi === 0)) {
     return (
       <div
         className="rounded-xl border flex flex-col items-center justify-center gap-2"
@@ -47,9 +47,10 @@ export default function PieRenaksi({ data, loading, onSliceClick }: Props) {
   }
 
   const chartData = [
-    { name: 'Terlaksana', value: data.terlaksana },
-    { name: 'Tidak Terlaksana', value: data.tidak_terlaksana },
-    { name: 'Belum Input', value: data.belum_input },
+    { name: 'Tercapai', value: data.tercapai },
+    { name: 'Hampir Tercapai', value: data.hampir_tercapai },
+    { name: 'Tidak Tercapai', value: data.tidak_tercapai },
+    { name: 'Belum diisi', value: data.belum_diisi },
   ];
 
   return (

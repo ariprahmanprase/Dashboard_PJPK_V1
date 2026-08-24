@@ -11,14 +11,36 @@ use Illuminate\Database\Eloquent\Builder;
 class DashboardService
 {
     /**
-     * Hitung status_tl seragam: HIJAU ≥ Target, KUNING ≥ 90% Target, MERAH < 90% Target
+     * Hitung status_tl berdasarkan arah target indikator:
+     * - Higher Better : HIJAU capaian ≥ target, KUNING ≥ 90% target, MERAH < 90%
+     * - Lower Better  : HIJAU capaian ≤ target, KUNING ≤ 110% target, MERAH > 110%
+     * - Maintain / Stable & Proportional:
+     *             HIJAU capaian = target persis, selain itu MERAH (tanpa KUNING)
+     * - arah_target null (data lama): fallback ke logika Higher Better
      */
-    public function calcStatusTL($target, $capaian): array
+    public function calcStatusTL($target, $capaian, ?string $arahTarget = null): array
     {
         if ($capaian === null || $target === null || $target == 0) {
             return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
         }
 
+        if (in_array($arahTarget, ['Maintain / Stable', 'Proportional'], true)) {
+            return abs($capaian - $target) < 1e-9
+                ? ['status_tl' => 'On Track', 'warna_tl' => 'Hijau']
+                : ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
+        }
+
+        if ($arahTarget === 'Lower Better') {
+            if ($capaian <= $target) {
+                return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
+            }
+            if ($capaian <= $target * 1.1) {
+                return ['status_tl' => 'Warning', 'warna_tl' => 'Kuning'];
+            }
+            return ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
+        }
+
+        // Default: arah target Higher Better
         if ($capaian >= $target) {
             return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
         }
@@ -35,15 +57,16 @@ class DashboardService
     private function getIndicatorIdsByComputedStatus(Builder $indikatorQuery, string $statusTl, ?string $tahun): array
     {
         $tahun = $tahun ?? '2025';
-        $ids = $indikatorQuery->pluck('id');
+        $arahMap = (clone $indikatorQuery)->pluck('arah_target', 'id');
+        $ids = $arahMap->keys();
 
         $tcs = TargetCapaian::whereIn('indikator_id', $ids)
             ->where('tahun', $tahun)
             ->select('indikator_id', 'target', 'capaian')
             ->get();
 
-        return $tcs->filter(function ($tc) use ($statusTl) {
-            $s = $this->calcStatusTL($tc->target, $tc->capaian);
+        return $tcs->filter(function ($tc) use ($statusTl, $arahMap) {
+            $s = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
             return $s['status_tl'] === $statusTl;
         })->pluck('indikator_id')->unique()->values()->toArray();
     }
@@ -55,9 +78,10 @@ class DashboardService
     {
         $updated = 0;
         $rows = TargetCapaian::all();
+        $arahMap = Indikator::pluck('arah_target', 'id');
 
         foreach ($rows as $tc) {
-            $new = $this->calcStatusTL($tc->target, $tc->capaian);
+            $new = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
             if ($tc->status_tl !== $new['status_tl'] || $tc->warna_tl !== $new['warna_tl']) {
                 $tc->status_tl = $new['status_tl'];
                 $tc->warna_tl = $new['warna_tl'];
@@ -83,9 +107,10 @@ class DashboardService
         $totalOpd = $opdQuery->distinct('opds.id')->count();
 
         // Fetch all target_capaians & compute status dinamis
-        $rows = TargetCapaian::whereIn('indikator_id', $indikatorQuery->pluck('id'))
+        $arahMap = (clone $indikatorQuery)->pluck('arah_target', 'id');
+        $rows = TargetCapaian::whereIn('indikator_id', $arahMap->keys())
             ->where('tahun', $tahun)
-            ->select('target', 'capaian')
+            ->select('indikator_id', 'target', 'capaian')
             ->get();
 
         $onTrack = 0;
@@ -98,7 +123,7 @@ class DashboardService
             if ($tc->capaian === null) {
                 $capaianBelum++;
             }
-            $s = $this->calcStatusTL($tc->target, $tc->capaian);
+            $s = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
             match ($s['status_tl']) {
                 'On Track' => $onTrack++,
                 'Warning' => $warning++,
@@ -135,12 +160,13 @@ class DashboardService
 
             $target = $tc->target ?? null;
             $capaian = $tc->capaian ?? null;
-            $status = $this->calcStatusTL($target, $capaian);
+            $status = $this->calcStatusTL($target, $capaian, $indikator->arah_target);
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
             return [
                 'kode'            => $indikator->kode,
                 'nama_indikator'  => $indikator->nama_indikator,
+                'arah_target'     => $indikator->arah_target,
                 'nama_opd'        => $indikator->nama_opd,           // accessor: join dari pivot
                 'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
                 'pilar_id'        => $indikator->pilar_id,
@@ -181,27 +207,47 @@ class DashboardService
     }
 
     // ─────────────────────────────────────────────────────
-    //  PIE RENAKSI
+    //  PIE RENAKSI (dari renaksi_programs — sumber data aktual)
     // ─────────────────────────────────────────────────────
     public function getRenaksiPieData(array $filters = []): array
     {
-        $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
-        $totalIndikator = $indikatorQuery->count();
-        $indikatorIds = $indikatorQuery->pluck('id');
+        $tahun = $filters['tahun'] ?? '2025';
 
-        $indikatorDenganRenaksi = \App\Models\Renaksi::whereIn('indikator_id', $indikatorIds)
-            ->distinct('indikator_id')
-            ->count('indikator_id');
+        $query = RenaksiProgram::query()->where('tahun', $tahun);
 
-        $byStatus = \App\Models\Renaksi::whereIn('indikator_id', $indikatorIds)
+        if (!empty($filters['opd_id'])) {
+            $query->where('opd_id', $filters['opd_id']);
+        }
+        if (!empty($filters['pilar_id'])) {
+            $pilarId = $filters['pilar_id'];
+            $query->where(function ($q) use ($pilarId) {
+                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
+                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
+                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
+                    });
+                }
+            });
+        }
+        if (!empty($filters['indikator_id'])) {
+            $indikatorId = $filters['indikator_id'];
+            $query->where(function ($q) use ($indikatorId) {
+                $q->where('indikator_1_id', $indikatorId)
+                  ->orWhere('indikator_2_id', $indikatorId)
+                  ->orWhere('indikator_3_id', $indikatorId)
+                  ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+
+        $byStatus = $query
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
 
         return [
-            'terlaksana' => $byStatus['Terlaksana'] ?? 0,
-            'tidak_terlaksana' => $byStatus['Tidak Terlaksana'] ?? 0,
-            'belum_input' => $totalIndikator - $indikatorDenganRenaksi,
+            'tercapai'        => $byStatus['Tercapai'] ?? 0,
+            'hampir_tercapai' => $byStatus['Hampir Tercapai'] ?? 0,
+            'tidak_tercapai'  => $byStatus['Tidak Tercapai'] ?? 0,
+            'belum_diisi'     => $byStatus['Belum diisi'] ?? 0,
         ];
     }
 
@@ -253,7 +299,7 @@ class DashboardService
             $noPilar = $ind->pilar->no_pilar ?? 0;
             $tc = $tcs->get($ind->id);
 
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
 
             if (!isset($grouped[$pilar])) {
                 $grouped[$pilar] = ['pilar' => $pilar, 'no_pilar' => $noPilar, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
@@ -290,7 +336,7 @@ class DashboardService
         $grouped = [];
         foreach ($indikators as $ind) {
             $tc = $tcs->get($ind->id);
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
 
             foreach ($ind->opds as $opd) {
                 $opdName = $opd->nama_opd;
@@ -330,13 +376,14 @@ class DashboardService
                 'kode' => $ind->kode,
                 'nama_indikator' => $ind->nama_indikator,
                 'pilar' => $ind->pilar->nama_pilar ?? '-',
+                'arah_target' => $ind->arah_target,
             ];
             $tc = $allData->get($ind->id, collect());
             foreach (['2025', '2026', '2027', '2028', '2029'] as $thn) {
                 $match = $tc->firstWhere('tahun', $thn);
                 $target = $match->target ?? null;
                 $capaian = $match->capaian ?? null;
-                $s = $this->calcStatusTL($target, $capaian);
+                $s = $this->calcStatusTL($target, $capaian, $ind->arah_target);
                 $row['status_' . $thn] = $s['status_tl'];
                 $row['warna_' . $thn] = $s['warna_tl'];
                 $row['target_' . $thn] = $target;
@@ -382,6 +429,37 @@ class DashboardService
                 ];
             }
             $result[] = ['pilar' => $pilarName, 'data' => $byYear];
+        }
+
+        return $result;
+    }
+
+    // ─────────────────────────────────────────────────────
+    //  CHART PER INDIKATOR (small multiples)
+    // ─────────────────────────────────────────────────────
+    public function getChartPerIndikator(array $filters = []): array
+    {
+        $indikatorQuery = $this->applyFilters(Indikator::query(), $filters);
+        $indikators = $indikatorQuery->orderBy('kode')->get();
+
+        $allData = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
+            ->selectRaw('indikator_id, tahun, AVG(target) as avg_target, AVG(capaian) as avg_capaian')
+            ->groupBy('indikator_id', 'tahun')
+            ->get()
+            ->groupBy('indikator_id');
+
+        $result = [];
+        foreach ($indikators as $ind) {
+            $byYear = [];
+            foreach (['2025', '2026', '2027', '2028', '2029'] as $thn) {
+                $row = optional($allData->get($ind->id, collect())->firstWhere('tahun', $thn));
+                $byYear[] = [
+                    'tahun'       => $thn,
+                    'avg_target'  => $row->avg_target !== null ? round((float) $row->avg_target, 2) : null,
+                    'avg_capaian' => $row->avg_capaian !== null ? round((float) $row->avg_capaian, 2) : null,
+                ];
+            }
+            $result[] = ['indikator' => "{$ind->kode} — {$ind->nama_indikator}", 'data' => $byYear];
         }
 
         return $result;
@@ -462,7 +540,7 @@ class DashboardService
             $tc = $tcs->get($thn);
             $t = $tc->target ?? null;
             $c = $tc->capaian ?? null;
-            $s = $this->calcStatusTL($t, $c);
+            $s = $this->calcStatusTL($t, $c, $indikator->arah_target);
             $gap = ($c !== null && $t !== null) ? round($c - $t, 6) : null;
             $pctGap = ($gap !== null && $t != 0) ? round($gap / $t, 6) : null;
 
@@ -476,6 +554,28 @@ class DashboardService
                 'warna_tl'  => $s['warna_tl'],
             ];
         }
+
+        // Renaksi program terkait (dari Excel renaksi programs — sumber data aktual)
+        $renaksiPrograms = RenaksiProgram::where('indikator_1_id', $indikator->id)
+            ->orWhere('indikator_2_id', $indikator->id)
+            ->orWhere('indikator_3_id', $indikator->id)
+            ->orWhere('indikator_4_id', $indikator->id)
+            ->orderBy('tahun')
+            ->orderBy('no')
+            ->get()
+            ->map(fn($r) => [
+                'id'           => $r->id,
+                'tahun'        => $r->tahun ?? '2025',
+                'dinas'        => $r->dinas_text ?? '-',
+                'program'      => $r->program ?? '-',
+                'rencana_aksi' => $r->rencana_aksi ?? '-',
+                'target'       => $this->formatTarget($r),
+                'realisasi'    => $this->formatRealisasi($r),
+                'status'       => $r->status ?? 'Belum diisi',
+                'kendala'      => $r->kendala,
+                'catatan'      => $r->catatan,
+            ])
+            ->toArray();
 
         // Renaksi terkait
         $renaksi = $indikator->renaksis->map(fn($r) => [
@@ -499,6 +599,7 @@ class DashboardService
             'inovasi'         => $indikator->inovasi,
             'target_capaians' => $targetCapaians,
             'renaksi'         => $renaksi,
+            'renaksi_programs' => $renaksiPrograms,
         ];
     }
 
@@ -585,7 +686,10 @@ class DashboardService
     // ─────────────────────────────────────────────────────
     public function getRenaksiProgramList(array $filters = []): array
     {
-        $query = RenaksiProgram::with(['opd', 'indikator1', 'indikator2', 'indikator3', 'indikator4']);
+        $query = RenaksiProgram::with([
+            'opd',
+            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+        ]);
 
         // Filter by tahun
         if (!empty($filters['tahun'])) {
@@ -606,6 +710,16 @@ class DashboardService
                   ->orWhere('indikator_2_id', $indikatorId)
                   ->orWhere('indikator_3_id', $indikatorId)
                   ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+        if (!empty($filters['pilar_id'])) {
+            $pilarId = $filters['pilar_id'];
+            $query->where(function ($q) use ($pilarId) {
+                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
+                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
+                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
+                    });
+                }
             });
         }
         if (!empty($filters['status_renaksi'])) {
@@ -636,6 +750,7 @@ class DashboardService
                 'kendala'       => $r->kendala,
                 'catatan'       => $r->catatan,
                 'indikator'     => $r->indikator_list,
+                'pilar'         => $r->pilar_list,
                 'status'        => $r->status,
             ])
             ->toArray();
@@ -767,7 +882,7 @@ class DashboardService
             ->values();
 
         return Indikator::whereIn('id', $ids)
-            ->select('id', 'kode', 'nama_indikator')
+            ->select('id', 'kode', 'nama_indikator', 'pilar_id')
             ->orderBy('no_urut')
             ->get()
             ->toArray();
@@ -779,7 +894,7 @@ class DashboardService
      */
     public function getAllIndikatorOptions(?int $opdId = null): array
     {
-        $query = Indikator::select('id', 'kode', 'nama_indikator')->orderBy('no_urut');
+        $query = Indikator::select('id', 'kode', 'nama_indikator', 'pilar_id')->orderBy('no_urut');
         if ($opdId !== null) {
             $query->whereHas('opds', fn($q) => $q->where('opds.id', $opdId));
         }

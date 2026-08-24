@@ -12,11 +12,9 @@ import PieRenaksi from '@/components/PieRenaksi';
 import PieStatus from '@/components/PieStatus';
 import BarPerPilar from '@/components/BarPerPilar';
 import BarPerOpd from '@/components/BarPerOpd';
-import SmallMultiple from '@/components/SmallMultiple';
+import SmallMultipleIndikator from '@/components/SmallMultipleIndikator';
 import HeatmapGrid from '@/components/HeatmapGrid';
-import PyramidTargetCapaian from '@/components/PyramidTargetCapaian';
-
-import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartPilarEntry } from '@/types';
+import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartIndikatorEntry } from '@/types';
 
 // ── Helpers ──────────────────────────────────────────
 function buildParams(f: { tahun: string; opdId: string; pilarId: string; indikatorId: string; statusTl: string }): string {
@@ -71,7 +69,7 @@ export default function ReportPage() {
   const [perPilar, setPerPilar] = useState<PerPilarItem[]>([]);
   const [perOpd, setPerOpd] = useState<PerOpdItem[]>([]);
   const [heatmapData, setHeatmapData] = useState<HeatmapRow[]>([]);
-  const [chartPerPilar, setChartPerPilar] = useState<ChartPilarEntry[]>([]);
+  const [chartPerIndikator, setChartPerIndikator] = useState<ChartIndikatorEntry[]>([]);
 
   // ── fetchData helper ──────────────────────────────
   const fetchDataFor = async (filters: { tahun: string; opdId: string; pilarId: string; indikatorId: string; statusTl: string }) => {
@@ -84,7 +82,7 @@ export default function ReportPage() {
       if (filters.pilarId) hmParams.set('pilar_id', filters.pilarId);
       if (filters.indikatorId) hmParams.set('indikator_id', filters.indikatorId);
 
-      const [sc, tbl, ch, rp, pp, po, hm, cpp] = await Promise.all([
+      const [sc, tbl, ch, rp, pp, po, hm, cpi] = await Promise.all([
         apiFetch<Scorecards>(`/api/dashboard/scorecards?${params}`),
         apiFetch<TableRow[]>(`/api/dashboard/table?${params}`),
         apiFetch<ChartDataPoint[]>(`/api/dashboard/chart?${params}`),
@@ -92,7 +90,7 @@ export default function ReportPage() {
         apiFetch<PerPilarItem[]>(`/api/dashboard/per-pilar?${params}`),
         apiFetch<PerOpdItem[]>(`/api/dashboard/per-opd?${params}`),
         apiFetch<HeatmapRow[]>(`/api/dashboard/heatmap?${hmParams}`),
-        apiFetch<ChartPilarEntry[]>(`/api/dashboard/chart-per-pilar?${params}`),
+        apiFetch<ChartIndikatorEntry[]>(`/api/dashboard/chart-per-indikator?${params}`),
       ]);
       setScorecards(sc);
       setTableData(tbl);
@@ -101,7 +99,7 @@ export default function ReportPage() {
       setPerPilar(pp);
       setPerOpd(po);
       setHeatmapData(hm);
-      setChartPerPilar(cpp);
+      setChartPerIndikator(cpi);
     } catch (err) {
       console.error('[PJPK] fetch error:', err);
     } finally {
@@ -156,6 +154,17 @@ export default function ReportPage() {
       statusTl: _key === 'status_tl' ? value : statusTl,
     };
 
+    // Jika pilar berubah, reset indikator bila tidak termasuk pilar yang dipilih
+    if (_key === 'pilar_id' && newState.indikatorId) {
+      const masihCocok = value !== '' && filterOptions?.indikator.some(
+        i => String(i.id) === newState.indikatorId && String(i.pilar_id) === value
+      );
+      if (!masihCocok) {
+        newState.indikatorId = '';
+        setIndikatorId('');
+      }
+    }
+
     if (_key === 'tahun') setTahun(value);
     else if (_key === 'opd_id') setOpdId(value);
     else if (_key === 'pilar_id') setPilarId(value);
@@ -163,6 +172,17 @@ export default function ReportPage() {
     else if (_key === 'status_tl') setStatusTl(value);
 
     fetchDataFor(newState);
+  }
+
+  // ── Reset semua filter ke default ──────────────
+  function handleResetFilter() {
+    setScorecardKey(null);
+    setOpdId('');
+    setPilarId('');
+    setIndikatorId('');
+    setStatusTl('');
+    setTahun('2025');
+    fetchDataFor({ tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' });
   }
 
   // ── PieStatus click (popup modal) ──────────────
@@ -198,20 +218,27 @@ export default function ReportPage() {
 
   async function handlePieClick(status: string) {
     const params = buildParams({ tahun, opdId, pilarId, indikatorId, statusTl });
-    const statusParam = status.replace(' ', '+');
+    const statusParam = encodeURIComponent(status);
     setModalMode('all');
-    setModalKode(`Menampilkan rencana aksi dengan status: ${status} (filter aktif)`);
+    setModalKode(`Rencana aksi dengan status: ${status} (filter aktif)`);
     setModalNama('');
     setModalOpen(true);
     setRenaksiLoading(true);
     setRenaksiData([]);
 
     try {
-      const resp = await fetch(`/api/dashboard/renaksi-list?${params}&status_renaksi=${statusParam}`);
+      const resp = await fetch(`/api/dashboard/renaksi-program-list?${params}&status_renaksi=${statusParam}`);
       if (!resp.ok) throw new Error(`API ${resp.status}`);
       const json = await resp.json();
-      // Cast RenaksiListItem[] → RenaksiItem[] (extra indikator field handled in modal)
-      setRenaksiData(json as RenaksiItem[]);
+      setRenaksiData((json as Array<Record<string, unknown>>).map((r, i) => ({
+        no: (r.no as number) ?? i + 1,
+        indikator: Array.isArray(r.indikator) ? (r.indikator as string[]).join(', ') : String(r.indikator ?? '-'),
+        rencana_aksi: String(r.rencana_aksi ?? '-'),
+        opd: String(r.dinas ?? r.opd ?? '-'),
+        tahun: String(r.tahun ?? '-'),
+        status: String(r.status ?? '-'),
+        catatan: (r.catatan as string | null) ?? null,
+      })));
     } catch (err) {
       console.error('[PJPK] renaksi list fetch error:', err);
     } finally {
@@ -241,7 +268,7 @@ export default function ReportPage() {
           <Filter size={16} style={{ color: 'var(--color-text-secondary)' }} />
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Filter Data</p>
         </div>
-        <FilterBar options={filterOptions} filters={filtersObj} onFilterChange={handleFilterChange} />
+        <FilterBar options={filterOptions} filters={filtersObj} onFilterChange={handleFilterChange} onReset={handleResetFilter} />
       </div>
 
       <ScoreCardGrid data={scorecards} loading={loading} activeKey={scorecardKey} onCardClick={handleScorecardClick} />
@@ -265,9 +292,6 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* ── Piramida Target vs Capaian ── */}
-      <PyramidTargetCapaian data={chartPerPilar} tahun={tahun} loading={loading} />
-
       {/* ── Lapis 1: Strategic Overview ── */}
       <div className="responsive-row">
         <div style={{ flex: '1 1 50%', minWidth: 0 }}>
@@ -284,7 +308,7 @@ export default function ReportPage() {
           <HeatmapGrid data={heatmapData} loading={loading} />
         </div>
         <div style={{ flex: '1 1 60%', minWidth: 0 }}>
-          <SmallMultiple data={chartPerPilar} loading={loading} />
+          <SmallMultipleIndikator data={chartPerIndikator} loading={loading} />
         </div>
       </div>
 

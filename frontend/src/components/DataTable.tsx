@@ -52,7 +52,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
       <table className="w-full text-sm" style={{ minWidth: 1200 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-            {['Kode', 'Nama Indikator', 'Pilar', 'OPD', 'Tahun', 'Target', 'Capaian', 'Gap', 'Status'].map(h => {
+            {['Kode', 'Nama Indikator', 'Pilar', 'OPD', 'Tahun', 'Target', 'Capaian', 'Gap', 'Arah Target', 'Status'].map(h => {
               const isNumeric = ['Target', 'Capaian', 'Gap'].includes(h);
               return (
               <th
@@ -162,6 +162,17 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                     {row.gap >= 0 ? '+' : ''}{row.gap.toLocaleString('id-ID')}
                   </span>
                 ) : '-'}
+              </td>
+              <td
+                className="align-middle"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.75rem',
+                  padding: '0.875rem 1.25rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {row.arah_target ?? '-'}
               </td>
               <td className="align-middle" style={{ padding: '1rem 1.5rem' }}>
                 <StatusBadge status={row.status_tl} warna={row.warna_tl} />

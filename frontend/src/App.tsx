@@ -9,7 +9,7 @@ import AdminRenaksiPage from '@/pages/admin/AdminRenaksiPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminReportPage from '@/pages/admin/AdminReportPage';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
-import { fetchMe, getStoredUser, getToken, type AdminUser } from '@/services/admin';
+import { clearSession, fetchMe, getStoredUser, getToken, logout, type AdminUser } from '@/services/admin';
 
 function publicPageFromPath(): PageName {
   return window.location.pathname.startsWith('/rencana-aksi') ? 'rencana-aksi' : 'report';
@@ -59,7 +59,11 @@ function AdminArea() {
     if (!getToken()) return;
     fetchMe()
       .then(setUser)
-      .catch(() => setUser(null))
+      .catch(() => {
+        // Token ada tapi sudah tidak valid — bersihkan sesi supaya tidak dianggap login
+        clearSession();
+        setUser(null);
+      })
       .finally(() => setChecking(false));
   }, []);
 
@@ -78,7 +82,12 @@ function AdminArea() {
     return <AdminLoginPage onSuccess={() => setUser(getStoredUser())} />;
   }
 
-  const handleLogout = () => setUser(null);
+  // Logout harus membersihkan token di localStorage (bukan hanya state) —
+  // kalau tidak, sidebar publik masih menganggap user login
+  const handleLogout = () => {
+    logout().catch(() => {});
+    setUser(null);
+  };
 
   // Kelola user khusus super admin
   if (page === 'users' && user.role === 'super_admin') {

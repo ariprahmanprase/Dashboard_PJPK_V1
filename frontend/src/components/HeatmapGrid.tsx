@@ -1,6 +1,7 @@
 import type { HeatmapRow } from '@/types';
 import { Loader2, Grid3X3 } from 'lucide-react';
 import { useState } from 'react';
+import HeatmapRenaksiModal from './HeatmapRenaksiModal';
 
 interface Props {
   data: HeatmapRow[];
@@ -31,6 +32,7 @@ function buildTooltip(row: HeatmapRow, thn: string): string {
 
 export default function HeatmapGrid({ data, loading }: Props) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [selected, setSelected] = useState<{ kode: string; tahun: string } | null>(null);
 
   if (loading) {
     return (
@@ -84,6 +86,7 @@ export default function HeatmapGrid({ data, loading }: Props) {
                     <td key={thn} style={{ padding: '1px', textAlign: 'center' }}>
                       <div
                         title={`${row.kode} — ${thn}: ${status}`}
+                        onClick={() => setSelected({ kode: row.kode, tahun: thn })}
                         onMouseEnter={e => {
                           setTooltip({ x: e.clientX, y: e.clientY, text: buildTooltip(row, thn) });
                           (e.currentTarget as HTMLElement).style.transform = 'scale(1.3)';
@@ -130,7 +133,7 @@ export default function HeatmapGrid({ data, loading }: Props) {
         ))}
       </div>
 
-      {tooltip && (
+      {tooltip && !selected && (
         <div
           style={{
             position: 'fixed',
@@ -150,6 +153,13 @@ export default function HeatmapGrid({ data, loading }: Props) {
           {tooltip.text}
         </div>
       )}
+
+      <HeatmapRenaksiModal
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        kode={selected?.kode ?? ''}
+        tahun={selected?.tahun ?? ''}
+      />
     </div>
   );
 }

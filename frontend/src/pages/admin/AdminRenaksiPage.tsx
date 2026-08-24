@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { CheckCircle2, Loader2, Pencil, Plus, Search, Trash2, X, XCircle } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
+import RenaksiProgramTable from '@/components/RenaksiProgramTable';
+import type { RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import {
   createRenaksi,
@@ -34,9 +36,44 @@ const selectStyle = {
   color: 'var(--color-text)',
 };
 
+// AdminRenaksi â†’ RenaksiProgramRow (bentuk data yang dipakai tabel & modal detail dashboard)
+// Format target/realisasi untuk tampilan tabel & modal (mengikuti jenis_target)
+function formatNilai(r: AdminRenaksi, field: 'target' | 'realisasi'): string {
+  if (r.jenis_target === 'kuantitatif') {
+    const nilai = field === 'target' ? r.target_nilai : r.realisasi_nilai;
+    if (nilai === null) return '-';
+    const num = Number(nilai);
+    const formatted = Number.isInteger(num)
+      ? num.toLocaleString('id-ID')
+      : num.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return r.target_satuan ? `${formatted} ${r.target_satuan}` : formatted;
+  }
+  const teks = field === 'target' ? r.target : r.realisasi;
+  return teks && teks !== '-' ? teks : '-';
+}
+
+function toProgramRow(r: AdminRenaksi): RenaksiProgramRow {
+  return {
+    no: r.no ?? 0,
+    tahun: r.tahun,
+    dinas: r.dinas,
+    kode_program: r.kode_program ?? '-',
+    program: r.program ?? '-',
+    rencana_aksi: r.rencana_aksi,
+    jenis_target: r.jenis_target,
+    target: formatNilai(r, 'target'),
+    realisasi: formatNilai(r, 'realisasi'),
+    kendala: r.kendala,
+    catatan: r.catatan,
+    indikator: r.indikator,
+    pilar: r.pilar,
+    status: r.status,
+  };
+}
+
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
   const isSuperAdmin = user.role === 'super_admin';
-  // Admin analis: lihat semua + isi realisasi — tanpa tambah/hapus & tanpa filter dinas
+  // Admin analis: lihat semua + isi realisasi â€” tanpa tambah/hapus & tanpa filter dinas
   const isAnalis = user.role === 'admin_analis';
   const canCreate = user.role !== 'admin_analis';
   const canDelete = user.role !== 'admin_analis';
@@ -46,11 +83,12 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tahun, setTahun] = useState('2025');
+  const [pilarId, setPilarId] = useState('');
+  const [pilarOptions, setPilarOptions] = useState<{ id: number; nama_pilar: string }[]>([]);
   const [indikatorId, setIndikatorId] = useState('');
   const [dinas, setDinas] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
-  const [viewing, setViewing] = useState<AdminRenaksi | null>(null);
   const [editing, setEditing] = useState<AdminRenaksi | null>(null);
   const [deleting, setDeleting] = useState<AdminRenaksi | null>(null);
   const [creating, setCreating] = useState(false);
@@ -58,6 +96,10 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [allIndikatorOptions, setAllIndikatorOptions] = useState<IndikatorOption[]>([]);
 
   useEffect(() => {
+    fetch('/api/filters')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setPilarOptions(d.pilar ?? []))
+      .catch(() => setPilarOptions([]));
     fetchIndikatorOptions()
       .then(setIndikatorOptions)
       .catch(() => setIndikatorOptions([]));
@@ -95,6 +137,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           tahun,
           search: search || undefined,
           indikator_id: indikatorId ? Number(indikatorId) : undefined,
+          pilar_id: pilarId ? Number(pilarId) : undefined,
           status: status || undefined,
         }),
       );
@@ -103,9 +146,20 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     } finally {
       setLoading(false);
     }
-  }, [tahun, search, indikatorId, status]);
+  }, [tahun, search, indikatorId, pilarId, status]);
 
-  // Filter dinas di client (super admin) — backend hanya menerima opd_id, dinas_options bertipe teks
+  // Cascading: ganti pilar â†’ reset indikator bila tidak cocok
+  const handlePilarChange = (value: string) => {
+    setPilarId(value);
+    if (indikatorId) {
+      const masihCocok = value !== '' && indikatorOptions.some(
+        (i) => String(i.id) === indikatorId && String(i.pilar_id) === value,
+      );
+      if (!masihCocok) setIndikatorId('');
+    }
+  };
+
+  // Filter dinas di client (super admin) â€” backend hanya menerima opd_id, dinas_options bertipe teks
   const visibleItems = dinas ? items.filter((r) => r.dinas === dinas) : items;
 
   useEffect(() => {
@@ -139,17 +193,31 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </select>
 
           <select
+            value={pilarId}
+            onChange={(e) => handlePilarChange(e.target.value)}
+            className="rounded-lg border px-4 py-3 text-sm w-full sm:w-auto sm:min-w-56"
+            style={selectStyle}
+          >
+            <option value="">Semua Pilar</option>
+            {pilarOptions.map((p) => (
+              <option key={p.id} value={p.id}>{p.nama_pilar}</option>
+            ))}
+          </select>
+
+          <select
             value={indikatorId}
             onChange={(e) => setIndikatorId(e.target.value)}
             className="rounded-lg border px-4 py-3 text-sm w-full sm:w-auto sm:min-w-56"
             style={selectStyle}
           >
             <option value="">Semua Indikator</option>
-            {indikatorOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}
-              </option>
-            ))}
+            {indikatorOptions
+              .filter((i) => !pilarId || String(i.pilar_id) === pilarId)
+              .map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + 'â€¦' : i.nama_indikator}
+                </option>
+              ))}
           </select>
 
           {(isSuperAdmin || isAnalis) && (
@@ -188,7 +256,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari rencana aksi / program…"
+              placeholder="Cari rencana aksi / programâ€¦"
               className="rounded-lg border pl-11 pr-4 py-3 text-sm w-full"
               style={selectStyle}
             />
@@ -198,7 +266,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
             className="text-xs sm:text-sm whitespace-nowrap sm:ml-auto"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            {loading ? 'Memuat…' : `${visibleItems.length} renaksi`}
+            {loading ? 'Memuatâ€¦' : `${visibleItems.length} renaksi`}
           </span>
 
           {canCreate && (
@@ -221,194 +289,34 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </p>
         )}
 
-        {/* Content */}
-        {loading ? (
-          <div
-            className="rounded-xl border flex items-center justify-center py-28"
-            style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
-          >
-            <Loader2 className="animate-spin" size={32} style={{ color: 'var(--color-text-secondary)' }} />
-          </div>
-        ) : visibleItems.length === 0 ? (
-          <div
-            className="rounded-xl border text-center py-28 px-6 text-sm"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            Tidak ada renaksi untuk filter ini.
-          </div>
-        ) : (
-          <>
-            {/* Kartu (mobile & tablet) */}
-            <div className="w-full flex flex-col gap-6 lg:hidden">
-              {visibleItems.map((r) => (
-                <RenaksiCard
-                  key={r.id}
-                  item={r}
-                  canDelete={canDelete}
-                  onEdit={() => setEditing(r)}
-                  onDelete={() => setDeleting(r)}
-                />
-              ))}
-            </div>
-
-            {/* Tabel (desktop) — disamakan dengan tabel menu Rencana Aksi */}
-            <div
-              className="hidden lg:block w-full rounded-xl border overflow-hidden"
-              style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: 1400 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['No', 'Dinas', 'Kode Program', 'Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Status', 'Aksi'].map((h) => (
-                        <th
-                          key={h}
-                          className="text-left font-medium uppercase tracking-wider"
-                          style={{
-                            color: 'var(--color-text-secondary)',
-                            fontSize: '0.688rem',
-                            padding: '0.875rem 1.25rem',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleItems.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
-                        style={{ borderBottom: '1px solid var(--color-border)' }}
-                        onClick={() => setViewing(r)}
-                      >
-                        <td
-                          className="align-middle"
-                          style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}
-                        >
-                          {r.no}
-                        </td>
-                        <td
-                          className="align-middle"
-                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 120 }}
-                        >
-                          <span className="line-clamp-2">{r.dinas}</span>
-                        </td>
-                        <td
-                          className="align-middle font-mono"
-                          style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 100 }}
-                        >
-                          <span className="line-clamp-2">{r.kode_program ?? '-'}</span>
-                        </td>
-                        <td
-                          className="align-middle"
-                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}
-                        >
-                          <span className="line-clamp-2">{r.program ?? '-'}</span>
-                        </td>
-                        <td
-                          className="align-middle font-medium"
-                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 280 }}
-                        >
-                          <span className="line-clamp-2">{r.rencana_aksi}</span>
-                        </td>
-                        <td
-                          className="align-middle font-mono"
-                          style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', whiteSpace: 'nowrap' }}
-                        >
-                          {r.tahun}
-                        </td>
-                        <td
-                          className="align-middle"
-                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
-                        >
-                          <span className="line-clamp-2">{formatNilai(r, 'target')}</span>
-                        </td>
-                        <td
-                          className="align-middle"
-                          style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
-                        >
-                          <span className="line-clamp-2">{formatNilai(r, 'realisasi')}</span>
-                        </td>
-                        <td className="align-middle" style={{ padding: '0.75rem 1.25rem', maxWidth: 180 }}>
-                          {r.indikator && r.indikator.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {r.indikator.slice(0, 2).map((ind, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-block px-2 py-0.5 rounded text-xs"
-                                  style={{ backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-secondary)' }}
-                                >
-                                  {ind}
-                                </span>
-                              ))}
-                              {r.indikator.length > 2 && (
-                                <span
-                                  className="inline-block px-2 py-0.5 rounded text-xs"
-                                  style={{ backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-secondary)' }}
-                                >
-                                  +{r.indikator.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          ) : '-'}
-                        </td>
-                        <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
-                          <StatusPill status={r.status} />
-                        </td>
-                        <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditing(r);
-                              }}
-                              className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-                              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', padding: '0.5rem 0.875rem' }}
-                            >
-                              <Pencil size={13} /> Edit
-                            </button>
-                            {canDelete && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleting(r);
-                                }}
-                                className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
-                                style={{ borderColor: '#fca5a5', color: '#dc2626', padding: '0.5rem 0.875rem' }}
-                              >
-                                <Trash2 size={13} /> Hapus
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
+        {/* Content â€” tabel & modal detail persis seperti dashboard, + kolom Aksi */}
+        <RenaksiProgramTable
+          data={visibleItems.map(toProgramRow)}
+          loading={loading}
+          actions={{
+            onEdit: (row) => {
+              const original = visibleItems.find((r) => r.no === row.no && r.rencana_aksi === row.rencana_aksi);
+              if (original) setEditing(original);
+            },
+            ...(canDelete
+              ? {
+                  onDelete: (row: RenaksiProgramRow) => {
+                    const original = visibleItems.find((r) => r.no === row.no && r.rencana_aksi === row.rencana_aksi);
+                    if (original) setDeleting(original);
+                  },
+                }
+              : {}),
+          }}
+        />
       </div>
-
-      {/* Modal detail (klik baris) — seperti modal tabel Rencana Aksi di dashboard */}
-      {viewing && !editing && (
-        <DetailModal item={viewing} onClose={() => setViewing(null)} />
-      )}
 
       {editing && (
         <EditModal
           item={editing}
           isSuperAdmin={isSuperAdmin}
           isAnalis={isAnalis}
-          // Analis & super admin: daftar semua indikator; admin OPD tidak bisa ubah indikator
-          indikatorOptions={isSuperAdmin || isAnalis ? allIndikatorOptions : indikatorOptions}
+          // Semua role mendapat daftar lengkap indikator (admin OPD boleh menautkan, super admin merevisi)
+          indikatorOptions={allIndikatorOptions}
           satuanOptions={satuanOptions}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -447,250 +355,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   );
 }
 
-function RenaksiCard({ item, canDelete, onEdit, onDelete }: { item: AdminRenaksi; canDelete: boolean; onEdit: () => void; onDelete: () => void }) {
-  return (
-    <div
-      className="rounded-xl border p-6 flex flex-col gap-6"
-      style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-            #{item.no} · {item.dinas}
-            {item.kode_program && item.kode_program !== '-' ? ` · ${item.kode_program}` : ''}
-            {item.program ? ` · ${item.program}` : ''}
-          </p>
-          <p className="text-sm font-medium mt-2.5 leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            {item.rencana_aksi}
-          </p>
-        </div>
-        <StatusPill status={item.status} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div
-          className="rounded-lg p-4"
-          style={{ backgroundColor: 'var(--color-bg)' }}
-        >
-          <p className="text-xs mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Target</p>
-          <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-            {formatNilai(item, 'target')}
-          </p>
-        </div>
-        <div
-          className="rounded-lg p-4"
-          style={{ backgroundColor: 'var(--color-bg)' }}
-        >
-          <p className="text-xs mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Realisasi</p>
-          <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-            {formatNilai(item, 'realisasi')}
-          </p>
-        </div>
-      </div>
-
-      <div className={`grid gap-3 ${canDelete ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        <button
-          onClick={onEdit}
-          className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
-        >
-          <Pencil size={14} /> Isi Realisasi
-        </button>
-        {canDelete && (
-          <button
-            onClick={onDelete}
-            className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
-            style={{ borderColor: '#fca5a5', color: '#dc2626' }}
-          >
-            <Trash2 size={14} /> Hapus
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function formatNilai(r: AdminRenaksi, field: 'target' | 'realisasi'): string {
-  if (r.jenis_target === 'kuantitatif') {
-    const nilai = field === 'target' ? r.target_nilai : r.realisasi_nilai;
-    if (nilai === null) return '-';
-    const num = Number(nilai);
-    const formatted = Number.isInteger(num)
-      ? num.toLocaleString('id-ID')
-      : num.toLocaleString('id-ID', { maximumFractionDigits: 2 });
-    return r.target_satuan ? `${formatted} ${r.target_satuan}` : formatted;
-  }
-  const teks = field === 'target' ? r.target : r.realisasi;
-  return teks && teks !== '-' ? teks : '-';
-}
-
-function StatusPill({ status }: { status: string }) {
-  const st = renaksiStatusStyle(status);
-  return (
-    <span
-      className="inline-flex items-center font-medium rounded-lg whitespace-nowrap shrink-0"
-      style={{
-        padding: '0.25rem 0.75rem',
-        fontSize: '0.75rem',
-        backgroundColor: st.bg,
-        color: st.color,
-      }}
-    >
-      {status === 'Tidak Tercapai' ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
-      <span className="ml-1">{st.label}</span>
-    </span>
-  );
-}
-
-// ── Modal detail (klik baris) — gaya RenaksiProgramModal dashboard ──
-function DetailModal({ item, onClose }: { item: AdminRenaksi; onClose: () => void }) {
-  const st = renaksiStatusStyle(item.status);
-  const tercapai = item.status === 'Tercapai' || item.status === 'Hampir Tercapai';
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-2xl shadow-2xl w-full mx-4 overflow-hidden"
-        style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-          maxWidth: 700,
-          maxHeight: '80vh',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between"
-          style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)' }}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="p-2 rounded-lg shrink-0"
-              style={{ backgroundColor: st.bg }}
-            >
-              {tercapai || item.status === 'Belum diisi' ? (
-                <CheckCircle2 size={20} style={{ color: st.color }} />
-              ) : (
-                <XCircle size={20} style={{ color: st.color }} />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                {item.dinas} — {item.kode_program ?? '-'}
-              </p>
-              <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)' }}>
-                {item.program ?? '-'}
-              </h3>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                {item.rencana_aksi}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)', padding: '1.5rem' }}>
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                Tahun
-              </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-                {item.tahun}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                Target
-              </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-                {formatNilai(item, 'target')}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                Realisasi
-              </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-                {formatNilai(item, 'realisasi')}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                Status
-              </p>
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: st.bg, color: st.color }}
-              >
-                {tercapai || item.status === 'Belum diisi' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                {st.label}
-              </span>
-            </div>
-          </div>
-
-          <div
-            className="flex flex-col gap-6 pt-8 mt-2"
-            style={{ borderTop: '1px solid var(--color-border)' }}
-          >
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-                Kendala
-              </p>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>
-                {item.kendala || '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-                Catatan
-              </p>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>
-                {item.catatan || '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-                Indikator Terkait
-              </p>
-              {item.indikator && item.indikator.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {item.indikator.map((ind, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 rounded-lg text-xs font-medium"
-                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}
-                    >
-                      {ind}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>-</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Edit modal ──────────────────────────────────────
+// â”€â”€ Edit modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface EditModalProps {
   item: AdminRenaksi;
   isSuperAdmin: boolean;
@@ -707,14 +372,14 @@ const SATUAN_CUSTOM = '__custom__';
 function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
   // Field target/realisasi/kendala/catatan hanya bisa diubah super admin & admin OPD
   const canEditFields = !isAnalis;
-  // Tautan indikator bisa diubah super admin & admin analis
-  const canEditIndikator = isSuperAdmin || isAnalis;
+  // Tautan indikator bisa diubah semua role (admin OPD menautkan sendiri, super admin merevisi bila kurang tepat)
+  const canEditIndikator = true;
   const isKuantitatif = item.jenis_target === 'kuantitatif';
   const [status, setStatus] = useState(item.status);
   const [realisasiNilai, setRealisasiNilai] = useState(item.realisasi_nilai ?? '');
   const [realisasiTeks, setRealisasiTeks] = useState(item.realisasi ?? '');
   const [targetNilai, setTargetNilai] = useState(item.target_nilai ?? '');
-  // Satuan: dropdown dari satuan yang sudah ada + opsi "Tambahkan satuan…" (input custom)
+  // Satuan: dropdown dari satuan yang sudah ada + opsi "Tambahkan satuanâ€¦" (input custom)
   const [satuanChoice, setSatuanChoice] = useState<string>(() =>
     item.target_satuan && !satuanOptions.includes(item.target_satuan) ? SATUAN_CUSTOM : (item.target_satuan ?? ''),
   );
@@ -800,7 +465,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
               {isAnalis ? 'Tentukan Status & Indikator' : 'Isi Realisasi'}
             </h2>
             <p className="text-xs sm:text-sm mt-2 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              {item.dinas} · {item.tahun} · {item.rencana_aksi}
+              {item.dinas} Â· {item.tahun} Â· {item.rencana_aksi}
             </p>
           </div>
           <button
@@ -838,11 +503,11 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                   className={inputClass}
                   style={inputStyle}
                 >
-                  <option value="">— Pilih satuan —</option>
+                  <option value="">â€” Pilih satuan â€”</option>
                   {satuanOptions.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  {isSuperAdmin && <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>}
+                  {isSuperAdmin && <option value={SATUAN_CUSTOM}>ï¼‹ Tambahkan satuanâ€¦</option>}
                 </select>
                 {isSuperAdmin && satuanChoice === SATUAN_CUSTOM && (
                   <input
@@ -893,7 +558,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                 rows={3}
                 className={inputClass}
                 style={inputStyle}
-                placeholder="Uraian realisasi…"
+                placeholder="Uraian realisasiâ€¦"
               />
             </Field>
           )}
@@ -931,7 +596,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
             </Field>
           )}
 
-          {/* Tautan indikator — super admin & admin analis boleh mengubah */}
+          {/* Tautan indikator â€” super admin & admin analis boleh mengubah */}
           {canEditIndikator && (
             <Field label="Indikator terkait (maks. 4, kosongkan untuk menghapus)">
               <div className="flex flex-col gap-3">
@@ -949,14 +614,14 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
                     className={inputClass}
                     style={inputStyle}
                   >
-                    <option value="">— Slot {slot + 1}: kosong —</option>
+                    <option value="">â€” Slot {slot + 1}: kosong â€”</option>
                     {indikatorOptions.map((i) => (
                       <option
                         key={i.id}
                         value={i.id}
                         disabled={indikatorIds.includes(i.id) && val !== i.id}
                       >
-                        {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
+                        {i.kode ? `${i.kode} â€” ` : ''}{i.nama_indikator}
                       </option>
                     ))}
                   </select>
@@ -1012,7 +677,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {saving && <Loader2 className="animate-spin" size={14} />}
-              {saving ? 'Menyimpan…' : 'Simpan'}
+              {saving ? 'Menyimpanâ€¦' : 'Simpan'}
             </button>
           </div>
         </form>
@@ -1021,7 +686,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   );
 }
 
-// ── Modal tambah renaksi baru ───────────────────────
+// â”€â”€ Modal tambah renaksi baru â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface CreateModalProps {
   defaultTahun: string;
   isSuperAdmin: boolean;
@@ -1091,15 +756,15 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
     }
   };
 
-  // Preview status otomatis untuk renaksi kuantitatif (admin OPD) — mengikuti rumus backend
+  // Preview status otomatis untuk renaksi kuantitatif (admin OPD) â€” mengikuti rumus backend
   const statusPreview = (() => {
     if (jenisTarget !== 'kuantitatif') {
-      return { text: '—', keterangan: '' };
+      return { text: 'â€”', keterangan: '' };
     }
     if (targetNilai === '' || realisasiNilai === '') {
       return {
         text: 'Belum diisi',
-        keterangan: 'Lengkapi target dan realisasi — status akan keluar otomatis berdasarkan rumus capaian.',
+        keterangan: 'Lengkapi target dan realisasi â€” status akan keluar otomatis berdasarkan rumus capaian.',
       };
     }
     const t = Number(targetNilai);
@@ -1108,10 +773,10 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
       return { text: 'Belum diisi', keterangan: 'Target harus lebih dari 0 agar status bisa dihitung.' };
     }
     if (r >= t) {
-      return { text: 'Tercapai', keterangan: `Realisasi (${r}) ≥ 100% target (${t}).` };
+      return { text: 'Tercapai', keterangan: `Realisasi (${r}) â‰¥ 100% target (${t}).` };
     }
     if (r >= t * 0.9) {
-      return { text: 'Hampir Tercapai', keterangan: `Realisasi (${r}) ≥ 90% target (${t}).` };
+      return { text: 'Hampir Tercapai', keterangan: `Realisasi (${r}) â‰¥ 90% target (${t}).` };
     }
     return { text: 'Tidak Tercapai', keterangan: `Realisasi (${r}) < 90% target (${t}).` };
   })();
@@ -1177,7 +842,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                 className={inputClass}
                 style={inputStyle}
               >
-                <option value="">— Pilih dinas —</option>
+                <option value="">â€” Pilih dinas â€”</option>
                 {opdOptions.map((o) => (
                   <option key={o.id} value={o.id}>{o.nama_opd}</option>
                 ))}
@@ -1202,7 +867,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                 onChange={(e) => setProgram(e.target.value)}
                 className={inputClass}
                 style={inputStyle}
-                placeholder="Nama program…"
+                placeholder="Nama programâ€¦"
                 maxLength={255}
               />
             </Field>
@@ -1216,7 +881,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               rows={3}
               className={inputClass}
               style={inputStyle}
-              placeholder="Uraian rencana aksi…"
+              placeholder="Uraian rencana aksiâ€¦"
             />
           </Field>
 
@@ -1254,11 +919,11 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                     className={inputClass}
                     style={inputStyle}
                   >
-                    <option value="">— Pilih satuan —</option>
+                    <option value="">â€” Pilih satuan â€”</option>
                     {satuanOptions.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                    <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>
+                    <option value={SATUAN_CUSTOM}>ï¼‹ Tambahkan satuanâ€¦</option>
                   </select>
                   {satuanChoice === SATUAN_CUSTOM && (
                     <input
@@ -1294,7 +959,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                   rows={2}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Uraian target…"
+                  placeholder="Uraian targetâ€¦"
                 />
               </Field>
               <Field label="Realisasi">
@@ -1304,7 +969,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
                   rows={2}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Uraian realisasi…"
+                  placeholder="Uraian realisasiâ€¦"
                 />
               </Field>
             </>
@@ -1328,45 +993,42 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
             </Field>
           )}
 
-          {/* Indikator: super admin memilih; admin OPD hanya melihat keterangan (ditambahkan admin terkait) */}
-          {isSuperAdmin ? (
-            <Field label="Indikator terkait (maks. 4)">
-              <div className="flex flex-col gap-3">
-                {indikatorIds.map((val, slot) => (
-                  <select
-                    key={slot}
-                    value={val}
-                    onChange={(e) =>
-                      setIndikatorIds((prev) => {
-                        const next = [...prev];
-                        next[slot] = e.target.value === '' ? '' : Number(e.target.value);
-                        return next;
-                      })
-                    }
-                    className={inputClass}
-                    style={inputStyle}
-                  >
-                    <option value="">— Slot {slot + 1}: kosong —</option>
-                    {indikatorOptions.map((i) => (
-                      <option
-                        key={i.id}
-                        value={i.id}
-                        disabled={indikatorIds.includes(i.id) && val !== i.id}
-                      >
-                        {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
-                      </option>
-                    ))}
-                  </select>
-                ))}
-              </div>
-            </Field>
-          ) : (
-            <Field label="Indikator terkait">
+          {/* Indikator: semua role boleh memilih; bila kurang tepat super admin yang merevisi */}
+          <Field label="Indikator terkait (maks. 4)">
+            <div className="flex flex-col gap-3">
+              {indikatorIds.map((val, slot) => (
+                <select
+                  key={slot}
+                  value={val}
+                  onChange={(e) =>
+                    setIndikatorIds((prev) => {
+                      const next = [...prev];
+                      next[slot] = e.target.value === '' ? '' : Number(e.target.value);
+                      return next;
+                    })
+                  }
+                  className={inputClass}
+                  style={inputStyle}
+                >
+                  <option value="">â€” Slot {slot + 1}: kosong â€”</option>
+                  {indikatorOptions.map((i) => (
+                    <option
+                      key={i.id}
+                      value={i.id}
+                      disabled={indikatorIds.includes(i.id) && val !== i.id}
+                    >
+                      {i.kode ? `${i.kode} â€” ` : ''}{i.nama_indikator}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+            {!isSuperAdmin && (
               <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                Tautan indikator ditambahkan kemudian oleh admin analis.
+                Pilih indikator yang dituju rencana aksi ini. Bila kurang tepat, super admin akan merevisi.
               </p>
-            </Field>
-          )}
+            )}
+          </Field>
 
           <Field label="Kendala">
             <textarea
@@ -1413,7 +1075,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {saving && <Loader2 className="animate-spin" size={14} />}
-              {saving ? 'Menyimpan…' : 'Simpan'}
+              {saving ? 'Menyimpanâ€¦' : 'Simpan'}
             </button>
           </div>
         </form>
@@ -1422,7 +1084,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
   );
 }
 
-// ── Modal konfirmasi hapus renaksi (super admin) ────
+// â”€â”€ Modal konfirmasi hapus renaksi (super admin) â”€â”€â”€â”€
 function DeleteRenaksiModal({
   item, onClose, onDeleted,
 }: {
@@ -1487,7 +1149,7 @@ function DeleteRenaksiModal({
             style={{ backgroundColor: '#dc2626' }}
           >
             {deleting && <Loader2 className="animate-spin" size={14} />}
-            {deleting ? 'Menghapus…' : 'Ya, hapus'}
+            {deleting ? 'Menghapusâ€¦' : 'Ya, hapus'}
           </button>
         </div>
       </div>

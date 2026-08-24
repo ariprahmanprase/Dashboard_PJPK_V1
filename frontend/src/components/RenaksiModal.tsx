@@ -1,5 +1,6 @@
 import { X, Loader2, FileX } from 'lucide-react';
 import type { RenaksiItem } from '@/types';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
 interface Props {
   open: boolean;
@@ -178,21 +179,15 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                     </td>
                     <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
                       <span
-                        className={`inline-block font-medium rounded-lg ${item.status === 'Tidak Terlaksana' ? 'alert-badge-renaksi' : ''}`}
+                        className="inline-block font-medium rounded-lg"
                         style={{
                           padding: '0.25rem 0.75rem',
                           fontSize: '0.75rem',
-                          backgroundColor:
-                            item.status === 'Terlaksana'
-                              ? 'rgba(34, 197, 94, 0.1)'
-                              : 'rgba(239, 68, 68, 0.1)',
-                          color:
-                            item.status === 'Terlaksana'
-                              ? '#16a34a'
-                              : '#dc2626',
+                          backgroundColor: renaksiStatusStyle(item.status).bg,
+                          color: renaksiStatusStyle(item.status).color,
                         }}
                       >
-                        {item.status}
+                        {renaksiStatusStyle(item.status).label}
                       </span>
                     </td>
                     <td

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, FileX } from 'lucide-react';
-import type { IndikatorDetail } from '@/types';
+import { X, Loader2, FileX, ListChecks } from 'lucide-react';
+import type { IndikatorDetail, IndikatorRenaksiProgram } from '@/types';
+import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
 interface Props {
   open: boolean;
@@ -205,6 +206,64 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
               ) : (
                 <EmptyField label="Inovasi" />
               )}
+
+              {/* Divider */}
+              <div style={{ borderBottom: '1px solid var(--color-border)', margin: '0.5rem 0 1.25rem' }} />
+
+              {/* Rencana Aksi + Status */}
+              <div>
+                <div className="flex items-center gap-2" style={labelStyle}>
+                  <ListChecks size={13} />
+                  <span>Rencana Aksi ({detail.renaksi_programs?.length ?? 0})</span>
+                </div>
+                {!detail.renaksi_programs || detail.renaksi_programs.length === 0 ? (
+                  <p style={{ ...valueStyle, fontStyle: 'italic', opacity: 0.5 }}>
+                    Belum ada rencana aksi untuk indikator ini
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {detail.renaksi_programs.map((r: IndikatorRenaksiProgram) => {
+                      const st = renaksiStatusStyle(r.status);
+                      return (
+                        <div
+                          key={r.id}
+                          style={{
+                            backgroundColor: 'var(--color-bg-tertiary)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '0.5rem',
+                            padding: '0.625rem 0.875rem',
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ ...valueStyle, fontWeight: 500, lineHeight: 1.4 }}>
+                                {r.rencana_aksi}
+                              </p>
+                              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                                {r.dinas} · {r.tahun}
+                                {r.target !== '-' ? ` · Target: ${r.target}` : ''}
+                                {r.realisasi !== '-' ? ` · Realisasi: ${r.realisasi}` : ''}
+                              </p>
+                            </div>
+                            <span
+                              className="shrink-0 font-medium rounded-lg"
+                              style={{
+                                padding: '0.2rem 0.625rem',
+                                fontSize: '0.6875rem',
+                                backgroundColor: st.bg,
+                                color: st.color,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {st.label}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
         </div>

@@ -44,7 +44,7 @@ class AdminIndikatorController extends Controller
         $target = $validated['target'] ?? null;
         $capaian = $validated['capaian'] ?? null;
         $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
-        $status = app(\App\Services\DashboardService::class)->calcStatusTL($target, $capaian);
+        $status = app(\App\Services\DashboardService::class)->calcStatusTL($target, $capaian, $indikator->arah_target);
 
         TargetCapaian::updateOrCreate(
             ['indikator_id' => $indikator->id, 'tahun' => $validated['tahun']],

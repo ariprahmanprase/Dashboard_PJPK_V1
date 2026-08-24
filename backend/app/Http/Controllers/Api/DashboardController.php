@@ -99,6 +99,12 @@ class DashboardController extends Controller
         return response()->json($service->getChartPerPilar($filters));
     }
 
+    public function chartPerIndikator(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun', 'status_tl']);
+        return response()->json($service->getChartPerIndikator($filters));
+    }
+
     public function rencanaAksiSummary(Request $request, DashboardService $service)
     {
         $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'tahun']);
@@ -113,7 +119,7 @@ class DashboardController extends Controller
 
     public function renaksiProgramList(Request $request, DashboardService $service)
     {
-        $filters = $request->only(['opd_id', 'indikator_id', 'status_renaksi', 'search', 'tahun', 'dinas']);
+        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'status_renaksi', 'search', 'tahun', 'dinas']);
         return response()->json($service->getRenaksiProgramList($filters));
     }
 

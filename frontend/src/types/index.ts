@@ -14,6 +14,7 @@ export interface IndikatorOption {
   id: number;
   kode: string;
   nama_indikator: string;
+  pilar_id: number;
 }
 
 export interface FilterOptions {
@@ -47,6 +48,7 @@ export interface TableRow {
   capaian: number | null;
   gap: number | null;
   pct_gap: number | null;
+  arah_target: string | null;
   satuan: string;
   tahun: string | null;
   sumber_data: string;
@@ -63,6 +65,7 @@ export interface RenaksiItem {
   status: string;
   catatan: string | null;
   opd: string;
+  indikator?: string;
 }
 
 export interface RenaksiResponse {
@@ -81,9 +84,10 @@ export interface ChartDataPoint {
 }
 
 export interface RenaksiPieData {
-  terlaksana: number;
-  tidak_terlaksana: number;
-  belum_input: number;
+  tercapai: number;
+  hampir_tercapai: number;
+  tidak_tercapai: number;
+  belum_diisi: number;
 }
 
 export interface RenaksiListItem {
@@ -148,6 +152,11 @@ export interface ChartPilarEntry {
   data: ChartDataPoint[];
 }
 
+export interface ChartIndikatorEntry {
+  indikator: string;
+  data: ChartDataPoint[];
+}
+
 export interface DashboardFilters {
   opd_id?: string;
   pilar_id?: string;
@@ -178,6 +187,19 @@ export interface RencanaAksiSummary {
   persentase: number;
 }
 
+export interface IndikatorRenaksiProgram {
+  id: number;
+  tahun: string;
+  dinas: string;
+  program: string;
+  rencana_aksi: string;
+  target: string;
+  realisasi: string;
+  status: string;
+  kendala: string | null;
+  catatan: string | null;
+}
+
 export interface IndikatorDetail {
   kode: string;
   nama_indikator: string;
@@ -188,6 +210,7 @@ export interface IndikatorDetail {
   dokrenda: string;
   kendala: string | null;
   inovasi: string | null;
+  renaksi_programs?: IndikatorRenaksiProgram[];
 }
 
 export interface RenaksiProgramRow {
@@ -203,6 +226,7 @@ export interface RenaksiProgramRow {
   kendala: string | null;
   catatan: string | null;
   indikator: string[];
+  pilar: string[];
   status: string;
 }
 

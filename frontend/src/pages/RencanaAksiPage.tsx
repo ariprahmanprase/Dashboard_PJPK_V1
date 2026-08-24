@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, FileText, Loader2, FileX, Table2, Grid, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, Filter, FileText, Loader2, FileX, Table2, Grid, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import FilterBar from '@/components/FilterBar';
 import ScoreCard from '@/components/ScoreCard';
 import type { RenaksiProgramRow, RenaksiProgramSummary, FilterOptions, RencanaAksiRow, RencanaAksiSummary, IndikatorOption } from '@/types';
@@ -26,6 +26,31 @@ export default function RencanaAksiPage() {
   const [indikatorId, setIndikatorId] = useState('');
   const [statusRenaksi, setStatusRenaksi] = useState('');
   const [search, setSearch] = useState('');
+
+  // ── Reset semua filter ──
+  function handleResetFilter() {
+    setTahun('');
+    setPilarId('');
+    setOpdId('');
+    setDinas('');
+    setIndikatorId('');
+    setStatusRenaksi('');
+    setSearch('');
+  }
+
+  const hasActiveFilter = Boolean(tahun || pilarId || opdId || dinas || indikatorId || statusRenaksi || search);
+
+  // ── Cascading: ganti pilar → reset indikator bila tidak cocok ──
+  function handlePilarChange(value: string) {
+    setPilarId(value);
+    if (indikatorId) {
+      const sumber = activeTab === 'program' ? programIndikatorList : (filterOptions?.indikator ?? []);
+      const masihCocok = value !== '' && sumber.some(
+        i => String(i.id) === indikatorId && String(i.pilar_id) === value
+      );
+      if (!masihCocok) setIndikatorId('');
+    }
+  }
 
   // Data Program (Excel)
   const [programData, setProgramData] = useState<RenaksiProgramRow[]>([]);
@@ -64,6 +89,7 @@ export default function RencanaAksiPage() {
       const progParams = new URLSearchParams();
       if (tahun) progParams.set('tahun', tahun);
       if (dinas) progParams.set('dinas', dinas);
+      if (pilarId) progParams.set('pilar_id', pilarId);
       if (indikatorId) progParams.set('indikator_id', indikatorId);
       if (statusRenaksi) progParams.set('status_renaksi', statusRenaksi);
       if (search) progParams.set('search', search);
@@ -187,7 +213,7 @@ export default function RencanaAksiPage() {
       ) : activeTab === 'program' ? (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5" style={{ gap: '0.75rem' }}>
           <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" />
-          <ScoreCard label="Total Dinas" value={programSummary?.total_dinas ?? 0} variant="info" />
+          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" />
           <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" />
           <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" />
           <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" />
@@ -214,37 +240,34 @@ export default function RencanaAksiPage() {
             {['2025', '2026', '2027', '2028', '2029'].map(t => <option key={t} value={t}>{t}</option>)}
           </select>
 
-          {/* Pilar - only show for Indikator tab */}
-          {activeTab === 'indikator' && (
-            <select value={pilarId} onChange={e => setPilarId(e.target.value)} style={{ ...baseSelect, minWidth: 200 }}>
-              <option value="">Semua Pilar</option>
-              {filterOptions?.pilar.map(p => <option key={p.id} value={p.id}>{p.nama_pilar}</option>)}
-            </select>
-          )}
+          {/* Pilar - show for both tabs; mempersempit opsi indikator */}
+          <select value={pilarId} onChange={e => handlePilarChange(e.target.value)} style={{ ...baseSelect, minWidth: 200 }}>
+            <option value="">Semua Pilar</option>
+            {filterOptions?.pilar.map(p => <option key={p.id} value={p.id}>{p.nama_pilar}</option>)}
+          </select>
 
-          {/* OPD - only show for Indikator tab */}
-          {activeTab === 'indikator' && (
+          {/* Indikator - show for both tabs; menyesuaikan pilar yang dipilih */}
+          <select value={indikatorId} onChange={e => setIndikatorId(e.target.value)} style={{ ...baseSelect, minWidth: 220 }}>
+            <option value="">Semua Indikator</option>
+            {(activeTab === 'program' ? programIndikatorList : filterOptions?.indikator ?? [])
+              .filter(i => !pilarId || String(i.pilar_id) === pilarId)
+              .map(i => (
+                <option key={i.id} value={i.id}>{i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}</option>
+              ))}
+          </select>
+
+          {/* OPD yang mengampu - tab indikator pakai OPD master, tab program pakai dinas dari data renaksi */}
+          {activeTab === 'indikator' ? (
             <select value={opdId} onChange={e => setOpdId(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
-              <option value="">Semua OPD</option>
+              <option value="">Semua OPD yang mengampu</option>
               {filterOptions?.opd.map(o => <option key={o.id} value={o.id}>{o.kode_opd}</option>)}
             </select>
-          )}
-
-          {/* Dinas - only show for Program tab */}
-          {activeTab === 'program' && (
+          ) : (
             <select value={dinas} onChange={e => setDinas(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
-              <option value="">Semua Dinas</option>
+              <option value="">Semua OPD yang mengampu</option>
               {dinasList.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           )}
-
-          {/* Indikator - show for both tabs; tab Program hanya indikator yang dipakai di rencana aksi */}
-          <select value={indikatorId} onChange={e => setIndikatorId(e.target.value)} style={{ ...baseSelect, minWidth: 220 }}>
-            <option value="">Semua Indikator</option>
-            {(activeTab === 'program' ? programIndikatorList : filterOptions?.indikator ?? []).map(i => (
-              <option key={i.id} value={i.id}>{i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}</option>
-            ))}
-          </select>
 
           {/* Status - show for both */}
           <select value={statusRenaksi} onChange={e => setStatusRenaksi(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
@@ -276,6 +299,31 @@ export default function RencanaAksiPage() {
               }}
             />
           </div>
+
+          {/* Reset */}
+          <button
+            type="button"
+            onClick={handleResetFilter}
+            disabled={!hasActiveFilter}
+            title="Reset semua filter"
+            style={{
+              height: 40,
+              padding: '0 0.875rem',
+              borderRadius: '0.5rem',
+              border: '1px solid var(--color-border)',
+              backgroundColor: hasActiveFilter ? 'var(--color-bg-secondary)' : 'transparent',
+              color: 'var(--color-text-secondary)',
+              fontSize: '0.875rem',
+              cursor: hasActiveFilter ? 'pointer' : 'default',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              opacity: hasActiveFilter ? 1 : 0.5,
+            }}
+          >
+            <RotateCcw size={14} />
+            Reset
+          </button>
         </div>
       </div>
 

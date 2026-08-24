@@ -15,6 +15,41 @@ class ExcelImportService
     private array $pilarMap = [];       // no_pilar => id
     private array $opdMap = [];         // nama_opd => id
     private array $indikatorMap = [];   // kode => id
+    private array $arahMap = [];        // indikator_id => arah_target
+
+    /** Arah target per kode indikator (Panduan arah target tiap indikator) */
+    private const ARAH_BY_KODE = [
+        'P1-01' => 'Maintain / Stable',
+        'P1-02' => 'Lower Better',
+        'P1-03' => 'Higher Better',
+        'P2-01' => 'Higher Better',
+        'P2-02' => 'Higher Better',
+        'P2-03' => 'Higher Better',
+        'P2-04' => 'Lower Better',
+        'P2-05' => 'Lower Better',
+        'P2-06' => 'Lower Better',
+        'P2-07' => 'Lower Better',
+        'P2-08' => 'Higher Better',
+        'P2-09' => 'Lower Better',
+        'P2-10' => 'Higher Better',
+        'P2-11' => 'Lower Better',
+        'P2-12' => 'Higher Better',
+        'P2-13' => 'Lower Better',
+        'P2-14' => 'Higher Better',
+        'P3-01' => 'Higher Better',
+        'P3-02' => 'Higher Better',
+        'P3-03' => 'Higher Better',
+        'P3-04' => 'Higher Better',
+        'P3-05' => 'Higher Better',
+        'P3-06' => 'Higher Better',
+        'P3-07' => 'Higher Better',
+        'P4-01' => 'Higher Better',
+        'P4-02' => 'Proportional',
+        'P5-01' => 'Higher Better',
+        'P5-02' => 'Higher Better',
+        'P5-03' => 'Higher Better',
+        'P5-04' => 'Higher Better',
+    ];
 
     public function import(string $filePath): array
     {
@@ -163,9 +198,11 @@ class ExcelImportService
                     'dokrenda'        => $d ?: null,
                     'kendala'         => $this->cell($sheet, 'M', $r) ?: null,
                     'inovasi'         => $this->cell($sheet, 'N', $r) ?: null,
+                    'arah_target'     => self::ARAH_BY_KODE[$kode] ?? 'Higher Better',
                 ]);
 
                 $this->indikatorMap[$kode] = $indikator->id;
+                $this->arahMap[$indikator->id] = $indikator->arah_target;
 
                 // Insert pivot indikator_opd
                 foreach ($opdNames as $namaOpd) {
@@ -240,7 +277,11 @@ class ExcelImportService
                     }
 
                     // Status & warna
-                    $status = $this->calcStatusTL($targetNum, $capaianNum);
+                    $status = app(DashboardService::class)->calcStatusTL(
+                        $targetNum,
+                        $capaianNum,
+                        $this->arahMap[$this->indikatorMap[$kode]] ?? null
+                    );
 
                     TargetCapaian::create([
                         'indikator_id' => $this->indikatorMap[$kode],
@@ -350,17 +391,4 @@ class ExcelImportService
      * else → Alert.
      * NULL target/capaian → Belum Diisi.
      */
-    private function calcStatusTL($target, $capaian): array
-    {
-        if ($capaian === null || $target === null || $target == 0) {
-            return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
-        }
-        if ($capaian >= $target) {
-            return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
-        }
-        if ($capaian >= $target * 0.9) {
-            return ['status_tl' => 'Warning', 'warna_tl' => 'Kuning'];
-        }
-        return ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
-    }
 }

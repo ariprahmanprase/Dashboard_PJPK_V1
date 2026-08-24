@@ -27,12 +27,14 @@ export interface AdminRenaksi {
   status: 'Tercapai' | 'Hampir Tercapai' | 'Tidak Tercapai' | 'Belum diisi';
   indikator: string[];
   indikator_ids: number[];
+  pilar: string[];
 }
 
 export interface IndikatorOption {
   id: number;
   kode: string | null;
   nama_indikator: string;
+  pilar_id?: number;
 }
 
 const TOKEN_KEY = 'pjpk_admin_token';
@@ -114,11 +116,12 @@ export async function fetchMe(): Promise<AdminUser> {
   return data.user;
 }
 
-export async function fetchAdminRenaksi(params: { tahun?: string; search?: string; indikator_id?: number; opd_id?: number; status?: string } = {}): Promise<AdminRenaksi[]> {
+export async function fetchAdminRenaksi(params: { tahun?: string; search?: string; indikator_id?: number; pilar_id?: number; opd_id?: number; status?: string } = {}): Promise<AdminRenaksi[]> {
   const qs = new URLSearchParams();
   if (params.tahun) qs.set('tahun', params.tahun);
   if (params.search) qs.set('search', params.search);
   if (params.indikator_id) qs.set('indikator_id', String(params.indikator_id));
+  if (params.pilar_id) qs.set('pilar_id', String(params.pilar_id));
   if (params.opd_id) qs.set('opd_id', String(params.opd_id));
   if (params.status) qs.set('status', params.status);
   const suffix = qs.toString() ? `?${qs.toString()}` : '';

@@ -14,7 +14,7 @@ class Indikator extends Model
 
     protected $fillable = [
         'kode', 'no_urut', 'pilar_id', 'opd_id',
-        'nama_indikator', 'satuan',
+        'nama_indikator', 'satuan', 'arah_target',
         'sumber_data', 'baseline_2024', 'dokrenda', 'kendala', 'inovasi',
     ];
 

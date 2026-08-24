@@ -69,6 +69,22 @@ class RenaksiProgram extends Model
         return $indikators;
     }
 
+    public function getPilarListAttribute()
+    {
+        $pilars = [];
+        foreach (['indikator1', 'indikator2', 'indikator3', 'indikator4'] as $rel) {
+            $indikator = $this->{$rel};
+            if ($indikator && $indikator->pilar) {
+                // nama_pilar sudah berbentuk "Pilar 1: Pengendalian Kuantitas Penduduk"
+                $label = $indikator->pilar->nama_pilar;
+                if (!in_array($label, $pilars, true)) {
+                    $pilars[] = $label;
+                }
+            }
+        }
+        return $pilars;
+    }
+
     public function getIndikatorIdListAttribute()
     {
         return collect([

@@ -1,13 +1,13 @@
-import type { ChartPilarEntry } from '@/types';
+import type { ChartIndikatorEntry } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Loader2, TrendingUp } from 'lucide-react';
 
 interface Props {
-  data: ChartPilarEntry[];
+  data: ChartIndikatorEntry[];
   loading: boolean;
 }
 
-export default function SmallMultiple({ data, loading }: Props) {
+export default function SmallMultipleIndikator({ data, loading }: Props) {
   if (loading) {
     return (
       <div className="rounded-xl border flex items-center justify-center py-16"
@@ -30,13 +30,13 @@ export default function SmallMultiple({ data, loading }: Props) {
   return (
     <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1rem' }}>
       <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-        Tren per Pilar
+        Tren per Indikator
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
         {data.map(item => (
-          <div key={item.pilar} style={{ border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.5rem 0.25rem 0.25rem 0' }}>
-            <p className="text-xs font-medium text-center truncate" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.125rem', fontSize: '0.625rem' }}>
-              {item.pilar}
+          <div key={item.indikator} style={{ border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.5rem 0.25rem 0.25rem 0' }}>
+            <p className="text-xs font-medium text-center" title={item.indikator} style={{ color: 'var(--color-text-secondary)', marginBottom: '0.125rem', fontSize: '0.625rem', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', minHeight: '1.5rem' }}>
+              {item.indikator}
             </p>
             <ResponsiveContainer width="100%" height={140}>
               <LineChart data={item.data} margin={{ top: 2, right: 8, left: -5, bottom: 2 }}>

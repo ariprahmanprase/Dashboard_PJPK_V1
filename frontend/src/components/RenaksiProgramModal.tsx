@@ -193,6 +193,31 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
                 </p>
               )}
             </div>
+            <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-wider mb-2"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Pilar Terkait
+              </p>
+              {data.pilar && data.pilar.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {data.pilar.map((p, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-lg text-xs font-medium"
+                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6' }}
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  -
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

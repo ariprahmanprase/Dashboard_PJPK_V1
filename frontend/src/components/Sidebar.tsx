@@ -1,4 +1,5 @@
-import { FileText, ListChecks, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { FileText, ListChecks, X, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react';
+import { getToken, getStoredUser } from '@/services/admin';
 
 export type PageName = 'report' | 'rencana-aksi';
 
@@ -154,8 +155,19 @@ function SidebarContent({
       </nav>
 
       {/* Footer */}
-      <div className="shrink-0 text-center border-t" style={{ padding: isExpanded ? '1rem' : '0.25rem', borderColor: 'var(--color-sidebar-border)' }}>
-        <p className="text-[10px]" style={{ color: 'var(--color-sidebar-muted)' }}>{isExpanded ? '© 2026 PJPK Dashboard v1.0' : 'v1'}</p>
+      <div className="shrink-0 border-t" style={{ padding: isExpanded ? '1rem' : '0.5rem 0.25rem', borderColor: 'var(--color-sidebar-border)' }}>
+        {getToken() && getStoredUser() && (
+          <a
+            href="/admin"
+            className={`sidebar-link ${!isExpanded ? 'justify-center px-0' : ''}`}
+            style={{ padding: isExpanded ? '12px 16px' : '12px 0', marginBottom: '0.5rem', display: 'flex' }}
+            title="Kembali ke halaman admin"
+          >
+            <ShieldCheck size={20} />
+            {isExpanded && <span style={{ fontSize: '0.875rem' }}>Halaman Admin</span>}
+          </a>
+        )}
+        <p className="text-[10px] text-center" style={{ color: 'var(--color-sidebar-muted)' }}>{isExpanded ? '© 2026 PJPK Dashboard v1.0' : 'v1'}</p>
       </div>
     </>
   );

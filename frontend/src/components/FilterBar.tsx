@@ -1,12 +1,22 @@
 import type { FilterOptions, DashboardFilters } from '@/types';
+import { RotateCcw } from 'lucide-react';
 
 interface Props {
   options: FilterOptions | null;
   filters: DashboardFilters;
   onFilterChange: (key: keyof DashboardFilters, value: string) => void;
+  onReset?: () => void;
 }
 
-export default function FilterBar({ options, filters, onFilterChange }: Props) {
+export default function FilterBar({ options, filters, onFilterChange, onReset }: Props) {
+  const hasActiveFilter = Boolean(
+    filters.opd_id || filters.pilar_id || filters.indikator_id || filters.status_tl || (filters.tahun && filters.tahun !== '2025')
+  );
+
+  const indikatorOptions = filters.pilar_id
+    ? options?.indikator.filter(i => String(i.pilar_id) === filters.pilar_id)
+    : options?.indikator;
+
   const baseSelect: React.CSSProperties = {
     height: 40,
     padding: '0 0.875rem',
@@ -32,7 +42,7 @@ export default function FilterBar({ options, filters, onFilterChange }: Props) {
       </select>
       <select value={filters.indikator_id || ''} onChange={e => onFilterChange('indikator_id', e.target.value)} style={{ ...baseSelect, minWidth: 280 }}>
         <option value="">Semua Indikator</option>
-        {options?.indikator.map(i => <option key={i.id} value={i.id}>{i.kode} — {i.nama_indikator}</option>)}
+        {indikatorOptions?.map(i => <option key={i.id} value={i.id}>{i.kode} — {i.nama_indikator}</option>)}
       </select>
       <select value={filters.tahun || '2025'} onChange={e => onFilterChange('tahun', e.target.value)} style={{ ...baseSelect, minWidth: 110 }}>
         {options?.tahun.map(t => <option key={t} value={t}>{t}</option>)}
@@ -41,6 +51,31 @@ export default function FilterBar({ options, filters, onFilterChange }: Props) {
         <option value="">Semua Status</option>
         {options?.status_tl.map(s => <option key={s} value={s}>{s}</option>)}
       </select>
+      {onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={!hasActiveFilter}
+          title="Reset semua filter"
+          style={{
+            height: 40,
+            padding: '0 0.875rem',
+            borderRadius: '0.5rem',
+            border: '1px solid var(--color-border)',
+            backgroundColor: hasActiveFilter ? 'var(--color-bg-secondary)' : 'transparent',
+            color: 'var(--color-text-secondary)',
+            fontSize: '0.875rem',
+            cursor: hasActiveFilter ? 'pointer' : 'default',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            opacity: hasActiveFilter ? 1 : 0.5,
+          }}
+        >
+          <RotateCcw size={14} />
+          Reset
+        </button>
+      )}
     </div>
   );
 }

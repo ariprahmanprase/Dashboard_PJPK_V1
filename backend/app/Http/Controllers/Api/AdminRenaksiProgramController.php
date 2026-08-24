@@ -23,8 +23,10 @@ class AdminRenaksiProgramController extends Controller
     {
         $user = $request->user();
 
-        $query = RenaksiProgram::with(['opd', 'indikator1', 'indikator2', 'indikator3', 'indikator4'])
-            ->orderBy('no');
+        $query = RenaksiProgram::with([
+            'opd',
+            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+        ])->orderBy('no');
 
         if ($user->isAdminOpd()) {
             $query->where('opd_id', $user->opd_id);
@@ -42,6 +44,16 @@ class AdminRenaksiProgramController extends Controller
                   ->orWhere('indikator_2_id', $indikatorId)
                   ->orWhere('indikator_3_id', $indikatorId)
                   ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+        if ($request->filled('pilar_id')) {
+            $pilarId = $request->integer('pilar_id');
+            $query->where(function ($q) use ($pilarId) {
+                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
+                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
+                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
+                    });
+                }
             });
         }
         if ($request->filled('status')) {
@@ -76,6 +88,7 @@ class AdminRenaksiProgramController extends Controller
             'status'         => $r->status,
             'indikator'      => $r->indikator_list,
             'indikator_ids'  => $r->indikator_id_list,
+            'pilar'          => $r->pilar_list,
         ]);
 
         return response()->json(['data' => $items]);
@@ -113,15 +126,14 @@ class AdminRenaksiProgramController extends Controller
     }
 
     /**
-     * Semua indikator untuk dropdown form tambah renaksi.
-     * Admin OPD hanya menerima indikator yang dipegang dinasnya.
+     * Semua indikator untuk dropdown form tambah/edit renaksi.
+     * Semua role (termasuk admin OPD) menerima daftar lengkap — admin OPD boleh
+     * menautkan renaksinya ke indikator mana pun; super admin yang merevisi bila kurang tepat.
      */
     public function indikatorOptions(Request $request, \App\Services\DashboardService $service)
     {
-        $user = $request->user();
-
         return response()->json([
-            'data' => $service->getAllIndikatorOptions($user->isAdminOpd() ? $user->opd_id : null),
+            'data' => $service->getAllIndikatorOptions(),
         ]);
     }
 
@@ -181,11 +193,12 @@ class AdminRenaksiProgramController extends Controller
         // Nomor urut mengikuti nomor terbesar yang sudah ada
         $validated['no'] = ((int) RenaksiProgram::max('no')) + 1;
 
-        // Tautan indikator (maks. 4) — hanya super admin; indikator ditambahkan kemudian oleh pihak lain
+        // Tautan indikator (maks. 4) — super admin & admin OPD boleh memilih;
+        // bila kurang tepat, super admin yang merevisi kemudian
         $ids = collect($request->input('indikator_ids', []))
             ->filter(fn($v) => is_numeric($v))
             ->map(fn($v) => (int) $v)
-            ->filter(fn($v) => $user->isSuperAdmin() && \App\Models\Indikator::whereKey($v)->exists())
+            ->filter(fn($v) => \App\Models\Indikator::whereKey($v)->exists())
             ->unique()
             ->take(4)
             ->values();
@@ -280,8 +293,8 @@ class AdminRenaksiProgramController extends Controller
             ]);
         }
 
-        // Tautan indikator (1-4) hanya boleh diubah super admin
-        if ($user->isSuperAdmin() && $request->has('indikator_ids')) {
+        // Tautan indikator (1-4) boleh diubah super admin & admin OPD (pemilik renaksi)
+        if (!$user->isAdminAnalis() && $request->has('indikator_ids')) {
             $this->syncIndikator($request, $renaksiProgram, true);
         }
 
