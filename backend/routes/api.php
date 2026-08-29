@@ -13,6 +13,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
 
     Route::get('/admin/renaksi-programs/satuan-options', [AdminRenaksiProgramController::class, 'satuanOptions']);
     Route::get('/admin/renaksi-programs/opd-options', [AdminRenaksiProgramController::class, 'opdOptions']);
@@ -21,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'store']);
     Route::put('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'update']);
     Route::delete('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'destroy']);
+    Route::post('/admin/renaksi-programs/{renaksiProgram}/ai-recommendation', [AdminRenaksiProgramController::class, 'generateAiRecommendation']);
+    Route::delete('/admin/renaksi-programs/{renaksiProgram}/ai-recommendation', [AdminRenaksiProgramController::class, 'deleteAiRecommendation']);
 
     // Pilar options — super admin & admin analis (untuk form edit di Admin Report)
     Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);

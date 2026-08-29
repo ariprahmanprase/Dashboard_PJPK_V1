@@ -32,6 +32,7 @@ class RenaksiProgram extends Model
         'indikator_3_id',
         'indikator_4_id',
         'status',
+        'ai_recommendation',
     ];
 
     public function opd()

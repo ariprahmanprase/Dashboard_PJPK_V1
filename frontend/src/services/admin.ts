@@ -3,6 +3,7 @@ export interface AdminUser {
   name: string;
   email: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
+  jabatan: string | null;
   opd_id: number | null;
   opd_nama: string | null;
 }
@@ -28,6 +29,7 @@ export interface AdminRenaksi {
   indikator: string[];
   indikator_ids: number[];
   pilar: string[];
+  ai_recommendation: string | null;
 }
 
 export interface IndikatorOption {
@@ -116,6 +118,23 @@ export async function fetchMe(): Promise<AdminUser> {
   return data.user;
 }
 
+export interface ProfilePayload {
+  name: string;
+  jabatan?: string | null;
+  current_password?: string;
+  new_password?: string;
+}
+
+// Update profil diri sendiri — role/opd tidak ikut (hak akses hanya diubah super admin)
+export async function updateProfile(payload: ProfilePayload): Promise<AdminUser> {
+  const data = await request<{ user: AdminUser }>('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+  return data.user;
+}
+
 export async function fetchAdminRenaksi(params: { tahun?: string; search?: string; indikator_id?: number; pilar_id?: number; opd_id?: number; status?: string } = {}): Promise<AdminRenaksi[]> {
   const qs = new URLSearchParams();
   if (params.tahun) qs.set('tahun', params.tahun);
@@ -162,6 +181,19 @@ export async function deleteRenaksi(id: number): Promise<void> {
   await request(`/admin/renaksi-programs/${id}`, { method: 'DELETE' });
 }
 
+// ── Analisis & Rekomendasi AI (per renaksi) ──
+export async function generateAiRecommendation(id: number): Promise<{ text: string; model: string | null }> {
+  const data = await request<{ data: { ai_recommendation: string; ai_model?: string | null } }>(
+    `/admin/renaksi-programs/${id}/ai-recommendation`,
+    { method: 'POST' },
+  );
+  return { text: data.data.ai_recommendation, model: data.data.ai_model ?? null };
+}
+
+export async function deleteAiRecommendation(id: number): Promise<void> {
+  await request(`/admin/renaksi-programs/${id}/ai-recommendation`, { method: 'DELETE' });
+}
+
 export interface RenaksiCreatePayload {
   tahun: string;
   opd_id: number;
@@ -205,6 +237,7 @@ export interface AdminUserRow {
   name: string;
   email: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
+  jabatan: string | null;
   opd_id: number | null;
   opd_nama: string | null;
   created_at: string | null;
@@ -220,6 +253,7 @@ export interface UserPayload {
   email: string;
   password?: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
+  jabatan?: string | null;
   opd_id?: number | null;
 }
 

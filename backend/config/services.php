@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.6-flash'),
+    ],
+
+    'sumopod' => [
+        'api_key' => env('SUMOPOD_API_KEY'),
+        'base_url' => env('SUMOPOD_BASE_URL', 'https://api.sumopod.com/v1'),
+        'model' => env('SUMOPOD_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

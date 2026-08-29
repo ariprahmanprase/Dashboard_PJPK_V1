@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CheckCircle2, Loader2, Pencil, Plus, Search, Trash2, X, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
-import type { RenaksiProgramRow } from '@/types';
+import RenaksiStatusBar from '@/components/RenaksiStatusBar';
+import ScorecardPopupModal from '@/components/ScorecardPopupModal';
+import type { RenaksiProgramRow, RenaksiProgramSummary } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import {
   createRenaksi,
+  deleteAiRecommendation,
   deleteRenaksi,
   fetchAdminIndikatorOptions,
   fetchAdminRenaksi,
   fetchIndikatorOptions,
   fetchRenaksiOpdOptions,
   fetchSatuanOptions,
+  generateAiRecommendation,
   updateRenaksi,
   type AdminRenaksi,
   type AdminUser,
@@ -68,7 +72,114 @@ function toProgramRow(r: AdminRenaksi): RenaksiProgramRow {
     indikator: r.indikator,
     pilar: r.pilar,
     status: r.status,
+    ai_recommendation: r.ai_recommendation,
   };
+}
+
+// Seksi Analisis & Rekomendasi AI di dalam popup detail (area admin)
+function AiRecommendationSection({
+  row,
+  item,
+  onRowChange,
+  onItemChange,
+}: {
+  row: RenaksiProgramRow;
+  item: AdminRenaksi | null;
+  onRowChange: (updated: RenaksiProgramRow) => void;
+  onItemChange: (updated: AdminRenaksi) => void;
+}) {
+  const [busy, setBusy] = useState<'generate' | 'delete' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [aiModel, setAiModel] = useState<string | null>(null);
+
+  if (!item) return null;
+  const currentItem = item;
+
+  async function handleGenerate() {
+    setBusy('generate');
+    setError(null);
+    try {
+      const { text, model } = await generateAiRecommendation(currentItem.id);
+      setAiModel(model);
+      onRowChange({ ...row, ai_recommendation: text });
+      onItemChange({ ...currentItem, ai_recommendation: text });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal membuat rekomendasi.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleDelete() {
+    setBusy('delete');
+    setError(null);
+    try {
+      await deleteAiRecommendation(currentItem.id);
+      onRowChange({ ...row, ai_recommendation: null });
+      onItemChange({ ...currentItem, ai_recommendation: null });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus rekomendasi.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+          Analisis &amp; Rekomendasi AI
+        </p>
+        {row.ai_recommendation ? (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={busy !== null}
+            className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-60"
+            style={{ borderColor: '#fca5a5', color: '#dc2626', padding: '0.4rem 0.75rem' }}
+          >
+            {busy === 'delete' ? <Loader2 className="animate-spin" size={13} /> : <Trash2 size={13} />}
+            Hapus Rekomendasi
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={busy !== null}
+            className="flex items-center gap-2 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-primary)', padding: '0.4rem 0.75rem' }}
+          >
+            {busy === 'generate' ? <Loader2 className="animate-spin" size={13} /> : <Sparkles size={13} />}
+            {busy === 'generate' ? 'Membuat…' : 'Generate'}
+          </button>
+        )}
+      </div>
+
+      {row.ai_recommendation ? (
+        <div
+          className="rounded-xl p-4 flex flex-col gap-3"
+          style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+        >
+          <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            {row.ai_recommendation}
+          </p>
+          <p className="text-[10px] italic" style={{ color: 'var(--color-text-secondary)', opacity: 0.75 }}>
+            Catatan: analisis dilakukan oleh model AI ({aiModel ?? 'gemini/gemini-3.1-flash-lite'} via Sumopod) — hasil bersifat saran, bukan keputusan final.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          Belum ada rekomendasi untuk rencana aksi ini. Klik Generate untuk membuat analisis berdasarkan data target, realisasi, status, dan kendala.
+        </p>
+      )}
+
+      {error && (
+        <p className="text-xs rounded-lg px-4 py-3" style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
@@ -161,6 +272,38 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
 
   // Filter dinas di client (super admin) — backend hanya menerima opd_id, dinas_options bertipe teks
   const visibleItems = dinas ? items.filter((r) => r.dinas === dinas) : items;
+
+  // Popup status: daftar renaksi per status (klik dari stacked bar)
+  const [statusPopup, setStatusPopup] = useState<string | null>(null);
+
+  // Summary status dihitung dari data yang terlihat (mengikuti semua filter aktif)
+  const statusSummary: RenaksiProgramSummary = useMemo(() => {
+    const count = (s: string) => visibleItems.filter((r) => r.status === s).length;
+    const tercapai = count('Tercapai');
+    const hampir = count('Hampir Tercapai');
+    const tidak = count('Tidak Tercapai');
+    const belum = count('Belum diisi');
+    const total = visibleItems.length;
+    return {
+      total,
+      total_dinas: new Set(visibleItems.map((r) => r.dinas)).size,
+      terlaksana: tercapai + hampir,
+      tercapai,
+      hampir_tercapai: hampir,
+      tidak_tercapai: tidak,
+      belum_diisi: belum,
+      tidak_terlaksana: tidak,
+      persentase: total > 0 ? Math.round(((tercapai + hampir) / total) * 1000) / 10 : 0,
+    };
+  }, [visibleItems]);
+
+  const statusPopupRows = useMemo(
+    () =>
+      statusPopup
+        ? visibleItems.filter((r) => r.status === statusPopup).map(toProgramRow)
+        : [],
+    [statusPopup, visibleItems],
+  );
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -289,6 +432,13 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </p>
         )}
 
+        {/* Stacked bar persentase status (mengikuti filter aktif) — klik segmen = popup daftar */}
+        <RenaksiStatusBar
+          data={statusSummary}
+          loading={loading && items.length === 0}
+          onSegmentClick={(s) => setStatusPopup(s)}
+        />
+
         {/* Content — tabel & modal detail persis seperti dashboard, + kolom Aksi */}
         <RenaksiProgramTable
           data={visibleItems.map(toProgramRow)}
@@ -307,6 +457,16 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
                 }
               : {}),
           }}
+          renderModalExtra={(row, onRowChange) => (
+            <AiRecommendationSection
+              row={row}
+              item={items.find((r) => r.no === row.no && r.rencana_aksi === row.rencana_aksi) ?? null}
+              onRowChange={onRowChange}
+              onItemChange={(updated) =>
+                setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+              }
+            />
+          )}
         />
       </div>
 
@@ -340,6 +500,14 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           }}
         />
       )}
+
+      {/* Popup daftar renaksi per status (dari stacked bar) */}
+      <ScorecardPopupModal
+        open={statusPopup !== null}
+        title={statusPopup ? `Renaksi — ${statusPopup}` : ''}
+        rows={statusPopupRows}
+        onClose={() => setStatusPopup(null)}
+      />
 
       {deleting && (
         <DeleteRenaksiModal

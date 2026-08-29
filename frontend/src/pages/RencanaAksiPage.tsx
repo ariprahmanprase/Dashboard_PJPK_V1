@@ -4,6 +4,8 @@ import FilterBar from '@/components/FilterBar';
 import ScoreCard from '@/components/ScoreCard';
 import type { RenaksiProgramRow, RenaksiProgramSummary, FilterOptions, RencanaAksiRow, RencanaAksiSummary, IndikatorOption } from '@/types';
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
+import ScorecardPopupModal from '@/components/ScorecardPopupModal';
+import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
 // ── Helpers ──────────────────────────────────────────
@@ -71,6 +73,19 @@ export default function RencanaAksiPage() {
 
   // Modal for detail
   const [selected, setSelected] = useState<RencanaAksiRow | null>(null);
+
+  // Popup scorecard (tab program): daftar program per status
+  const [scorecardPopup, setScorecardPopup] = useState<string | null>(null);
+
+  const scorecardPopupRows = useMemo(() => {
+    if (!scorecardPopup) return [];
+    if (scorecardPopup === 'Total Program') return programData;
+    if (scorecardPopup === 'Total OPD') {
+      const seen = new Set<string>();
+      return programData.filter(r => (seen.has(r.dinas) ? false : (seen.add(r.dinas), true)));
+    }
+    return programData.filter(r => r.status === scorecardPopup);
+  }, [scorecardPopup, programData]);
 
   // ── Fetch Data ─────────────────────────────────────────
   const fetchData = async () => {
@@ -212,11 +227,11 @@ export default function RencanaAksiPage() {
         </div>
       ) : activeTab === 'program' ? (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5" style={{ gap: '0.75rem' }}>
-          <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" />
-          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" />
-          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" />
-          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" />
-          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" />
+          <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" onClick={() => setScorecardPopup('Total Program')} />
+          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" onClick={() => setScorecardPopup('Total OPD')} />
+          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" onClick={() => setScorecardPopup('Tercapai')} />
+          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" onClick={() => setScorecardPopup('Hampir Tercapai')} />
+          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" onClick={() => setScorecardPopup('Tidak Tercapai')} />
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" style={{ gap: '0.75rem' }}>
@@ -225,6 +240,15 @@ export default function RencanaAksiPage() {
           <ScoreCard label="Tidak Terlaksana" value={indikatorSummary?.tidak_terlaksana ?? 0} variant="danger" />
           <ScoreCard label="Persentase" value={indikatorSummary ? `${indikatorSummary.persentase}%` : '0%'} variant="warning" />
         </div>
+      )}
+
+      {/* ── Stacked bar persentase status (tab program) ── */}
+      {activeTab === 'program' && (
+        <RenaksiStatusBar
+          data={programSummary}
+          loading={loading && !programSummary}
+          onSegmentClick={(status) => setScorecardPopup(status)}
+        />
       )}
 
       {/* ── Filter Bar ── */}
@@ -443,6 +467,14 @@ export default function RencanaAksiPage() {
           Menampilkan {activeTab === 'program' ? programData.length : sortedIndikatorData.length} rencana aksi
         </p>
       )}
+
+      {/* ── Scorecard Popup (Program) ── */}
+      <ScorecardPopupModal
+        open={scorecardPopup !== null}
+        title={scorecardPopup === 'Total OPD' ? 'Daftar OPD Pengampu' : scorecardPopup === 'Total Program' ? 'Semua Program' : `Program — ${scorecardPopup ?? ''}`}
+        rows={scorecardPopupRows}
+        onClose={() => setScorecardPopup(null)}
+      />
 
       {/* ── Detail Modal (Indikator) ── */}
       {selected && (

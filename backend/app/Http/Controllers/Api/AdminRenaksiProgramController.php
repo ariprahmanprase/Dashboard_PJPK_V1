@@ -89,6 +89,7 @@ class AdminRenaksiProgramController extends Controller
             'indikator'      => $r->indikator_list,
             'indikator_ids'  => $r->indikator_id_list,
             'pilar'          => $r->pilar_list,
+            'ai_recommendation' => $r->ai_recommendation,
         ]);
 
         return response()->json(['data' => $items]);
@@ -329,6 +330,52 @@ class AdminRenaksiProgramController extends Controller
         $renaksiProgram->delete();
 
         return response()->json(['message' => 'Data renaksi berhasil dihapus.']);
+    }
+
+    /**
+     * Generate Analisis & Rekomendasi AI untuk satu renaksi (via Sumopod).
+     * Admin OPD hanya boleh untuk renaksi dinasnya sendiri.
+     */
+    public function generateAiRecommendation(Request $request, RenaksiProgram $renaksiProgram, \App\Services\AiRecommendationService $ai)
+    {
+        $user = $request->user();
+
+        if ($user->isAdminOpd() && $renaksiProgram->opd_id !== $user->opd_id) {
+            return response()->json(['message' => 'Anda tidak berhak mengubah data dinas lain.'], 403);
+        }
+
+        try {
+            $text = $ai->generateRecommendation($renaksiProgram);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        $renaksiProgram->update(['ai_recommendation' => $text]);
+
+        return response()->json([
+            'message' => 'Rekomendasi AI berhasil dibuat.',
+            'data'    => [
+                'id' => $renaksiProgram->id,
+                'ai_recommendation' => $text,
+                'ai_model' => config('services.sumopod.model'),
+            ],
+        ]);
+    }
+
+    /**
+     * Hapus rekomendasi AI satu renaksi.
+     */
+    public function deleteAiRecommendation(Request $request, RenaksiProgram $renaksiProgram)
+    {
+        $user = $request->user();
+
+        if ($user->isAdminOpd() && $renaksiProgram->opd_id !== $user->opd_id) {
+            return response()->json(['message' => 'Anda tidak berhak mengubah data dinas lain.'], 403);
+        }
+
+        $renaksiProgram->update(['ai_recommendation' => null]);
+
+        return response()->json(['message' => 'Rekomendasi AI berhasil dihapus.']);
     }
 
     /**

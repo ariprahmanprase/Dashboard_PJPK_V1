@@ -6,9 +6,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   data: RenaksiProgramRow | null;
+  /** Konten tambahan di bagian bawah modal (mis. seksi AI di area admin) */
+  extra?: React.ReactNode;
+  /** z-index overlay (default 50) — naikkan bila modal dibuka di atas modal lain */
+  zIndex?: number;
 }
 
-export default function RenaksiProgramModal({ open, onClose, data }: Props) {
+export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex = 50 }: Props) {
   if (!open || !data) return null;
 
   const st = renaksiStatusStyle(data.status);
@@ -16,8 +20,8 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', zIndex }}
       onClick={onClose}
     >
       <div
@@ -219,6 +223,13 @@ export default function RenaksiProgramModal({ open, onClose, data }: Props) {
               )}
             </div>
           </div>
+
+          {/* Konten tambahan (mis. Analisis & Rekomendasi AI di area admin) */}
+          {extra && (
+            <div className="pt-8 mt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+              {extra}
+            </div>
+          )}
         </div>
       </div>
     </div>

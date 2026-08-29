@@ -13,9 +13,11 @@ interface Props {
     onEdit: (row: RenaksiProgramRow) => void;
     onDelete?: (row: RenaksiProgramRow) => void;
   };
+  /** Render slot di bagian bawah modal detail (mis. seksi Analisis & Rekomendasi AI di admin) */
+  renderModalExtra?: (row: RenaksiProgramRow, onRowChange: (updated: RenaksiProgramRow) => void) => React.ReactNode;
 }
 
-export default function RenaksiProgramTable({ data, loading, onRowClick, actions }: Props) {
+export default function RenaksiProgramTable({ data, loading, onRowClick, actions, renderModalExtra }: Props) {
   const [selectedRow, setSelectedRow] = useState<RenaksiProgramRow | null>(null);
 
   if (loading) {
@@ -211,6 +213,7 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
         open={selectedRow !== null}
         onClose={closeModal}
         data={selectedRow}
+        extra={renderModalExtra && selectedRow ? renderModalExtra(selectedRow, setSelectedRow) : undefined}
       />
     </>
   );

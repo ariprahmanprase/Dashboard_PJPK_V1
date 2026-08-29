@@ -228,6 +228,7 @@ export interface RenaksiProgramRow {
   indikator: string[];
   pilar: string[];
   status: string;
+  ai_recommendation?: string | null;
 }
 
 export interface RenaksiProgramSummary {

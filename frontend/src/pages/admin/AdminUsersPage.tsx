@@ -183,7 +183,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                 <table className="w-full text-sm" style={{ minWidth: 900 }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['Nama', 'Email', 'Role', 'OPD / Dinas', 'Dibuat', 'Aksi'].map((h) => (
+                      {['Nama', 'Email', 'Jabatan', 'Role', 'OPD / Dinas', 'Dibuat', 'Aksi'].map((h) => (
                         <th
                           key={h}
                           className="text-left font-medium uppercase tracking-wider"
@@ -211,6 +211,9 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                         </td>
                         <td className="align-middle" style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem' }}>
                           {u.email}
+                        </td>
+                        <td className="align-middle" style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem' }}>
+                          {u.jabatan ?? '—'}
                         </td>
                         <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
                           <RoleBadge role={u.role} />
@@ -324,6 +327,9 @@ function UserCard({
             {item.name} {isSelf && <span className="text-[10px] uppercase" style={{ color: 'var(--color-text-secondary)' }}>(Anda)</span>}
           </p>
           <p className="text-xs mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>{item.email}</p>
+          {item.jabatan && (
+            <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{item.jabatan}</p>
+          )}
           {item.opd_nama && (
             <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{item.opd_nama}</p>
           )}
@@ -365,6 +371,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [name, setName] = useState(item?.name ?? '');
   const [email, setEmail] = useState(item?.email ?? '');
   const [password, setPassword] = useState('');
+  const [jabatan, setJabatan] = useState(item?.jabatan ?? '');
   const [role, setRole] = useState<'super_admin' | 'admin_opd' | 'admin_analis'>(item?.role ?? 'admin_opd');
   const [opdId, setOpdId] = useState<string>(item?.opd_id ? String(item.opd_id) : '');
   const [saving, setSaving] = useState(false);
@@ -387,6 +394,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
       name,
       email,
       role,
+      jabatan: jabatan || null,
       opd_id: role === 'admin_opd' && opdId ? Number(opdId) : null,
     };
     if (password) payload.password = password;
@@ -446,6 +454,16 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
 
           <Field label="Email">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputClass} style={inputStyle} />
+          </Field>
+
+          <Field label="Jabatan (opsional)">
+            <input
+              value={jabatan}
+              onChange={(e) => setJabatan(e.target.value)}
+              placeholder="Mis. Kepala Bidang P2P"
+              className={inputClass}
+              style={inputStyle}
+            />
           </Field>
 
           <Field label={isEdit ? 'Password baru (kosongkan jika tidak diganti)' : 'Password'}>

@@ -27,7 +27,8 @@ class AdminUserController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('jabatan', 'like', "%{$search}%");
             });
         }
 
@@ -125,6 +126,7 @@ class AdminUserController extends Controller
             ],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:6'],
             'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN_OPD, User::ROLE_ADMIN_ANALIS])],
+            'jabatan' => ['nullable', 'string', 'max:255'],
             'opd_id' => [
                 Rule::requiredIf($request->input('role') === User::ROLE_ADMIN_OPD),
                 'nullable', 'integer', 'exists:opds,id',
@@ -139,6 +141,7 @@ class AdminUserController extends Controller
             'name' => $u->name,
             'email' => $u->email,
             'role' => $u->role,
+            'jabatan' => $u->jabatan,
             'opd_id' => $u->opd_id,
             'opd_nama' => $u->opd?->nama_opd,
             'created_at' => $u->created_at?->format('Y-m-d H:i'),

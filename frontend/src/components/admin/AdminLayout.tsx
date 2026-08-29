@@ -9,13 +9,14 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Sun,
+  UserRound,
   Users,
   X,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import type { AdminUser } from '@/services/admin';
 
-export type AdminPageName = 'report' | 'renaksi' | 'users';
+export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile';
 
 interface AdminMenuItem {
   key: AdminPageName;
@@ -37,6 +38,11 @@ interface Props {
 
 const MENUS: AdminMenuItem[] = [
   { key: 'renaksi', label: 'Admin Renaksi', icon: ClipboardList },
+];
+
+// Menu untuk semua role — edit biodata & password sendiri
+const PROFILE_MENUS: AdminMenuItem[] = [
+  { key: 'profile', label: 'Profil', icon: UserRound },
 ];
 
 // Menu khusus admin analis: report saja (tanpa kelola user)
@@ -202,7 +208,7 @@ function AdminSidebarContent({
             Menu
           </p>
         )}
-        {[...MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : [])].map((m) => {
+        {[...MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => {
           const Icon = m.icon;
           return (
             <a

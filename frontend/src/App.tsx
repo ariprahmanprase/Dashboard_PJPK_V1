@@ -8,6 +8,7 @@ import AdminLoginPage from '@/pages/admin/AdminLoginPage';
 import AdminRenaksiPage from '@/pages/admin/AdminRenaksiPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminReportPage from '@/pages/admin/AdminReportPage';
+import AdminProfilePage from '@/pages/admin/AdminProfilePage';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { clearSession, fetchMe, getStoredUser, getToken, logout, type AdminUser } from '@/services/admin';
 
@@ -92,6 +93,11 @@ function AdminArea() {
   // Kelola user khusus super admin
   if (page === 'users' && user.role === 'super_admin') {
     return <AdminUsersPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  // Profil — semua role bisa edit biodata & password sendiri
+  if (page === 'profile') {
+    return <AdminProfilePage user={user} onLogout={handleLogout} onNavigate={setPage} onUserUpdated={setUser} />;
   }
 
   if (page === 'renaksi') {
