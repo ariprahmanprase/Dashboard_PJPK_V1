@@ -16,6 +16,7 @@ import {
   type IndikatorUpdatePayload,
 } from '@/services/admin';
 import type { DashboardFilters, FilterOptions, TableRow } from '@/types';
+import { opdInduk } from '@/lib/opd';
 
 async function apiFetch<T>(url: string): Promise<T> {
   const resp = await fetch(url);
@@ -190,7 +191,7 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
                         {row.nama_pilar}
                       </td>
                       <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem', fontSize: '0.75rem', maxWidth: '220px', wordWrap: 'break-word' }}>
-                        {row.nama_opd}
+                        {opdInduk(row.nama_opd)}
                       </td>
                       <td className="font-mono align-middle" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.875rem 1.25rem' }}>
                         {row.tahun ?? '-'}
@@ -424,7 +425,7 @@ function EditIndikatorModal({
                         color: active ? '#2563eb' : 'var(--color-text-secondary)',
                       }}
                     >
-                      {o.nama_opd}
+                      {opdInduk(o.nama_opd)}
                     </button>
                   );
                 })

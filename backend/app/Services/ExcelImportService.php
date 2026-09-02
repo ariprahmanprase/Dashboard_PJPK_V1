@@ -17,38 +17,38 @@ class ExcelImportService
     private array $indikatorMap = [];   // kode => id
     private array $arahMap = [];        // indikator_id => arah_target
 
-    /** Arah target per kode indikator (Panduan arah target tiap indikator) */
+    /** Arah target per kode indikator (Panduan arah target tiap indikator), kode P-01 s.d. P-30 */
     private const ARAH_BY_KODE = [
-        'P1-01' => 'Maintain / Stable',
-        'P1-02' => 'Lower Better',
-        'P1-03' => 'Higher Better',
-        'P2-01' => 'Higher Better',
-        'P2-02' => 'Higher Better',
-        'P2-03' => 'Higher Better',
-        'P2-04' => 'Lower Better',
-        'P2-05' => 'Lower Better',
-        'P2-06' => 'Lower Better',
-        'P2-07' => 'Lower Better',
-        'P2-08' => 'Higher Better',
-        'P2-09' => 'Lower Better',
-        'P2-10' => 'Higher Better',
-        'P2-11' => 'Lower Better',
-        'P2-12' => 'Higher Better',
-        'P2-13' => 'Lower Better',
-        'P2-14' => 'Higher Better',
-        'P3-01' => 'Higher Better',
-        'P3-02' => 'Higher Better',
-        'P3-03' => 'Higher Better',
-        'P3-04' => 'Higher Better',
-        'P3-05' => 'Higher Better',
-        'P3-06' => 'Higher Better',
-        'P3-07' => 'Higher Better',
-        'P4-01' => 'Higher Better',
-        'P4-02' => 'Proportional',
-        'P5-01' => 'Higher Better',
-        'P5-02' => 'Higher Better',
-        'P5-03' => 'Higher Better',
-        'P5-04' => 'Higher Better',
+        'P-01' => 'Maintain / Stable',
+        'P-02' => 'Lower Better',
+        'P-03' => 'Higher Better',
+        'P-04' => 'Higher Better',
+        'P-05' => 'Higher Better',
+        'P-06' => 'Higher Better',
+        'P-07' => 'Lower Better',
+        'P-08' => 'Lower Better',
+        'P-09' => 'Lower Better',
+        'P-10' => 'Lower Better',
+        'P-11' => 'Higher Better',
+        'P-12' => 'Lower Better',
+        'P-13' => 'Higher Better',
+        'P-14' => 'Lower Better',
+        'P-15' => 'Higher Better',
+        'P-16' => 'Lower Better',
+        'P-17' => 'Higher Better',
+        'P-18' => 'Higher Better',
+        'P-19' => 'Higher Better',
+        'P-20' => 'Higher Better',
+        'P-21' => 'Higher Better',
+        'P-22' => 'Higher Better',
+        'P-23' => 'Higher Better',
+        'P-24' => 'Higher Better',
+        'P-25' => 'Higher Better',
+        'P-26' => 'Proportional',
+        'P-27' => 'Higher Better',
+        'P-28' => 'Higher Better',
+        'P-29' => 'Higher Better',
+        'P-30' => 'Higher Better',
     ];
 
     public function import(string $filePath): array
@@ -170,8 +170,8 @@ class ExcelImportService
                 $noUrutGlobal++;
                 $noUrutPilar++;
 
-                // Generate kode: P{no_pilar}-{no_urut_pilar} (padding 01)
-                $kode = sprintf('P%d-%02d', $pilarNo, $noUrutPilar);
+                // Generate kode: P-{no_urut_global} (padding 01) → P-01 s.d. P-30
+                $kode = sprintf('P-%02d', $noUrutGlobal);
 
                 // Row 13: Stunting — nama kosong di Excel, hardcode
                 $namaIndikator = $b;
@@ -240,17 +240,17 @@ class ExcelImportService
             2029 => 'K',
         ];
 
-        foreach ($ranges as $pilarNo => [$start, $end]) {
-            $noUrutPilar = 0;
+        $noUrutGlobal = 0;
 
+        foreach ($ranges as $pilarNo => [$start, $end]) {
             for ($r = $start; $r <= $end; $r++) {
                 $a = $this->cell($sheet, 'A', $r);
                 $b = $this->cell($sheet, 'B', $r);
 
                 if (empty($a) && empty($b)) continue;  // skip empty rows
 
-                $noUrutPilar++;
-                $kode = sprintf('P%d-%02d', $pilarNo, $noUrutPilar);
+                $noUrutGlobal++;
+                $kode = sprintf('P-%02d', $noUrutGlobal);
 
                 if (!isset($this->indikatorMap[$kode])) continue;
 

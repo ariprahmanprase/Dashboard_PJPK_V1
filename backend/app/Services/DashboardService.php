@@ -11,6 +11,20 @@ use Illuminate\Database\Eloquent\Builder;
 class DashboardService
 {
     /**
+     * Parse filter opd_id — mendukung multi-id dipisah koma ("105,116,117")
+     * agar filter per dinas induk mencakup semua bidangnya. Selalu array.
+     */
+    private function opdIds(array $filters): array
+    {
+        $raw = $filters['opd_id'] ?? null;
+        if (empty($raw)) return [];
+        return collect(explode(',', (string) $raw))
+            ->map(fn($v) => (int) trim($v))
+            ->filter(fn($v) => $v > 0)
+            ->values()
+            ->all();
+    }
+    /**
      * Hitung status_tl berdasarkan arah target indikator:
      * - Higher Better : HIJAU capaian ≥ target, KUNING ≥ 90% target, MERAH < 90%
      * - Lower Better  : HIJAU capaian ≤ target, KUNING ≤ 110% target, MERAH > 110%
@@ -215,8 +229,8 @@ class DashboardService
 
         $query = RenaksiProgram::query()->where('tahun', $tahun);
 
-        if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('opd_id', $opdIds);
         }
         if (!empty($filters['pilar_id'])) {
             $pilarId = $filters['pilar_id'];
@@ -470,9 +484,9 @@ class DashboardService
     // ─────────────────────────────────────────────────────
     private function applyFilters(Builder $query, array $filters): Builder
     {
-        if (!empty($filters['opd_id'])) {
-            $query->whereHas('opds', function ($q) use ($filters) {
-                $q->where('opds.id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereHas('opds', function ($q) use ($opdIds) {
+                $q->whereIn('opds.id', $opdIds);
             });
         }
         if (!empty($filters['pilar_id'])) {
@@ -497,8 +511,8 @@ class DashboardService
     private function applyFiltersToOpd(array $filters)
     {
         $query = Opd::query();
-        if (!empty($filters['opd_id'])) {
-            $query->where('id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('id', $opdIds);
         }
         if (!empty($filters['pilar_id']) || !empty($filters['indikator_id']) || !empty($filters['status_tl'])) {
             $query->whereHas('indikators', function ($q) use ($filters) {
@@ -565,6 +579,7 @@ class DashboardService
             ->get()
             ->map(fn($r) => [
                 'id'           => $r->id,
+                'no'           => $r->no,
                 'tahun'        => $r->tahun ?? '2025',
                 'dinas'        => $r->dinas_text ?? '-',
                 'program'      => $r->program ?? '-',
@@ -574,6 +589,7 @@ class DashboardService
                 'status'       => $r->status ?? 'Belum diisi',
                 'kendala'      => $r->kendala,
                 'catatan'      => $r->catatan,
+                'dokumentasi'  => $r->dokumentasi,
             ])
             ->toArray();
 
@@ -619,8 +635,8 @@ class DashboardService
         if (!empty($filters['pilar_id'])) {
             $query->whereHas('indikator', fn($q) => $q->where('pilar_id', $filters['pilar_id']));
         }
-        if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('opd_id', $opdIds);
         }
         if (!empty($filters['indikator_id'])) {
             $query->where('indikator_id', $filters['indikator_id']);
@@ -663,8 +679,8 @@ class DashboardService
         if (!empty($filters['pilar_id'])) {
             $query->whereHas('indikator', fn($q) => $q->where('pilar_id', $filters['pilar_id']));
         }
-        if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('opd_id', $opdIds);
         }
         if (!empty($filters['indikator_id'])) {
             $query->where('indikator_id', $filters['indikator_id']);
@@ -700,8 +716,8 @@ class DashboardService
             $query->where('dinas_text', $filters['dinas']);
         }
         // Filter by OPD id (fallback)
-        if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('opd_id', $opdIds);
         }
         if (!empty($filters['indikator_id'])) {
             $indikatorId = $filters['indikator_id'];
@@ -749,6 +765,7 @@ class DashboardService
                 'realisasi'     => $this->formatRealisasi($r),
                 'kendala'       => $r->kendala,
                 'catatan'       => $r->catatan,
+                'dokumentasi'   => $r->dokumentasi,
                 'indikator'     => $r->indikator_list,
                 'pilar'         => $r->pilar_list,
                 'status'        => $r->status,
@@ -825,8 +842,8 @@ class DashboardService
         if (!empty($filters['dinas'])) {
             $query->where('dinas_text', $filters['dinas']);
         }
-        if (!empty($filters['opd_id'])) {
-            $query->where('opd_id', $filters['opd_id']);
+        if ($opdIds = $this->opdIds($filters)) {
+            $query->whereIn('opd_id', $opdIds);
         }
 
         $total = $query->count();

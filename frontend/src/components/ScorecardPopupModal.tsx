@@ -41,18 +41,18 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between"
-            style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)' }}
+            className="flex items-start justify-between gap-3"
+            style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}
           >
-            <div>
-              <p className="text-base font-bold" style={{ color: 'var(--color-text)' }}>{title}</p>
+            <div style={{ minWidth: 0 }}>
+              <p className="text-base font-bold" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>{title}</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                 {rows.length} program
               </p>
             </div>
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
               style={{ color: 'var(--color-text-secondary)' }}
               title="Tutup"
             >
@@ -61,7 +61,7 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
           </div>
 
           {/* Body */}
-          <div style={{ overflow: 'auto', padding: '0.5rem 0' }}>
+          <div style={{ overflow: 'auto', flex: 1, minHeight: 0, padding: '0.5rem 0' }}>
             {rows.length === 0 ? (
               <p className="text-sm text-center py-12" style={{ color: 'var(--color-text-secondary)' }}>
                 Tidak ada program dengan status ini

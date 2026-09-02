@@ -93,6 +93,7 @@ class AuthController extends Controller
             'jabatan' => $user->jabatan,
             'opd_id' => $user->opd_id,
             'opd_nama' => $user->opd?->nama_opd,
+            'bidang' => $user->bidang,
         ];
     }
 }

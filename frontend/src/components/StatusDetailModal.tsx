@@ -1,5 +1,6 @@
 import { X, Loader2, FileX } from 'lucide-react';
 import type { TableRow } from '@/types';
+import { opdInduk } from '@/lib/opd';
 
 interface Props {
   open: boolean;
@@ -150,7 +151,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                         padding: '0.75rem 1.25rem',
                       }}
                     >
-                      {item.nama_opd}
+                      {opdInduk(item.nama_opd)}
                     </td>
                   </tr>
                 ))}

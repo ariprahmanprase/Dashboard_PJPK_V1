@@ -1,5 +1,6 @@
 import type { FilterOptions, DashboardFilters } from '@/types';
 import { RotateCcw } from 'lucide-react';
+import { groupOpdOptions } from '@/lib/opd';
 
 interface Props {
   options: FilterOptions | null;
@@ -34,7 +35,7 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem' }}>
       <select value={filters.opd_id || ''} onChange={e => onFilterChange('opd_id', e.target.value)} style={baseSelect}>
         <option value="">Semua OPD</option>
-        {options?.opd.map(o => <option key={o.id} value={o.id}>{o.kode_opd}</option>)}
+        {groupOpdOptions(options?.opd ?? [], true).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <select value={filters.pilar_id || ''} onChange={e => onFilterChange('pilar_id', e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
         <option value="">Semua Pilar</option>

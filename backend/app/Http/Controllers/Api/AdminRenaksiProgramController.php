@@ -25,6 +25,7 @@ class AdminRenaksiProgramController extends Controller
 
         $query = RenaksiProgram::with([
             'opd',
+            'creator',
             'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
         ])->orderBy('no');
 
@@ -85,11 +86,14 @@ class AdminRenaksiProgramController extends Controller
             'realisasi_nilai' => $r->realisasi_nilai,
             'kendala'        => $r->kendala,
             'catatan'        => $r->catatan,
+            'dokumentasi'    => $r->dokumentasi,
             'status'         => $r->status,
             'indikator'      => $r->indikator_list,
             'indikator_ids'  => $r->indikator_id_list,
             'pilar'          => $r->pilar_list,
             'ai_recommendation' => $r->ai_recommendation,
+            'created_by_name' => $r->creator?->name,
+            'created_at'     => $r->created_at?->format('Y-m-d H:i:s'),
         ]);
 
         return response()->json(['data' => $items]);
@@ -163,6 +167,7 @@ class AdminRenaksiProgramController extends Controller
             'status'         => ['nullable', Rule::in(self::STATUSES)],
             'kendala'        => ['nullable', 'string'],
             'catatan'        => ['nullable', 'string'],
+            'dokumentasi'    => ['nullable', 'string', 'max:2048'],
             'indikator_ids'  => ['nullable', 'array', 'max:4'],
             'indikator_ids.*' => ['integer', 'exists:indikators,id'],
         ];
@@ -193,6 +198,9 @@ class AdminRenaksiProgramController extends Controller
 
         // Nomor urut mengikuti nomor terbesar yang sudah ada
         $validated['no'] = ((int) RenaksiProgram::max('no')) + 1;
+
+        // Audit: catat user yang menambahkan
+        $validated['created_by'] = $user->id;
 
         // Tautan indikator (maks. 4) — super admin & admin OPD boleh memilih;
         // bila kurang tepat, super admin yang merevisi kemudian
@@ -260,9 +268,10 @@ class AdminRenaksiProgramController extends Controller
         }
 
         $rules = [
-            'kendala' => ['nullable', 'string'],
-            'catatan' => ['nullable', 'string'],
-            'status'  => ['nullable', Rule::in(self::STATUSES)],
+            'kendala'     => ['nullable', 'string'],
+            'catatan'     => ['nullable', 'string'],
+            'dokumentasi' => ['nullable', 'string', 'max:2048'],
+            'status'      => ['nullable', Rule::in(self::STATUSES)],
         ];
 
         // Field realisasi mengikuti jenis_target yang sudah ditetapkan
@@ -308,6 +317,7 @@ class AdminRenaksiProgramController extends Controller
                 'realisasi_nilai' => $renaksiProgram->realisasi_nilai,
                 'kendala'         => $renaksiProgram->kendala,
                 'catatan'         => $renaksiProgram->catatan,
+                'dokumentasi'     => $renaksiProgram->dokumentasi,
             ],
         ]);
     }

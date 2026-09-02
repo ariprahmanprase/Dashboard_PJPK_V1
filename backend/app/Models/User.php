@@ -29,6 +29,7 @@ class User extends Authenticatable
         'password',
         'role',
         'opd_id',
+        'bidang',
         'jabatan',
     ];
 

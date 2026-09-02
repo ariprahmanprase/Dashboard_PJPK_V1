@@ -61,6 +61,7 @@ class AdminUserController extends Controller
 
         if ($validated['role'] !== User::ROLE_ADMIN_OPD) {
             $validated['opd_id'] = null;
+            $validated['bidang'] = null;
         }
 
         $user = User::create($validated);
@@ -80,6 +81,7 @@ class AdminUserController extends Controller
 
         if ($validated['role'] !== User::ROLE_ADMIN_OPD) {
             $validated['opd_id'] = null;
+            $validated['bidang'] = null;
         }
 
         // Mencegah super admin menurunkan/menghapus hak akunnya sendiri
@@ -131,6 +133,7 @@ class AdminUserController extends Controller
                 Rule::requiredIf($request->input('role') === User::ROLE_ADMIN_OPD),
                 'nullable', 'integer', 'exists:opds,id',
             ],
+            'bidang' => ['nullable', 'string', 'max:150'],
         ]);
     }
 
@@ -144,6 +147,7 @@ class AdminUserController extends Controller
             'jabatan' => $u->jabatan,
             'opd_id' => $u->opd_id,
             'opd_nama' => $u->opd?->nama_opd,
+            'bidang' => $u->bidang,
             'created_at' => $u->created_at?->format('Y-m-d H:i'),
         ];
     }

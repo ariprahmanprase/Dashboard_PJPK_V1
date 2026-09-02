@@ -24,23 +24,25 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
       onClick={onClose}
     >
       <div
-        className="rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
+        className="rounded-2xl shadow-2xl w-full max-w-3xl mx-4 flex flex-col"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border)',
           maxHeight: '80vh',
+          overflow: 'hidden',
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between"
+          className="flex items-start justify-between gap-3"
           style={{
             padding: '1.25rem 1.5rem',
             borderBottom: '1px solid var(--color-border)',
+            flexShrink: 0,
           }}
         >
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h3
               className="text-lg font-bold"
               style={{ color: 'var(--color-text)' }}
@@ -48,13 +50,13 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
               Rencana Aksi
             </h3>
             {isAll ? (
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
                 {kode}
               </p>
             ) : (
               <p
                 className="text-sm mt-0.5"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}
               >
                 <span
                   className="font-mono font-medium"
@@ -75,7 +77,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
           >
             <X size={18} />
@@ -83,7 +85,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
         </div>
 
         {/* Body */}
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)' }}>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="animate-spin" size={28} style={{ color: 'var(--color-text-secondary)' }} />

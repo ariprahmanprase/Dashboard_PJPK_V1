@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Indikator extends Model
 {
-    // Route model binding memakai kode (P1-01, P2-04, dst) bukan id numerik
+    // Route model binding memakai kode (P-01 s.d. P-30) bukan id numerik
     public function getRouteKeyName(): string
     {
         return 'kode';

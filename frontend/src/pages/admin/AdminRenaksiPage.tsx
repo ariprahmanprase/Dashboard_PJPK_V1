@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle, UserRound, Clock } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
@@ -7,6 +7,8 @@ import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import type { RenaksiProgramRow, RenaksiProgramSummary } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
+import { opdInduk } from '@/lib/opd';
+import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import {
   createRenaksi,
   deleteAiRecommendation,
@@ -69,6 +71,7 @@ function toProgramRow(r: AdminRenaksi): RenaksiProgramRow {
     realisasi: formatNilai(r, 'realisasi'),
     kendala: r.kendala,
     catatan: r.catatan,
+    dokumentasi: r.dokumentasi,
     indikator: r.indikator,
     pilar: r.pilar,
     status: r.status,
@@ -94,6 +97,13 @@ function AiRecommendationSection({
 
   if (!item) return null;
   const currentItem = item;
+
+  // Note pengingat: catatan/kendala yang belum terisi membuat hasil generate kurang maksimal
+  const kosong = (v: string | null) => v === null || v.trim() === '' || v.trim() === '-';
+  const belumIsi = [
+    kosong(currentItem.catatan) ? 'catatan' : null,
+    kosong(currentItem.kendala) ? 'kendala' : null,
+  ].filter(Boolean) as string[];
 
   async function handleGenerate() {
     setBusy('generate');
@@ -155,6 +165,19 @@ function AiRecommendationSection({
         )}
       </div>
 
+      {belumIsi.length > 0 && (
+        <p
+          className="text-xs rounded-lg px-4 py-3 leading-relaxed"
+          style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.35)', color: 'var(--color-text-secondary)' }}
+        >
+          💡 <span className="font-medium" style={{ color: 'var(--color-text)' }}>Catatan belum lengkap:</span>{' '}
+          {belumIsi.length === 2
+            ? 'Catatan dan kendala belum terisi.'
+            : `${belumIsi[0] === 'catatan' ? 'Catatan' : 'Kendala'} belum terisi.`}{' '}
+          Isi catatan dan kendala untuk hasil generate yang lebih maksimal.
+        </p>
+      )}
+
       {row.ai_recommendation ? (
         <div
           className="rounded-xl p-4 flex flex-col gap-3"
@@ -164,7 +187,7 @@ function AiRecommendationSection({
             {row.ai_recommendation}
           </p>
           <p className="text-[10px] italic" style={{ color: 'var(--color-text-secondary)', opacity: 0.75 }}>
-            Catatan: analisis dilakukan oleh model AI ({aiModel ?? 'gemini/gemini-3.1-flash-lite'} via Sumopod) — hasil bersifat saran, bukan keputusan final.
+            Catatan: analisis dilakukan oleh model AI ({aiModel ?? 'gemini/gemini-3.1-flash-lite'}) — hasil bersifat saran, bukan keputusan final.
           </p>
         </div>
       ) : (
@@ -178,6 +201,39 @@ function AiRecommendationSection({
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+// Info audit: siapa & kapan renaksi ditambahkan
+function AuditInfo({ item }: { item: AdminRenaksi | null }) {
+  if (!item) return null;
+
+  const tanggal = item.created_at
+    ? new Date(item.created_at.replace(' ', 'T')).toLocaleString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : null;
+
+  return (
+    <div
+      className="flex flex-col gap-2 pt-4 mt-2"
+      style={{ borderTop: '1px solid var(--color-border)' }}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+        Ditambahkan Oleh
+      </p>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+        <span className="inline-flex items-center gap-1.5 text-sm" style={{ color: 'var(--color-text)' }}>
+          <UserRound size={14} style={{ color: 'var(--color-text-secondary)' }} />
+          {item.created_by_name ?? '— (data lama/impor)'}
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          <Clock size={14} />
+          {tanggal ? `${tanggal} WIB` : '—'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -371,7 +427,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
               style={selectStyle}
             >
               <option value="">Semua Dinas</option>
-              {dinasOptions.map((d) => (
+              {[...new Set(dinasOptions.map((d) => opdInduk(d)))].map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
@@ -457,16 +513,22 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
                 }
               : {}),
           }}
-          renderModalExtra={(row, onRowChange) => (
-            <AiRecommendationSection
-              row={row}
-              item={items.find((r) => r.no === row.no && r.rencana_aksi === row.rencana_aksi) ?? null}
-              onRowChange={onRowChange}
-              onItemChange={(updated) =>
-                setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-              }
-            />
-          )}
+          renderModalExtra={(row, onRowChange) => {
+            const original = items.find((r) => r.no === row.no && r.rencana_aksi === row.rencana_aksi) ?? null;
+            return (
+              <>
+                <AiRecommendationSection
+                  row={row}
+                  item={original}
+                  onRowChange={onRowChange}
+                  onItemChange={(updated) =>
+                    setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                  }
+                />
+                <AuditInfo item={original} />
+              </>
+            );
+          }}
         />
       </div>
 
@@ -557,6 +619,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   const [targetTeks, setTargetTeks] = useState(item.target ?? '');
   const [kendala, setKendala] = useState(item.kendala ?? '');
   const [catatan, setCatatan] = useState(item.catatan ?? '');
+  const [dokumentasi, setDokumentasi] = useState(item.dokumentasi ?? '');
   const [indikatorIds, setIndikatorIds] = useState<(number | '')[]>(() => {
     const ids = item.indikator_ids ?? [];
     return [ids[0] ?? '', ids[1] ?? '', ids[2] ?? '', ids[3] ?? ''];
@@ -572,6 +635,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
     const payload: RenaksiUpdatePayload = {
       kendala: kendala || null,
       catatan: catatan || null,
+      dokumentasi: dokumentasi.trim() || null,
     };
     // Status manual hanya dikirim untuk renaksi kualitatif (kuantitatif dihitung backend)
     if (!isKuantitatif) {
@@ -820,6 +884,21 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
             />
           </Field>
 
+          <Field label="Dokumentasi (opsional)">
+            <input
+              type="url"
+              value={dokumentasi}
+              onChange={(e) => setDokumentasi(e.target.value)}
+              disabled={!canEditFields}
+              placeholder="https://drive.google.com/… atau link media lainnya"
+              className={inputClass}
+              style={inputStyle}
+            />
+            <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              Tautan Google Drive / media lain berisi dokumentasi pelaksanaan rencana aksi.
+            </p>
+          </Field>
+
           {error && (
             <p
               className="text-sm rounded-lg px-4 py-3.5 leading-relaxed"
@@ -881,6 +960,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
   const [realisasiTeks, setRealisasiTeks] = useState('');
   const [kendala, setKendala] = useState('');
   const [catatan, setCatatan] = useState('');
+  const [dokumentasi, setDokumentasi] = useState('');
   const [indikatorIds, setIndikatorIds] = useState<(number | '')[]>(['', '', '', '']);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -899,6 +979,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
       jenis_target: jenisTarget,
       kendala: kendala || null,
       catatan: catatan || null,
+      dokumentasi: dokumentasi.trim() || null,
       indikator_ids: indikatorIds.filter((v): v is number => v !== ''),
     };
     if (jenisTarget === 'kuantitatif') {
@@ -1002,19 +1083,14 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               </select>
             </Field>
             <Field label="Dinas / OPD">
-              <select
-                value={opdId}
-                onChange={(e) => setOpdId(e.target.value === '' ? '' : Number(e.target.value))}
+              <OpdSearchSelect
+                options={opdOptions}
+                value={opdId === '' ? '' : String(opdId)}
+                onChange={(v) => setOpdId(v === '' ? '' : Number(v))}
+                placeholder="— Pilih dinas —"
                 required
                 disabled={!isSuperAdmin}
-                className={inputClass}
-                style={inputStyle}
-              >
-                <option value="">— Pilih dinas —</option>
-                {opdOptions.map((o) => (
-                  <option key={o.id} value={o.id}>{o.nama_opd}</option>
-                ))}
-              </select>
+              />
             </Field>
           </div>
 
@@ -1216,6 +1292,20 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
               className={inputClass}
               style={inputStyle}
             />
+          </Field>
+
+          <Field label="Dokumentasi (opsional)">
+            <input
+              type="url"
+              value={dokumentasi}
+              onChange={(e) => setDokumentasi(e.target.value)}
+              placeholder="https://drive.google.com/… atau link media lainnya"
+              className={inputClass}
+              style={inputStyle}
+            />
+            <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              Tautan Google Drive / media lain berisi dokumentasi pelaksanaan rencana aksi.
+            </p>
           </Field>
 
           {error && (

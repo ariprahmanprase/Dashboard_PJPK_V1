@@ -189,6 +189,7 @@ export interface RencanaAksiSummary {
 
 export interface IndikatorRenaksiProgram {
   id: number;
+  no?: number;
   tahun: string;
   dinas: string;
   program: string;
@@ -198,6 +199,7 @@ export interface IndikatorRenaksiProgram {
   status: string;
   kendala: string | null;
   catatan: string | null;
+  dokumentasi?: string | null;
 }
 
 export interface IndikatorDetail {
@@ -225,6 +227,7 @@ export interface RenaksiProgramRow {
   realisasi: string;
   kendala: string | null;
   catatan: string | null;
+  dokumentasi?: string | null;
   indikator: string[];
   pilar: string[];
   status: string;

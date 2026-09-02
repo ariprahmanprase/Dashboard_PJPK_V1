@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Loader2, Pencil, Plus, Search, Trash2, UserCheck, Users, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
@@ -13,6 +13,19 @@ import {
   type OpdOption,
   type UserPayload,
 } from '@/services/admin';
+import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
+import { opdInduk } from '@/lib/opd';
+
+/** Sentinel untuk opsi "+ Bidang baru" di dropdown bidang */
+const BIDANG_BARU = '__bidang_baru__';
+
+/** Ambil nama bidang dari nama OPD turunan: "Dinkopum (Bidang HI)" -> "Bidang HI" */
+function bidangDari(namaOpd: string): string | null {
+  const induk = opdInduk(namaOpd);
+  if (induk === namaOpd.trim()) return null;
+  const m = namaOpd.match(/\((.+)\)/);
+  return m ? m[1].trim() : null;
+}
 
 interface Props {
   user: AdminUser;
@@ -93,17 +106,14 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
             <option value="admin_analis">Admin Analis</option>
           </select>
 
-          <select
+          <OpdSearchSelect
+            options={opdOptions}
             value={opdId}
-            onChange={(e) => setOpdId(e.target.value)}
-            className="rounded-lg border px-4 py-3 text-sm w-full sm:w-auto sm:min-w-52"
-            style={selectStyle}
-          >
-            <option value="">Semua OPD</option>
-            {opdOptions.map((o) => (
-              <option key={o.id} value={o.id}>{o.nama_opd}</option>
-            ))}
-          </select>
+            onChange={setOpdId}
+            emptyLabel="Semua OPD"
+            placeholder="Semua OPD"
+            className="w-full sm:w-auto sm:min-w-52"
+          />
 
           <div className="relative flex-1 sm:min-w-60">
             <Search
@@ -183,7 +193,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                 <table className="w-full text-sm" style={{ minWidth: 900 }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['Nama', 'Email', 'Jabatan', 'Role', 'OPD / Dinas', 'Dibuat', 'Aksi'].map((h) => (
+                      {['Nama', 'Email', 'Jabatan', 'Role', 'OPD / Dinas', 'Bidang', 'Aksi'].map((h) => (
                         <th
                           key={h}
                           className="text-left font-medium uppercase tracking-wider"
@@ -219,10 +229,10 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                           <RoleBadge role={u.role} />
                         </td>
                         <td className="align-middle" style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 220 }}>
-                          <span className="line-clamp-2">{u.opd_nama ?? '—'}</span>
+                          <span className="line-clamp-2">{u.opd_nama ? opdInduk(u.opd_nama) : '—'}</span>
                         </td>
-                        <td className="align-middle font-mono" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', whiteSpace: 'nowrap' }}>
-                          {u.created_at ?? '-'}
+                        <td className="align-middle" style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 180 }}>
+                          <span className="line-clamp-2">{u.bidang ?? '—'}</span>
                         </td>
                         <td className="align-middle" style={{ padding: '0.75rem 1.25rem' }}>
                           <div className="flex items-center gap-2">
@@ -331,7 +341,7 @@ function UserCard({
             <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{item.jabatan}</p>
           )}
           {item.opd_nama && (
-            <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{item.opd_nama}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{opdInduk(item.opd_nama)}</p>
           )}
         </div>
         <RoleBadge role={item.role} />
@@ -373,7 +383,20 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [password, setPassword] = useState('');
   const [jabatan, setJabatan] = useState(item?.jabatan ?? '');
   const [role, setRole] = useState<'super_admin' | 'admin_opd' | 'admin_analis'>(item?.role ?? 'admin_opd');
-  const [opdId, setOpdId] = useState<string>(item?.opd_id ? String(item.opd_id) : '');
+
+  // Dinas yang dipilih = NAMA INDUK (bukan id) supaya tidak redundan per bidang
+  const [dinasInduk, setDinasInduk] = useState<string>(() =>
+    item?.opd_nama ? opdInduk(item.opd_nama) : '',
+  );
+  // Bidang: label bidang yang ada, atau BIDANG_BARU utk input teks baru
+  const [bidangChoice, setBidangChoice] = useState<string>(() => {
+    if (item?.bidang) {
+      return item.bidang; // dicocokkan ke opsi di bawah; kalau tidak ada, diperlakukan sbg teks
+    }
+    if (item?.opd_nama) return bidangDari(item.opd_nama) ?? '';
+    return '';
+  });
+  const [bidangBaru, setBidangBaru] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -385,6 +408,39 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
     color: 'var(--color-text)',
   };
 
+  // Daftar dinas induk (dedupe) + entri OPD per induk
+  const dinasList = useMemo(
+    () => [...new Set(opdOptions.map(o => opdInduk(o.nama_opd)))].sort((a, b) => a.localeCompare(b)),
+    [opdOptions],
+  );
+  const entriInduk = useMemo(
+    () => opdOptions.filter(o => opdInduk(o.nama_opd) === dinasInduk),
+    [opdOptions, dinasInduk],
+  );
+  // Entri induk murni (nama persis = induk) sebagai pemilik opd_id
+  const entriRoot = entriInduk.find(o => o.nama_opd.trim() === dinasInduk);
+  const opdIdTerpilih = entriRoot?.id ?? entriInduk[0]?.id ?? null;
+
+  // Opsi bidang yang sudah ada untuk dinas ini
+  const bidangOptions = useMemo(
+    () =>
+      entriInduk
+        .map(o => bidangDari(o.nama_opd))
+        .filter((b): b is string => b !== null)
+        .filter((b, i, arr) => arr.indexOf(b) === i),
+    [entriInduk],
+  );
+
+  // Bila bidang tersimpan tidak ada di opsi (bidang baru custom), tampilkan sebagai input teks
+  const bidangDikenal = bidangChoice === '' || bidangChoice === BIDANG_BARU || bidangOptions.includes(bidangChoice);
+  const bidangAktif = bidangDikenal ? bidangChoice : BIDANG_BARU;
+  const bidangCustom = bidangDikenal ? bidangBaru : (bidangBaru || bidangChoice);
+
+  const bidangFinal =
+    bidangAktif === BIDANG_BARU ? bidangCustom.trim() || null
+    : bidangAktif !== '' ? bidangAktif
+    : null;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -395,7 +451,8 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
       email,
       role,
       jabatan: jabatan || null,
-      opd_id: role === 'admin_opd' && opdId ? Number(opdId) : null,
+      opd_id: role === 'admin_opd' ? opdIdTerpilih : null,
+      bidang: role === 'admin_opd' ? bidangFinal : null,
     };
     if (password) payload.password = password;
 
@@ -495,15 +552,54 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
             </Field>
             {role === 'admin_opd' && (
               <Field label="OPD / Dinas">
-                <select value={opdId} onChange={(e) => setOpdId(e.target.value)} required className={inputClass} style={inputStyle}>
-                  <option value="">— Pilih OPD —</option>
-                  {opdOptions.map((o) => (
-                    <option key={o.id} value={o.id}>{o.nama_opd}</option>
+                <select
+                  value={dinasInduk}
+                  onChange={(e) => {
+                    setDinasInduk(e.target.value);
+                    setBidangChoice('');
+                    setBidangBaru('');
+                  }}
+                  required
+                  className={inputClass}
+                  style={inputStyle}
+                >
+                  <option value="">— Pilih dinas —</option>
+                  {dinasList.map(d => (
+                    <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
               </Field>
             )}
           </div>
+
+          {role === 'admin_opd' && dinasInduk && (
+            <Field label="Bidang (opsional)">
+              <select
+                value={bidangAktif}
+                onChange={(e) => {
+                  setBidangChoice(e.target.value);
+                  if (e.target.value !== BIDANG_BARU) setBidangBaru('');
+                }}
+                className={inputClass}
+                style={inputStyle}
+              >
+                <option value="">— Tanpa bidang (induk) —</option>
+                {bidangOptions.map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+                <option value={BIDANG_BARU}>+ Bidang baru…</option>
+              </select>
+              {bidangAktif === BIDANG_BARU && (
+                <input
+                  value={bidangCustom}
+                  onChange={(e) => setBidangBaru(e.target.value)}
+                  placeholder="Mis. Bidang HI"
+                  className={inputClass}
+                  style={{ ...inputStyle, marginTop: '0.5rem' }}
+                />
+              )}
+            </Field>
+          )}
 
           {error && (
             <p className="text-sm rounded-lg px-4 py-3.5 leading-relaxed" style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}>

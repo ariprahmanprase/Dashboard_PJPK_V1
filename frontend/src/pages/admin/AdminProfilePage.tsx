@@ -3,6 +3,7 @@ import { CheckCircle2, Eye, EyeOff, Loader2, Lock, UserRound } from 'lucide-reac
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { updateProfile, type AdminUser, type ProfilePayload } from '@/services/admin';
+import { opdInduk } from '@/lib/opd';
 
 interface Props {
   user: AdminUser;
@@ -85,13 +86,16 @@ export default function AdminProfilePage({ user, onLogout, onNavigate, onUserUpd
             <UserRound size={18} style={{ color: 'var(--color-text-secondary)' }} />
             <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Informasi Akun</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <InfoItem label="Email" value={user.email} />
             <InfoItem label="Role" value={ROLE_LABEL[user.role]} />
-            <InfoItem label="OPD / Dinas" value={user.opd_nama ?? '—'} />
+            <InfoItem label="OPD / Dinas" value={user.opd_nama ? opdInduk(user.opd_nama) : '—'} />
+            {user.role === 'admin_opd' && (
+              <InfoItem label="Bidang" value={user.bidang ?? '—'} />
+            )}
           </div>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Email, role, dan OPD hanya bisa diubah oleh Super Admin melalui menu Kelola User.
+            Email, role, OPD, dan bidang hanya bisa diubah oleh Super Admin melalui menu Kelola User.
           </p>
         </div>
 

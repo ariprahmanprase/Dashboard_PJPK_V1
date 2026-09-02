@@ -7,6 +7,7 @@ import RenaksiProgramTable from '@/components/RenaksiProgramTable';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
+import { groupOpdOptions, opdInduk } from '@/lib/opd';
 
 // ── Helpers ──────────────────────────────────────────
 async function apiFetch<T>(url: string): Promise<T> {
@@ -86,6 +87,27 @@ export default function RencanaAksiPage() {
     }
     return programData.filter(r => r.status === scorecardPopup);
   }, [scorecardPopup, programData]);
+
+  // Stacked bar dihitung dari programData (hasil filter aktif) supaya mengikuti semua filter
+  const statusBarData = useMemo<RenaksiProgramSummary>(() => {
+    const count = (s: string) => programData.filter(r => renaksiStatusStyle(r.status).label === s).length;
+    const tercapai = count('Tercapai');
+    const hampir = count('Hampir Tercapai');
+    const tidak = count('Tidak Tercapai');
+    const belum = count('Belum diisi');
+    const total = programData.length;
+    return {
+      total,
+      total_dinas: new Set(programData.map(r => r.dinas)).size,
+      terlaksana: tercapai + hampir,
+      tercapai,
+      hampir_tercapai: hampir,
+      tidak_tercapai: tidak,
+      belum_diisi: belum,
+      tidak_terlaksana: tidak,
+      persentase: total > 0 ? Math.round(((tercapai + hampir) / total) * 100) : 0,
+    };
+  }, [programData]);
 
   // ── Fetch Data ─────────────────────────────────────────
   const fetchData = async () => {
@@ -242,15 +264,6 @@ export default function RencanaAksiPage() {
         </div>
       )}
 
-      {/* ── Stacked bar persentase status (tab program) ── */}
-      {activeTab === 'program' && (
-        <RenaksiStatusBar
-          data={programSummary}
-          loading={loading && !programSummary}
-          onSegmentClick={(status) => setScorecardPopup(status)}
-        />
-      )}
-
       {/* ── Filter Bar ── */}
       <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1.5rem' }}>
         <div className="flex items-center gap-2.5" style={{ marginBottom: '1rem' }}>
@@ -284,12 +297,12 @@ export default function RencanaAksiPage() {
           {activeTab === 'indikator' ? (
             <select value={opdId} onChange={e => setOpdId(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
               <option value="">Semua OPD yang mengampu</option>
-              {filterOptions?.opd.map(o => <option key={o.id} value={o.id}>{o.kode_opd}</option>)}
+              {groupOpdOptions(filterOptions?.opd ?? [], true).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           ) : (
             <select value={dinas} onChange={e => setDinas(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
               <option value="">Semua OPD yang mengampu</option>
-              {dinasList.map(d => <option key={d} value={d}>{d}</option>)}
+              {[...new Set(dinasList.map(d => opdInduk(d)))].map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           )}
 
@@ -350,6 +363,15 @@ export default function RencanaAksiPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Stacked bar persentase status (tab program) — mengikuti filter aktif ── */}
+      {activeTab === 'program' && (
+        <RenaksiStatusBar
+          data={statusBarData}
+          loading={loading && !programData.length}
+          onSegmentClick={(status) => setScorecardPopup(status)}
+        />
+      )}
 
       {/* ── Table (based on active tab) ── */}
       {activeTab === 'program' ? (
@@ -484,19 +506,18 @@ export default function RencanaAksiPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="rounded-2xl shadow-2xl"
+            className="rounded-2xl shadow-2xl flex flex-col"
             style={{
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
               maxWidth: 600,
               width: '90%',
               maxHeight: '80vh',
-              overflow: 'auto',
-              padding: '2rem',
+              overflow: 'hidden',
             }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1, minHeight: 0, padding: '2rem' }}>
               {/* Header */}
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg" style={{ backgroundColor: renaksiStatusStyle(selected.status).bg }}>
@@ -505,11 +526,11 @@ export default function RencanaAksiPage() {
                     : <CheckCircle2 size={20} style={{ color: renaksiStatusStyle(selected.status).color }} />
                   }
                 </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
                     {selected.kode} — {selected.pilar}
                   </p>
-                  <p className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)' }}>
+                  <p className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>
                     {selected.indikator}
                   </p>
                 </div>

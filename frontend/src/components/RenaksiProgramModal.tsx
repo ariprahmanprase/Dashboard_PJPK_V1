@@ -1,4 +1,4 @@
-import { X, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { X, CheckCircle2, XCircle, Clock, ExternalLink } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
@@ -25,26 +25,28 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
       onClick={onClose}
     >
       <div
-        className="rounded-2xl shadow-2xl w-full mx-4 overflow-hidden"
+        className="rounded-2xl shadow-2xl w-full mx-4 flex flex-col"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border)',
           maxWidth: 700,
           maxHeight: '80vh',
+          overflow: 'hidden',
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between"
+          className="flex items-start justify-between gap-3"
           style={{
             padding: '1.25rem 1.5rem',
             borderBottom: '1px solid var(--color-border)',
+            flexShrink: 0,
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3" style={{ minWidth: 0 }}>
             <div
-              className="p-2 rounded-lg"
+              className="p-2 rounded-lg shrink-0"
               style={{ backgroundColor: st.bg }}
             >
               {data.status === 'Belum diisi' ? (
@@ -55,24 +57,24 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
                 <XCircle size={20} style={{ color: st.color }} />
               )}
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}
               >
-                {data.dinas} — {data.kode_program}
+                {data.dinas}{data.kode_program ? ` — ${data.kode_program}` : ''}
               </p>
-              <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)' }}>
+              <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>
                 {data.program}
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
                 {data.rencana_aksi}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
           >
             <X size={18} />
@@ -80,7 +82,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
         </div>
 
         {/* Body */}
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)', padding: '1.5rem' }}>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '1.5rem' }}>
           {/* Main Info */}
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
@@ -172,6 +174,30 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
                 {data.catatan || '-'}
               </p>
             </div>
+            {data.dokumentasi && (
+              <div>
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Dokumentasi
+                </p>
+                <a
+                  href={data.dokumentasi}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-3 py-2 transition-opacity hover:opacity-80"
+                  style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    color: '#3b82f6',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  <ExternalLink size={14} className="shrink-0" />
+                  {data.dokumentasi}
+                </a>
+              </div>
+            )}
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-2"

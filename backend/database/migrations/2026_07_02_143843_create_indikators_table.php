@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('indikators', function (Blueprint $table) {
             $table->tinyIncrements('id');
-            $table->string('kode', 10)->unique()->comment('Kode: P1-01 s.d. P5-30');
+            $table->string('kode', 10)->unique()->comment('Kode: P-01 s.d. P-30');
             $table->unsignedTinyInteger('no_urut')->comment('Nomor urut 1-30');
             $table->unsignedTinyInteger('pilar_id');
             $table->unsignedTinyInteger('opd_id');

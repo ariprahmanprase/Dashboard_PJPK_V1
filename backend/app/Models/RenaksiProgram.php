@@ -27,6 +27,8 @@ class RenaksiProgram extends Model
         'realisasi_nilai',
         'kendala',
         'catatan',
+        'dokumentasi',
+        'created_by',
         'indikator_1_id',
         'indikator_2_id',
         'indikator_3_id',
@@ -38,6 +40,11 @@ class RenaksiProgram extends Model
     public function opd()
     {
         return $this->belongsTo(Opd::class, 'opd_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function indikator1()

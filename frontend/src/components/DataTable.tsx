@@ -1,6 +1,7 @@
 import type { TableRow } from '@/types';
 import StatusBadge from './StatusBadge';
 import { Loader2, FileX } from 'lucide-react';
+import { opdInduk } from '@/lib/opd';
 
 interface Props {
   data: TableRow[];
@@ -113,7 +114,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 {row.nama_pilar}
               </td>
               <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem', fontSize: '0.75rem', maxWidth: '220px', wordWrap: 'break-word' }}>
-                {row.nama_opd}
+                {opdInduk(row.nama_opd)}
               </td>
               <td
                 className="font-mono align-middle"

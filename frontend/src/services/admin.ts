@@ -6,6 +6,7 @@ export interface AdminUser {
   jabatan: string | null;
   opd_id: number | null;
   opd_nama: string | null;
+  bidang?: string | null;
 }
 
 export interface AdminRenaksi {
@@ -25,11 +26,14 @@ export interface AdminRenaksi {
   realisasi_nilai: string | null;
   kendala: string | null;
   catatan: string | null;
+  dokumentasi: string | null;
   status: 'Tercapai' | 'Hampir Tercapai' | 'Tidak Tercapai' | 'Belum diisi';
   indikator: string[];
   indikator_ids: number[];
   pilar: string[];
   ai_recommendation: string | null;
+  created_by_name: string | null;
+  created_at: string | null;
 }
 
 export interface IndikatorOption {
@@ -167,6 +171,7 @@ export interface RenaksiUpdatePayload {
   target_satuan?: string | null;
   kendala?: string | null;
   catatan?: string | null;
+  dokumentasi?: string | null;
   indikator_ids?: number[];
 }
 
@@ -209,6 +214,7 @@ export interface RenaksiCreatePayload {
   status?: string;
   kendala?: string | null;
   catatan?: string | null;
+  dokumentasi?: string | null;
   indikator_ids?: number[];
 }
 
@@ -240,6 +246,7 @@ export interface AdminUserRow {
   jabatan: string | null;
   opd_id: number | null;
   opd_nama: string | null;
+  bidang?: string | null;
   created_at: string | null;
 }
 
@@ -255,6 +262,7 @@ export interface UserPayload {
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
   jabatan?: string | null;
   opd_id?: number | null;
+  bidang?: string | null;
 }
 
 export async function fetchAdminUsers(params: { role?: string; opd_id?: number; search?: string } = {}): Promise<AdminUserRow[]> {
