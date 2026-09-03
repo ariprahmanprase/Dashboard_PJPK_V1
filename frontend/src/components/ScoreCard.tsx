@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   label: string;
   value: number | string;
+  description?: string;
   variant: 'default' | 'success' | 'warning' | 'danger' | 'info';
   active?: boolean;
   onClick?: () => void;
@@ -16,7 +17,7 @@ const colors: Record<string, { bg: string; accent: string; text: string; border:
   default: { bg: 'var(--color-bg-secondary)', accent: '#94a3b8', text: 'var(--color-text)', border: 'var(--color-border)' },
 };
 
-export default function ScoreCard({ label, value, variant, active, onClick }: Props) {
+export default function ScoreCard({ label, value, description, variant, active, onClick }: Props) {
   const c = colors[variant];
 
   return (
@@ -54,6 +55,11 @@ export default function ScoreCard({ label, value, variant, active, onClick }: Pr
       <p className="text-[30px] font-bold tracking-tight leading-none" style={{ color: c.text }}>
         {value}
       </p>
+      {description && (
+        <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }}>
+          {description}
+        </p>
+      )}
     </button>
   );
 }
