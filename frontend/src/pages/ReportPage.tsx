@@ -14,7 +14,10 @@ import BarPerPilar from '@/components/BarPerPilar';
 import BarPerOpd from '@/components/BarPerOpd';
 import SmallMultipleIndikator from '@/components/SmallMultipleIndikator';
 import HeatmapGrid from '@/components/HeatmapGrid';
+import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
 import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartIndikatorEntry } from '@/types';
+
+const FILTER_KEY = 'pjpk-draft-filter-indikator';
 
 // ── Helpers ──────────────────────────────────────────
 function buildParams(f: { tahun: string; opdId: string; pilarId: string; indikatorId: string; statusTl: string }): string {
@@ -35,12 +38,11 @@ async function apiFetch<T>(url: string): Promise<T> {
 
 // ── Component ────────────────────────────────────────
 export default function ReportPage() {
-  // Filter states
-  const [tahun, setTahun] = useState('2025');
-  const [opdId, setOpdId] = useState('');
-  const [pilarId, setPilarId] = useState('');
-  const [indikatorId, setIndikatorId] = useState('');
-  const [statusTl, setStatusTl] = useState('');
+  // Filter states — disimpan sebagai satu objek agar persisten antar-halaman
+  const [filter, setFilter] = usePersistentState(FILTER_KEY, {
+    tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '',
+  });
+  const { tahun, opdId, pilarId, indikatorId, statusTl } = filter;
   const [scorecardKey, setScorecardKey] = useState<ScorecardKey | null>(null);
 
   // Data states
@@ -107,39 +109,34 @@ export default function ReportPage() {
     }
   };
 
-  // ── Initial mount ─────────────────────────────────
+  // ── Initial mount — pakai filter tersimpan (state awal sudah dari localStorage) ──
   useEffect(() => {
     apiFetch<FilterOptions>('/api/filters').then(setFilterOptions);
-    fetchDataFor({ tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' });
+    fetchDataFor(filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const DEFAULT_FILTER = { tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' };
 
   // ── Scorecard click ───────────────────────────────
   function handleScorecardClick(key: ScorecardKey) {
     if (scorecardKey === key) {
-      // Deselect
+      // Deselect → kembali ke default
       setScorecardKey(null);
-      setStatusTl('');
-      setTahun('2025');
-      setOpdId('');
-      setPilarId('');
-      setIndikatorId('');
-      fetchDataFor({ tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' });
+      setFilter(DEFAULT_FILTER);
+      fetchDataFor(DEFAULT_FILTER);
       return;
     }
-
-    setScorecardKey(key);
-    setOpdId('');
-    setPilarId('');
-    setIndikatorId('');
 
     let newStatus = '';
     if (key === 'on_track') newStatus = 'On Track';
     else if (key === 'warning') newStatus = 'Warning';
     else if (key === 'alert') newStatus = 'Alert';
 
-    setStatusTl(newStatus);
-    setTahun('2025');
-    fetchDataFor({ tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: newStatus });
+    const next = { ...DEFAULT_FILTER, statusTl: newStatus };
+    setScorecardKey(key);
+    setFilter(next);
+    fetchDataFor(next);
   }
 
   // ── Filter dropdown change ─────────────────────────
@@ -159,30 +156,19 @@ export default function ReportPage() {
       const masihCocok = value !== '' && filterOptions?.indikator.some(
         i => String(i.id) === newState.indikatorId && String(i.pilar_id) === value
       );
-      if (!masihCocok) {
-        newState.indikatorId = '';
-        setIndikatorId('');
-      }
+      if (!masihCocok) newState.indikatorId = '';
     }
 
-    if (_key === 'tahun') setTahun(value);
-    else if (_key === 'opd_id') setOpdId(value);
-    else if (_key === 'pilar_id') setPilarId(value);
-    else if (_key === 'indikator_id') setIndikatorId(value);
-    else if (_key === 'status_tl') setStatusTl(value);
-
+    setFilter(newState);
     fetchDataFor(newState);
   }
 
   // ── Reset semua filter ke default ──────────────
   function handleResetFilter() {
     setScorecardKey(null);
-    setOpdId('');
-    setPilarId('');
-    setIndikatorId('');
-    setStatusTl('');
-    setTahun('2025');
-    fetchDataFor({ tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' });
+    clearPersistent(FILTER_KEY);
+    setFilter(DEFAULT_FILTER);
+    fetchDataFor(DEFAULT_FILTER);
   }
 
   // ── PieStatus click (popup modal) ──────────────
@@ -257,16 +243,16 @@ export default function ReportPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div>
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Report</h2>
-        <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+        <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Indikator</h2>
+        <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Monitoring 30 indikator pembangunan kependudukan Kabupaten Sidoarjo
         </p>
       </div>
 
-      <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '2rem' }}>
+      <div className="ds-card" style={{ padding: '1.5rem' }}>
         <div className="flex items-center gap-2.5" style={{ marginBottom: '1.25rem' }}>
-          <Filter size={16} style={{ color: 'var(--color-text-secondary)' }} />
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Filter Data</p>
+          <Filter size={15} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+          <p className="ds-section-label">Filter Data</p>
         </div>
         <FilterBar options={filterOptions} filters={filtersObj} onFilterChange={handleFilterChange} onReset={handleResetFilter} />
       </div>
@@ -316,12 +302,12 @@ export default function ReportPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div className="flex items-center gap-2.5">
-          <Table2 size={16} style={{ color: 'var(--color-text-secondary)' }} />
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+          <Table2 size={15} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+          <p className="ds-section-label">
             Tabel Indikator
           </p>
           {!loading && (
-            <span className="text-xs ml-1" style={{ color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+            <span className="text-xs ml-1" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.6 }}>
               — {filteredTableData.length} data
             </span>
           )}

@@ -15,11 +15,11 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
       <div
         className="rounded-xl border flex items-center justify-center py-20"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          borderColor: 'var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          borderColor: 'hsl(var(--ds-border))',
         }}
       >
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--color-text-secondary)' }} />
+        <Loader2 className="animate-spin" size={32} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
       </div>
     );
   }
@@ -29,12 +29,12 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
       <div
         className="rounded-xl border flex flex-col items-center justify-center py-20 gap-3"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          borderColor: 'var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          borderColor: 'hsl(var(--ds-border))',
         }}
       >
-        <FileX size={40} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+        <FileX size={40} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+        <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Tidak ada data yang sesuai dengan filter
         </p>
       </div>
@@ -45,14 +45,14 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
     <div
       className="rounded-xl border overflow-hidden table-wrap"
       style={{
-        backgroundColor: 'var(--color-bg-secondary)',
-        borderColor: 'var(--color-border)',
+        backgroundColor: 'hsl(var(--ds-card))',
+        borderColor: 'hsl(var(--ds-border))',
       }}
     >
       <div className="overflow-x-auto">
       <table className="w-full text-sm" style={{ minWidth: 1200 }}>
         <thead>
-          <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
             {['Kode', 'Nama Indikator', 'Pilar', 'OPD', 'Tahun', 'Target', 'Capaian', 'Gap', 'Arah Target', 'Status'].map(h => {
               const isNumeric = ['Target', 'Capaian', 'Gap'].includes(h);
               return (
@@ -60,7 +60,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 key={h}
                 className={`font-medium uppercase tracking-wider ${isNumeric ? 'text-right' : 'text-left'}`}
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'hsl(var(--ds-muted-foreground))',
                   fontSize: '0.688rem',
                   padding: '0.875rem 1.25rem',
                 }}
@@ -74,14 +74,14 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
           {data.map((row, i) => (
             <tr
               key={`${row.kode}-${i}`}
-              style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+              style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
               className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
               onClick={() => onRowClick?.(row)}
             >
               <td
                 className="font-mono align-middle"
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'hsl(var(--ds-muted-foreground))',
                   fontSize: '0.75rem',
                   padding: '0.875rem 1.25rem',
                 }}
@@ -91,7 +91,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               <td
                 className="font-medium align-middle"
                 style={{
-                  color: 'var(--color-text)',
+                  color: 'hsl(var(--ds-foreground))',
                   padding: '0.875rem 1.25rem',
                   fontSize: '0.8125rem',
                   maxWidth: '260px',
@@ -106,20 +106,20 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               <td
                 className="align-middle"
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'hsl(var(--ds-muted-foreground))',
                   fontSize: '0.75rem',
                   padding: '0.875rem 1.25rem',
                 }}
               >
                 {row.nama_pilar}
               </td>
-              <td className="align-middle" style={{ color: 'var(--color-text-secondary)', padding: '0.875rem 1.25rem', fontSize: '0.75rem', maxWidth: '220px', wordWrap: 'break-word' }}>
+              <td className="align-middle" style={{ color: 'hsl(var(--ds-muted-foreground))', padding: '0.875rem 1.25rem', fontSize: '0.75rem', maxWidth: '220px', wordWrap: 'break-word' }}>
                 {opdInduk(row.nama_opd)}
               </td>
               <td
                 className="font-mono align-middle"
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'hsl(var(--ds-muted-foreground))',
                   fontSize: '0.75rem',
                   padding: '0.875rem 1.25rem',
                 }}
@@ -129,7 +129,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               <td
                 className="font-mono align-middle text-right"
                 style={{
-                  color: 'var(--color-text)',
+                  color: 'hsl(var(--ds-foreground))',
                   padding: '0.875rem 1.25rem',
                   fontSize: '0.75rem',
                 }}
@@ -139,7 +139,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               <td
                 className="font-mono align-middle text-right"
                 style={{
-                  color: 'var(--color-text)',
+                  color: 'hsl(var(--ds-foreground))',
                   padding: '0.875rem 1.25rem',
                   fontSize: '0.75rem',
                 }}
@@ -156,9 +156,9 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 {row.gap != null ? (
                   <span style={{
                     color:
-                      row.status_tl === 'On Track' ? 'var(--color-success, #22c55e)' :
-                      row.status_tl === 'Warning' ? 'var(--color-warning, #eab308)' :
-                      'var(--color-danger, #ef4444)',
+                      row.status_tl === 'On Track' ? '#00a651' :
+                      row.status_tl === 'Warning' ? '#e6c800' :
+                      '#ef4444',
                   }}>
                     {row.gap >= 0 ? '+' : ''}{row.gap.toLocaleString('id-ID')}
                   </span>
@@ -167,7 +167,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
               <td
                 className="align-middle"
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'hsl(var(--ds-muted-foreground))',
                   fontSize: '0.75rem',
                   padding: '0.875rem 1.25rem',
                   whiteSpace: 'nowrap',

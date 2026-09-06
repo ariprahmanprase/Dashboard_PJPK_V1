@@ -10,39 +10,37 @@ interface Props {
 export default function BarPerPilar({ data, loading }: Props) {
   if (loading) {
     return (
-      <div className="rounded-xl border flex items-center justify-center py-16"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-        <Loader2 className="animate-spin" size={24} style={{ color: 'var(--color-text-secondary)' }} />
+      <div className="ds-card flex items-center justify-center py-16">
+        <Loader2 className="animate-spin" size={24} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
       </div>
     );
   }
 
   if (!data.length) {
     return (
-      <div className="rounded-xl border flex flex-col items-center justify-center py-16 gap-2"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-        <BarChart3 size={28} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>Tidak ada data per pilar</p>
+      <div className="ds-card flex flex-col items-center justify-center py-16 gap-2">
+        <BarChart3 size={28} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+        <p className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Tidak ada data per pilar</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1rem 0.75rem 0 0' }}>
-      <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+    <div className="ds-card" style={{ padding: '1rem 0.75rem 0 0' }}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.25rem' }}>
         Status per Pilar
       </p>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} horizontal={false} />
-          <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={{ stroke: '#cbd5e1' }} />
-          <YAxis dataKey="pilar" type="category" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={{ stroke: '#cbd5e1' }} width={160} />
-          <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontSize: '0.75rem', color: 'var(--color-text)' }} />
-          <Legend wrapperStyle={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)' }} />
-          <Bar dataKey="on_track" name="On Track" stackId="a" fill="#22c55e" />
-          <Bar dataKey="warning" name="Warning" stackId="a" fill="#f59e0b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--ds-border))" strokeOpacity={0.5} horizontal={false} />
+          <XAxis type="number" tick={{ fill: 'hsl(var(--ds-muted-foreground))', fontSize: 11 }} axisLine={{ stroke: 'hsl(var(--ds-border))' }} />
+          <YAxis dataKey="pilar" type="category" tick={{ fill: 'hsl(var(--ds-muted-foreground))', fontSize: 10 }} axisLine={{ stroke: 'hsl(var(--ds-border))' }} width={160} />
+          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--ds-card))', border: '1px solid hsl(var(--ds-border))', borderRadius: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--ds-foreground))' }} />
+          <Legend wrapperStyle={{ fontSize: '0.6875rem', color: 'hsl(var(--ds-muted-foreground))' }} />
+          <Bar dataKey="on_track" name="On Track" stackId="a" fill="#00a651" />
+          <Bar dataKey="warning" name="Warning" stackId="a" fill="#e6c800" />
           <Bar dataKey="alert" name="Alert" stackId="a" fill="#ef4444" />
-          <Bar dataKey="belum_diisi" name="Belum Diisi" stackId="a" fill="#94a3b8" />
+          <Bar dataKey="belum_diisi" name="Belum Diisi" stackId="a" fill="hsl(var(--ds-muted-foreground))" />
         </BarChart>
       </ResponsiveContainer>
     </div>

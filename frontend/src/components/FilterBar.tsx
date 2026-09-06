@@ -19,13 +19,13 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
     : options?.indikator;
 
   const baseSelect: React.CSSProperties = {
-    height: 40,
+    height: 38,
     padding: '0 0.875rem',
     borderRadius: '0.5rem',
-    border: '1px solid var(--color-border)',
-    backgroundColor: 'var(--color-bg-secondary)',
-    color: 'var(--color-text)',
-    fontSize: '0.875rem',
+    border: '1px solid hsl(var(--ds-input))',
+    backgroundColor: 'hsl(var(--ds-card))',
+    color: 'hsl(var(--ds-foreground))',
+    fontSize: '0.813rem',
     cursor: 'pointer',
     outline: 'none',
     minWidth: 160,
@@ -59,13 +59,13 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
           disabled={!hasActiveFilter}
           title="Reset semua filter"
           style={{
-            height: 40,
+            height: 38,
             padding: '0 0.875rem',
             borderRadius: '0.5rem',
-            border: '1px solid var(--color-border)',
-            backgroundColor: hasActiveFilter ? 'var(--color-bg-secondary)' : 'transparent',
-            color: 'var(--color-text-secondary)',
-            fontSize: '0.875rem',
+            border: '1px solid hsl(var(--ds-border))',
+            backgroundColor: hasActiveFilter ? 'hsl(var(--ds-card))' : 'transparent',
+            color: 'hsl(var(--ds-muted-foreground))',
+            fontSize: '0.813rem',
             cursor: hasActiveFilter ? 'pointer' : 'default',
             display: 'inline-flex',
             alignItems: 'center',
