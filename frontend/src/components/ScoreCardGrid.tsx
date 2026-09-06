@@ -9,6 +9,7 @@ interface Props {
   activeKey: ScorecardKey | null;
   onCardClick: (key: ScorecardKey) => void;
   customLabels?: Record<string, string>;
+  customDescriptions?: Record<string, string>;
   hiddenKeys?: string[];
 }
 
@@ -21,16 +22,26 @@ const DEFAULT_LABELS: Record<string, string> = {
   capaian_belum: 'Capaian Belum Diinput',
 };
 
-export default function ScoreCardGrid({ data, loading, activeKey, onCardClick, customLabels = {}, hiddenKeys = [] }: Props) {
-  const labels = { ...DEFAULT_LABELS, ...customLabels };
+const DEFAULT_DESCRIPTIONS: Record<string, string> = {
+  total_opd: 'Jumlah OPD pengampu indikator (mengikuti filter)',
+  total_indikator: 'Jumlah indikator yang terpantau (mengikuti filter)',
+  on_track: 'Indikator dengan capaian sesuai/melampaui target',
+  warning: 'Indikator dengan capaian mendekati target',
+  alert: 'Indikator dengan capaian jauh di bawah target',
+  capaian_belum: 'Indikator yang belum menginput realisasi',
+};
 
-  const allCards: Array<{key: ScorecardKey; label: string; value: number; variant: 'info' | 'success' | 'warning' | 'danger' | 'default'}> = data ? [
-    { key: 'total_indikator', label: labels.total_indikator || 'Total', value: data.total_indikator, variant: 'info' },
-    { key: 'total_opd', label: labels.total_opd || 'Total OPD', value: data.total_opd, variant: 'info' },
-    { key: 'on_track', label: labels.on_track || 'On Track', value: data.on_track, variant: 'success' },
-    { key: 'warning', label: labels.warning || 'Warning', value: data.warning, variant: 'warning' },
-    { key: 'alert', label: labels.alert || 'Alert', value: data.alert, variant: 'danger' },
-    { key: 'capaian_belum', label: labels.capaian_belum || 'Belum Diinput', value: data.capaian_belum_diinput, variant: 'default' },
+export default function ScoreCardGrid({ data, loading, activeKey, onCardClick, customLabels = {}, customDescriptions = {}, hiddenKeys = [] }: Props) {
+  const labels = { ...DEFAULT_LABELS, ...customLabels };
+  const descriptions = { ...DEFAULT_DESCRIPTIONS, ...customDescriptions };
+
+  const allCards: Array<{key: ScorecardKey; label: string; value: number; description: string; variant: 'info' | 'success' | 'warning' | 'danger' | 'default'}> = data ? [
+    { key: 'total_opd', label: labels.total_opd || 'Total OPD', value: data.total_opd, description: descriptions.total_opd, variant: 'info' },
+    { key: 'total_indikator', label: labels.total_indikator || 'Total', value: data.total_indikator, description: descriptions.total_indikator, variant: 'info' },
+    { key: 'on_track', label: labels.on_track || 'On Track', value: data.on_track, description: descriptions.on_track, variant: 'success' },
+    { key: 'warning', label: labels.warning || 'Warning', value: data.warning, description: descriptions.warning, variant: 'warning' },
+    { key: 'alert', label: labels.alert || 'Alert', value: data.alert, description: descriptions.alert, variant: 'danger' },
+    { key: 'capaian_belum', label: labels.capaian_belum || 'Belum Diinput', value: data.capaian_belum_diinput, description: descriptions.capaian_belum, variant: 'default' },
   ] : [];
 
   const visibleCards = allCards.filter(c => !hiddenKeys.includes(c.key));
@@ -62,6 +73,7 @@ export default function ScoreCardGrid({ data, loading, activeKey, onCardClick, c
           key={c.key}
           label={c.label}
           value={c.value}
+          description={c.description}
           variant={c.variant}
           active={activeKey === c.key}
           onClick={() => onCardClick(c.key)}
