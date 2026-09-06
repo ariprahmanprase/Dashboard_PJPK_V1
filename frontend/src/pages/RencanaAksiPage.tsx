@@ -186,11 +186,11 @@ export default function RencanaAksiPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5" style={{ gap: '0.75rem' }}>
-          <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" onClick={() => setScorecardPopup('Total Program')} />
-          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" onClick={() => setScorecardPopup('Total OPD')} />
-          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" onClick={() => setScorecardPopup('Tercapai')} />
-          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" onClick={() => setScorecardPopup('Hampir Tercapai')} />
-          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" onClick={() => setScorecardPopup('Tidak Tercapai')} />
+          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" description="Jumlah OPD pengampu rencana aksi (mengikuti filter)" onClick={() => setScorecardPopup('Total OPD')} />
+          <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" description="Jumlah program rencana aksi yang terpantau (mengikuti filter)" onClick={() => setScorecardPopup('Total Program')} />
+          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" description="Program dengan realisasi sesuai/melampaui target" onClick={() => setScorecardPopup('Tercapai')} />
+          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" description="Program dengan realisasi mendekati target" onClick={() => setScorecardPopup('Hampir Tercapai')} />
+          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" description="Program dengan realisasi jauh di bawah target" onClick={() => setScorecardPopup('Tidak Tercapai')} />
         </div>
       )}
 
