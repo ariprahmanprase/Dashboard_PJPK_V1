@@ -11,10 +11,10 @@ interface Props {
 const TAHUN = ['2025', '2026', '2027', '2028', '2029'];
 
 const statusColor: Record<string, string> = {
-  Hijau: '#22c55e',
-  Kuning: '#f59e0b',
+  Hijau: '#00a651',
+  Kuning: '#e6c800',
   Merah: '#ef4444',
-  Abu: '#94a3b8',
+  Abu: 'hsl(var(--ds-muted-foreground))',
 };
 
 function formatNum(v: number | null): string {
@@ -36,35 +36,35 @@ export default function HeatmapGrid({ data, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border flex items-center justify-center" style={{ minHeight: 320, backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-        <Loader2 className="animate-spin" size={24} style={{ color: 'var(--color-text-secondary)' }} />
+      <div className="rounded-xl border flex items-center justify-center" style={{ minHeight: 320, backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}>
+        <Loader2 className="animate-spin" size={24} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
       </div>
     );
   }
 
   if (!data.length) {
     return (
-      <div className="rounded-xl border flex flex-col items-center justify-center gap-2" style={{ minHeight: 320, backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-        <Grid3X3 size={28} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>Tidak ada data heatmap</p>
+      <div className="rounded-xl border flex flex-col items-center justify-center gap-2" style={{ minHeight: 320, backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}>
+        <Grid3X3 size={28} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+        <p className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Tidak ada data heatmap</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1rem', position: 'relative' }}>
-      <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
+    <div className="rounded-xl border" style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1rem', position: 'relative' }}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.5rem' }}>
         Heatmap Status
       </p>
       <div style={{ overflowX: 'auto', position: 'relative' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.625rem' }}>
           <thead>
             <tr>
-              <th style={{ padding: '0.25rem 0.375rem', color: 'var(--color-text-secondary)', textAlign: 'left', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              <th style={{ padding: '0.25rem 0.375rem', color: 'hsl(var(--ds-muted-foreground))', textAlign: 'left', fontWeight: 500, whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'none' }}>Indikator</span>
               </th>
               {TAHUN.map(thn => (
-                <th key={thn} style={{ padding: '0.25rem 0.375rem', color: 'var(--color-text-secondary)', textAlign: 'center', fontWeight: 500, width: '3rem' }}>
+                <th key={thn} style={{ padding: '0.25rem 0.375rem', color: 'hsl(var(--ds-muted-foreground))', textAlign: 'center', fontWeight: 500, width: '3rem' }}>
                   {thn}
                 </th>
               ))}
@@ -74,8 +74,8 @@ export default function HeatmapGrid({ data, loading }: Props) {
             {data.map(row => (
               <tr key={row.kode}>
                 <td style={{ padding: '0.25rem 0.375rem', maxWidth: '140px' }}>
-                  <span title={`${row.kode}: ${row.nama_indikator}`} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'var(--color-text-secondary)' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.5625rem', marginRight: '0.25rem' }}>{row.kode}</span>
+                  <span title={`${row.kode}: ${row.nama_indikator}`} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'hsl(var(--ds-muted-foreground))' }}>
+                    <span style={{ fontWeight: 600, color: 'hsl(var(--ds-foreground))', fontSize: '0.5625rem', marginRight: '0.25rem' }}>{row.kode}</span>
                     {row.nama_indikator}
                   </span>
                 </td>
@@ -103,7 +103,7 @@ export default function HeatmapGrid({ data, loading }: Props) {
                           width: '100%',
                           aspectRatio: '1',
                           borderRadius: '0.25rem',
-                          backgroundColor: statusColor[warna] || '#94a3b8',
+                          backgroundColor: statusColor[warna] || 'hsl(var(--ds-muted-foreground))',
                           opacity: status === 'Belum Diisi' ? 0.25 : 0.85,
                           cursor: 'pointer',
                           transition: 'transform 0.15s',
@@ -121,14 +121,14 @@ export default function HeatmapGrid({ data, loading }: Props) {
       {/* Legend */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
         {[
-          { label: 'On Track', color: '#22c55e' },
-          { label: 'Warning', color: '#f59e0b' },
+          { label: 'On Track', color: '#00a651' },
+          { label: 'Warning', color: '#e6c800' },
           { label: 'Alert', color: '#ef4444' },
-          { label: 'Belum Diisi', color: '#94a3b8', light: true },
+          { label: 'Belum Diisi', color: 'hsl(var(--ds-muted-foreground))', light: true },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <span style={{ width: 8, height: 8, borderRadius: '0.125rem', backgroundColor: item.color, opacity: item.light ? 0.25 : 0.85 }} />
-            <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.5625rem' }}>{item.label}</span>
+            <span style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.5625rem' }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -139,12 +139,12 @@ export default function HeatmapGrid({ data, loading }: Props) {
             position: 'fixed',
             left: tooltip.x + 12,
             top: tooltip.y - 10,
-            backgroundColor: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
+            backgroundColor: 'hsl(var(--ds-card))',
+            border: '1px solid hsl(var(--ds-border))',
             borderRadius: '0.375rem',
             padding: '0.25rem 0.5rem',
             fontSize: '0.6875rem',
-            color: 'var(--color-text)',
+            color: 'hsl(var(--ds-foreground))',
             zIndex: 60,
             pointerEvents: 'none',
             whiteSpace: 'pre-line',

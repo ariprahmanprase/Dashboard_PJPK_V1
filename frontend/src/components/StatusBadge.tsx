@@ -5,39 +5,39 @@ interface Props {
 
 const styles: Record<string, { bg: string; text: string }> = {
   Hijau: {
-    bg: 'rgba(34, 197, 94, 0.1)',
-    text: '#16a34a',
+    bg: 'rgba(0, 166, 81, 0.1)',
+    text: '#00a651',
   },
   Kuning: {
-    bg: 'rgba(245, 158, 11, 0.1)',
-    text: '#b45309',
+    bg: 'rgba(230, 200, 0, 0.15)',
+    text: '#b8a300',
   },
   Merah: {
     bg: 'rgba(239, 68, 68, 0.1)',
     text: '#dc2626',
   },
   Abu: {
-    bg: 'rgba(148, 163, 184, 0.1)',
-    text: '#64748b',
+    bg: 'hsl(var(--ds-muted-foreground) / 0.1)',
+    text: 'hsl(var(--ds-muted-foreground))',
   },
 };
 
 const darkStyles: Record<string, { bg: string; text: string }> = {
   Hijau: {
-    bg: 'rgba(34, 197, 94, 0.15)',
-    text: '#86efac',
+    bg: 'rgba(0, 166, 81, 0.2)',
+    text: '#4ade80',
   },
   Kuning: {
-    bg: 'rgba(245, 158, 11, 0.15)',
-    text: '#fcd34d',
+    bg: 'rgba(230, 200, 0, 0.18)',
+    text: '#f5e97a',
   },
   Merah: {
     bg: 'rgba(239, 68, 68, 0.15)',
     text: '#fca5a5',
   },
   Abu: {
-    bg: 'rgba(148, 163, 184, 0.1)',
-    text: '#94a3b8',
+    bg: 'hsl(var(--ds-muted-foreground) / 0.12)',
+    text: 'hsl(var(--ds-muted-foreground))',
   },
 };
 

@@ -31,8 +31,8 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
         <div
           className="rounded-2xl shadow-2xl flex flex-col"
           style={{
-            backgroundColor: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
+            backgroundColor: 'hsl(var(--ds-card))',
+            border: '1px solid hsl(var(--ds-border))',
             maxWidth: 900,
             width: '92%',
             maxHeight: '80vh',
@@ -42,18 +42,18 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
           {/* Header */}
           <div
             className="flex items-start justify-between gap-3"
-            style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}
+            style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--ds-border))', flexShrink: 0 }}
           >
             <div style={{ minWidth: 0 }}>
-              <p className="text-base font-bold" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>{title}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-base font-bold" style={{ color: 'hsl(var(--ds-foreground))', overflowWrap: 'anywhere' }}>{title}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 {rows.length} program
               </p>
             </div>
             <button
               onClick={handleClose}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-              style={{ color: 'var(--color-text-secondary)' }}
+              style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               title="Tutup"
             >
               <X size={18} />
@@ -63,19 +63,19 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
           {/* Body */}
           <div style={{ overflow: 'auto', flex: 1, minHeight: 0, padding: '0.5rem 0' }}>
             {rows.length === 0 ? (
-              <p className="text-sm text-center py-12" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-sm text-center py-12" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 Tidak ada program dengan status ini
               </p>
             ) : (
               <table className="w-full text-sm" style={{ minWidth: 700 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
                     {['No', 'Dinas', 'Program', 'Rencana Aksi', 'Target', 'Realisasi', 'Status'].map(h => (
                       <th
                         key={h}
                         className="text-left font-medium uppercase tracking-wider"
                         style={{
-                          color: 'var(--color-text-secondary)',
+                          color: 'hsl(var(--ds-muted-foreground))',
                           fontSize: '0.688rem',
                           padding: '0.625rem 1.25rem',
                         }}
@@ -89,26 +89,26 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
                   {rows.map((row, idx) => (
                     <tr
                       key={`${row.no}-${idx}`}
-                      style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+                      style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setSelectedRow(row)}
                     >
-                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.625rem 1.25rem' }}>
+                      <td style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.625rem 1.25rem' }}>
                         {idx + 1}
                       </td>
-                      <td style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 140 }}>
+                      <td style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 140 }}>
                         <span className="line-clamp-2">{row.dinas}</span>
                       </td>
-                      <td style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 200 }}>
+                      <td style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 200 }}>
                         <span className="line-clamp-2">{row.program}</span>
                       </td>
-                      <td className="font-medium" style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 240 }}>
+                      <td className="font-medium" style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 240 }}>
                         <span className="line-clamp-2">{row.rencana_aksi}</span>
                       </td>
-                      <td style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 130 }}>
+                      <td style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 130 }}>
                         <span className="line-clamp-2">{row.target}</span>
                       </td>
-                      <td style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 130 }}>
+                      <td style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.625rem 1.25rem', maxWidth: 130 }}>
                         <span className="line-clamp-2">{row.realisasi}</span>
                       </td>
                       <td style={{ padding: '0.625rem 1.25rem' }}>

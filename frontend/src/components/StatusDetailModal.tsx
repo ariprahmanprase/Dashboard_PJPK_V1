@@ -12,10 +12,10 @@ interface Props {
 }
 
 const COLOR_MAP: Record<string, string> = {
-  'On Track': '#22c55e',
-  'Warning': '#f59e0b',
+  'On Track': '#00a651',
+  'Warning': '#e6c800',
   'Alert': '#ef4444',
-  'Belum Diisi': '#94a3b8',
+  'Belum Diisi': 'hsl(var(--ds-muted-foreground))',
 };
 
 export default function StatusDetailModal({ open, onClose, title, subtitle, data, loading }: Props) {
@@ -30,8 +30,8 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
       <div
         className="rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          border: '1px solid hsl(var(--ds-border))',
           maxHeight: '80vh',
         }}
         onClick={e => e.stopPropagation()}
@@ -41,15 +41,15 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
           className="flex items-center justify-between"
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid var(--color-border)',
+            borderBottom: '1px solid hsl(var(--ds-border))',
           }}
         >
           <div>
-            <h3 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+            <h3 className="text-lg font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>
               Detail Status: {title}
             </h3>
             {subtitle && (
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 {subtitle}
               </p>
             )}
@@ -57,7 +57,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
           <button
             onClick={onClose}
             className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
           >
             <X size={18} />
           </button>
@@ -67,28 +67,28 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
         <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 80px)' }}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="animate-spin" size={28} style={{ color: 'var(--color-text-secondary)' }} />
+              <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
             </div>
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <FileX size={36} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <FileX size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 Tidak ada data
               </p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
                   {['No', 'Kode', 'Indikator', 'Pilar', 'OPD'].map(h => (
                     <th
                       key={h}
                       className="text-left font-medium uppercase tracking-wider"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.688rem',
                         padding: '0.75rem 1.25rem',
-                        backgroundColor: 'var(--color-bg-secondary)',
+                        backgroundColor: 'hsl(var(--ds-card))',
                       }}
                     >
                       {h}
@@ -100,13 +100,13 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                 {data.map((item, idx) => (
                   <tr
                     key={item.kode}
-                    style={{ borderBottom: '1px solid var(--color-border)' }}
+                    style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.75rem',
                         padding: '0.75rem 1.25rem',
                         width: '3rem',
@@ -117,7 +117,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                     <td
                       className="align-middle font-mono font-medium"
                       style={{
-                        color: '#3b82f6',
+                        color: '#00aeef',
                         fontSize: '0.75rem',
                         padding: '0.75rem 1.25rem',
                       }}
@@ -127,7 +127,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                     <td
                       className="font-medium align-middle"
                       style={{
-                        color: 'var(--color-text)',
+                        color: 'hsl(var(--ds-foreground))',
                         padding: '0.75rem 1.25rem',
                       }}
                     >
@@ -136,7 +136,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.8125rem',
                         padding: '0.75rem 1.25rem',
                       }}
@@ -146,7 +146,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.8125rem',
                         padding: '0.75rem 1.25rem',
                       }}

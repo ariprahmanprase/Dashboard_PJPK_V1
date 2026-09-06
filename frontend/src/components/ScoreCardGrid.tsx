@@ -54,8 +54,8 @@ export default function ScoreCardGrid({ data, loading, activeKey, onCardClick, c
             key={i}
             className="rounded-xl border p-5 animate-pulse"
             style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderColor: 'var(--color-border)',
+              backgroundColor: 'hsl(var(--ds-card))',
+              borderColor: 'hsl(var(--ds-border))',
             }}
           >
             <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-4/5 mb-2.5" />

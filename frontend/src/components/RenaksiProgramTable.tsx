@@ -24,9 +24,9 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
     return (
       <div
         className="rounded-xl border flex items-center justify-center py-20"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}
       >
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--color-text-secondary)' }} />
+        <Loader2 className="animate-spin" size={32} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
       </div>
     );
   }
@@ -35,10 +35,10 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
     return (
       <div
         className="rounded-xl border flex flex-col items-center justify-center py-20 gap-3"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}
       >
-        <FileX size={40} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+        <FileX size={40} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+        <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Tidak ada data yang sesuai dengan filter
         </p>
       </div>
@@ -56,18 +56,18 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
     <>
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: actions ? 1250 : 1100 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
                 {['No', 'Dinas', 'Program', 'Rencana Aksi', 'Tahun', 'Target', 'Realisasi', 'Indikator', 'Pilar Terkait', 'Status', ...(actions ? ['Aksi'] : [])].map(h => (
                   <th
                     key={h}
                     className="text-left font-medium uppercase tracking-wider"
                     style={{
-                      color: 'var(--color-text-secondary)',
+                      color: 'hsl(var(--ds-muted-foreground))',
                       fontSize: '0.688rem',
                       padding: '0.875rem 1.25rem',
                     }}
@@ -81,49 +81,49 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
               {data.map((row) => (
                 <tr
                   key={`${row.no}-${row.rencana_aksi.slice(0, 24)}`}
-                  style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+                  style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   onClick={() => handleRowClick(row)}
                 >
                   <td
                     className="align-middle"
-                    style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}
+                    style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}
                   >
                     {row.no}
                   </td>
                   <td
                     className="align-middle"
-                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 120 }}
+                    style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 120 }}
                   >
                     <span className="line-clamp-2">{row.dinas}</span>
                   </td>
                   <td
                     className="align-middle"
-                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}
+                    style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}
                   >
                     <span className="line-clamp-2">{row.program}</span>
                   </td>
                   <td
                     className="align-middle font-medium"
-                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 280 }}
+                    style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 280 }}
                   >
                     <span className="line-clamp-2">{row.rencana_aksi}</span>
                   </td>
                   <td
                     className="align-middle font-mono"
-                    style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', whiteSpace: 'nowrap' }}
+                    style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem', whiteSpace: 'nowrap' }}
                   >
                     {row.tahun}
                   </td>
                   <td
                     className="align-middle"
-                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
+                    style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
                   >
                     <span className="line-clamp-2">{row.target}</span>
                   </td>
                   <td
                     className="align-middle"
-                    style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
+                    style={{ color: 'hsl(var(--ds-foreground))', fontSize: '0.8125rem', padding: '0.75rem 1.25rem', maxWidth: 150 }}
                   >
                     <span className="line-clamp-2">{row.realisasi}</span>
                   </td>
@@ -134,7 +134,7 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
                           <span
                             key={idx}
                             className="inline-block px-2 py-0.5 rounded text-xs"
-                            style={{ backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-secondary)' }}
+                            style={{ backgroundColor: 'hsl(var(--ds-card))', color: 'hsl(var(--ds-muted-foreground))' }}
                           >
                             {ind}
                           </span>
@@ -142,7 +142,7 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
                         {row.indikator.length > 2 && (
                           <span
                             className="inline-block px-2 py-0.5 rounded text-xs"
-                            style={{ backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-secondary)' }}
+                            style={{ backgroundColor: 'hsl(var(--ds-card))', color: 'hsl(var(--ds-muted-foreground))' }}
                           >
                             +{row.indikator.length - 2}
                           </span>
@@ -185,7 +185,7 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
                         <button
                           onClick={(e) => { e.stopPropagation(); actions.onEdit(row); }}
                           className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-                          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', padding: '0.5rem 0.875rem' }}
+                          style={{ borderColor: 'hsl(var(--ds-border))', color: 'hsl(var(--ds-foreground))', padding: '0.5rem 0.875rem' }}
                         >
                           <Pencil size={13} /> Edit
                         </button>

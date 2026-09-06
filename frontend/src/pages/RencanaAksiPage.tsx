@@ -8,6 +8,10 @@ import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import { groupOpdOptions, opdInduk } from '@/lib/opd';
+import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
+
+const FILTER_KEY = 'pjpk-draft-filter-renaksi';
+const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', dinas: '', indikatorId: '', statusRenaksi: '', search: '' };
 
 // ── Helpers ──────────────────────────────────────────
 async function apiFetch<T>(url: string): Promise<T> {
@@ -21,31 +25,28 @@ export default function RencanaAksiPage() {
   // Tab state
   const [activeTab, setActiveTab] = useState<'program' | 'indikator'>('program');
 
-  // Filters
-  const [tahun, setTahun] = useState('');
-  const [pilarId, setPilarId] = useState('');
-  const [opdId, setOpdId] = useState('');
-  const [dinas, setDinas] = useState('');
-  const [indikatorId, setIndikatorId] = useState('');
-  const [statusRenaksi, setStatusRenaksi] = useState('');
-  const [search, setSearch] = useState('');
+  // Filters — disimpan sebagai satu objek persisten (bertahan saat pindah halaman)
+  const [filter, setFilter] = usePersistentState(FILTER_KEY, DEFAULT_FILTER);
+  const { tahun, pilarId, opdId, dinas, indikatorId, statusRenaksi, search } = filter;
+  const patchFilter = (patch: Partial<typeof DEFAULT_FILTER>) => setFilter(f => ({ ...f, ...patch }));
+  const setTahun = (v: string) => patchFilter({ tahun: v });
+  const setOpdId = (v: string) => patchFilter({ opdId: v });
+  const setDinas = (v: string) => patchFilter({ dinas: v });
+  const setIndikatorId = (v: string) => patchFilter({ indikatorId: v });
+  const setStatusRenaksi = (v: string) => patchFilter({ statusRenaksi: v });
+  const setSearch = (v: string) => patchFilter({ search: v });
 
   // ── Reset semua filter ──
   function handleResetFilter() {
-    setTahun('');
-    setPilarId('');
-    setOpdId('');
-    setDinas('');
-    setIndikatorId('');
-    setStatusRenaksi('');
-    setSearch('');
+    clearPersistent(FILTER_KEY);
+    setFilter(DEFAULT_FILTER);
   }
 
   const hasActiveFilter = Boolean(tahun || pilarId || opdId || dinas || indikatorId || statusRenaksi || search);
 
   // ── Cascading: ganti pilar → reset indikator bila tidak cocok ──
   function handlePilarChange(value: string) {
-    setPilarId(value);
+    patchFilter({ pilarId: value });
     if (indikatorId) {
       const sumber = activeTab === 'program' ? programIndikatorList : (filterOptions?.indikator ?? []);
       const masihCocok = value !== '' && sumber.some(
@@ -185,9 +186,9 @@ export default function RencanaAksiPage() {
     height: 40,
     padding: '0 0.875rem',
     borderRadius: '0.5rem',
-    border: '1px solid var(--color-border)',
-    backgroundColor: 'var(--color-bg-secondary)',
-    color: 'var(--color-text)',
+    border: '1px solid hsl(var(--ds-border))',
+    backgroundColor: 'hsl(var(--ds-card))',
+    color: 'hsl(var(--ds-foreground))',
     fontSize: '0.875rem',
     cursor: 'pointer',
     outline: 'none',
@@ -198,20 +199,20 @@ export default function RencanaAksiPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Rencana Aksi</h2>
-        <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+        <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Rencana Aksi</h2>
+        <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Monitoring pelaksanaan rencana aksi pembangunan kependudukan
         </p>
       </div>
 
       {/* ── Tab Switcher ── */}
-      <div className="flex gap-2 p-1 rounded-xl" style={{ backgroundColor: 'var(--color-bg-secondary)', width: 'fit-content' }}>
+      <div className="flex gap-2 p-1 rounded-xl" style={{ backgroundColor: 'hsl(var(--ds-card))', width: 'fit-content' }}>
         <button
           onClick={() => setActiveTab('program')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'program' ? 'shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           style={{
-            backgroundColor: activeTab === 'program' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activeTab === 'program' ? 'var(--color-text)' : 'var(--color-text-secondary)',
+            backgroundColor: activeTab === 'program' ? 'hsl(var(--ds-card))' : 'transparent',
+            color: activeTab === 'program' ? 'hsl(var(--ds-foreground))' : 'hsl(var(--ds-muted-foreground))',
           }}
         >
           <Table2 size={16} />
@@ -221,8 +222,8 @@ export default function RencanaAksiPage() {
           onClick={() => setActiveTab('indikator')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'indikator' ? 'shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           style={{
-            backgroundColor: activeTab === 'indikator' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activeTab === 'indikator' ? 'var(--color-text)' : 'var(--color-text-secondary)',
+            backgroundColor: activeTab === 'indikator' ? 'hsl(var(--ds-card))' : 'transparent',
+            color: activeTab === 'indikator' ? 'hsl(var(--ds-foreground))' : 'hsl(var(--ds-muted-foreground))',
           }}
         >
           <Grid size={16} />
@@ -238,8 +239,8 @@ export default function RencanaAksiPage() {
               key={i}
               className="rounded-xl border p-5 animate-pulse"
               style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderColor: 'var(--color-border)',
+                backgroundColor: 'hsl(var(--ds-card))',
+                borderColor: 'hsl(var(--ds-border))',
               }}
             >
               <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-4/5 mb-2.5" />
@@ -265,10 +266,10 @@ export default function RencanaAksiPage() {
       )}
 
       {/* ── Filter Bar ── */}
-      <div className="rounded-xl border" style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1.5rem' }}>
+      <div className="rounded-xl border" style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1.5rem' }}>
         <div className="flex items-center gap-2.5" style={{ marginBottom: '1rem' }}>
-          <Filter size={16} style={{ color: 'var(--color-text-secondary)' }} />
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Filter</p>
+          <Filter size={16} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Filter</p>
         </div>
         <div className="filter-full" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', alignItems: 'center' }}>
           {/* Tahun - show for both tabs */}
@@ -317,7 +318,7 @@ export default function RencanaAksiPage() {
 
           {/* Search */}
           <div style={{ position: 'relative', flex: 1, minWidth: 240, maxWidth: 360 }}>
-            <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--color-text-secondary)' }} />
+            <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'hsl(var(--ds-muted-foreground))' }} />
             <input
               type="text"
               placeholder="Cari rencana aksi..."
@@ -328,9 +329,9 @@ export default function RencanaAksiPage() {
                 width: '100%',
                 padding: '0 0.875rem 0 2.25rem',
                 borderRadius: '0.5rem',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text)',
+                border: '1px solid hsl(var(--ds-border))',
+                backgroundColor: 'hsl(var(--ds-card))',
+                color: 'hsl(var(--ds-foreground))',
                 fontSize: '0.875rem',
                 outline: 'none',
               }}
@@ -347,9 +348,9 @@ export default function RencanaAksiPage() {
               height: 40,
               padding: '0 0.875rem',
               borderRadius: '0.5rem',
-              border: '1px solid var(--color-border)',
-              backgroundColor: hasActiveFilter ? 'var(--color-bg-secondary)' : 'transparent',
-              color: 'var(--color-text-secondary)',
+              border: '1px solid hsl(var(--ds-border))',
+              backgroundColor: hasActiveFilter ? 'hsl(var(--ds-card))' : 'transparent',
+              color: 'hsl(var(--ds-muted-foreground))',
               fontSize: '0.875rem',
               cursor: hasActiveFilter ? 'pointer' : 'default',
               display: 'inline-flex',
@@ -377,12 +378,12 @@ export default function RencanaAksiPage() {
       {activeTab === 'program' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div className="flex items-center gap-2.5">
-            <Table2 size={16} style={{ color: 'var(--color-text-secondary)' }} />
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+            <Table2 size={16} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
               Tabel Program Rencana Aksi
             </p>
             {!loading && (
-              <span className="text-xs ml-1" style={{ color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+              <span className="text-xs ml-1" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.6 }}>
                 — {programData.length} data
               </span>
             )}
@@ -394,39 +395,39 @@ export default function RencanaAksiPage() {
           {/* Indikator Table */}
           {loading ? (
             <div className="rounded-xl border flex items-center justify-center py-20"
-              style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-              <Loader2 className="animate-spin" size={32} style={{ color: 'var(--color-text-secondary)' }} />
+              style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}>
+              <Loader2 className="animate-spin" size={32} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
             </div>
           ) : sortedIndikatorData.length === 0 ? (
             <div className="rounded-xl border flex flex-col items-center justify-center py-20 gap-3"
-              style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
-              <FileX size={40} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Tidak ada rencana aksi yang sesuai filter</p>
+              style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}>
+              <FileX size={40} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Tidak ada rencana aksi yang sesuai filter</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div className="flex items-center gap-2.5">
-                <Table2 size={16} style={{ color: 'var(--color-text-secondary)' }} />
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                <Table2 size={16} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                   Tabel Rencana Aksi per Indikator
                 </p>
-                <span className="text-xs ml-1" style={{ color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+                <span className="text-xs ml-1" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.6 }}>
                   — {sortedIndikatorData.length} data
                 </span>
               </div>
               <div className="rounded-xl border overflow-hidden"
-                style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}>
+                style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))' }}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm" style={{ minWidth: 900 }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>No</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Kode</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Indikator</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Pilar</th>
+                      <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>No</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Kode</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Indikator</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Pilar</th>
                         <th
                           className="text-left font-medium uppercase tracking-wider select-none"
-                          style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
                           onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                         >
                           Tahun{' '}
@@ -435,26 +436,26 @@ export default function RencanaAksiPage() {
                             : <ArrowDown size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
                           }
                         </th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Rencana Aksi</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>OPD</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Status</th>
-                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Catatan</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Rencana Aksi</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>OPD</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Status</th>
+                        <th className="text-left font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.875rem 1.25rem' }}>Catatan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedIndikatorData.map((row) => (
                         <tr key={row.id}
-                          style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
+                          style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
                           className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                           onClick={() => setSelected(row)}
                         >
-                          <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.no}</td>
-                          <td className="font-mono" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.kode}</td>
-                          <td className="font-medium truncate" style={{ color: 'var(--color-text)', padding: '0.75rem 1.25rem', maxWidth: 240 }}>{row.indikator}</td>
-                          <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.pilar}</td>
-                          <td className="font-mono" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.tahun}</td>
-                          <td className="truncate" style={{ color: 'var(--color-text)', padding: '0.75rem 1.25rem', maxWidth: 300 }}>{row.rencana_aksi}</td>
-                          <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.opd}</td>
+                          <td style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.no}</td>
+                          <td className="font-mono" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.kode}</td>
+                          <td className="font-medium truncate" style={{ color: 'hsl(var(--ds-foreground))', padding: '0.75rem 1.25rem', maxWidth: 240 }}>{row.indikator}</td>
+                          <td style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.pilar}</td>
+                          <td className="font-mono" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.tahun}</td>
+                          <td className="truncate" style={{ color: 'hsl(var(--ds-foreground))', padding: '0.75rem 1.25rem', maxWidth: 300 }}>{row.rencana_aksi}</td>
+                          <td style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem' }}>{row.opd}</td>
                           <td style={{ padding: '0.75rem 1.25rem' }}>
                             <span style={{
                               display: 'inline-block',
@@ -469,7 +470,7 @@ export default function RencanaAksiPage() {
                               {renaksiStatusStyle(row.status).label}
                             </span>
                           </td>
-                          <td className="truncate" style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}>
+                          <td className="truncate" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', padding: '0.75rem 1.25rem', maxWidth: 200 }}>
                             {row.catatan ?? '-'}
                           </td>
                         </tr>
@@ -485,7 +486,7 @@ export default function RencanaAksiPage() {
 
       {/* Tabel footer */}
       {!loading && (
-        <p className="text-xs text-right" style={{ color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+        <p className="text-xs text-right" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.6 }}>
           Menampilkan {activeTab === 'program' ? programData.length : sortedIndikatorData.length} rencana aksi
         </p>
       )}
@@ -508,8 +509,8 @@ export default function RencanaAksiPage() {
           <div
             className="rounded-2xl shadow-2xl flex flex-col"
             style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
+              backgroundColor: 'hsl(var(--ds-card))',
+              border: '1px solid hsl(var(--ds-border))',
               maxWidth: 600,
               width: '90%',
               maxHeight: '80vh',
@@ -527,31 +528,31 @@ export default function RencanaAksiPage() {
                   }
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', overflowWrap: 'anywhere' }}>
                     {selected.kode} — {selected.pilar}
                   </p>
-                  <p className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>
+                  <p className="text-base font-bold mt-0.5" style={{ color: 'hsl(var(--ds-foreground))', overflowWrap: 'anywhere' }}>
                     {selected.indikator}
                   </p>
                 </div>
               </div>
 
-              <hr style={{ borderColor: 'var(--color-border)' }} />
+              <hr style={{ borderColor: 'hsl(var(--ds-border))' }} />
 
               {/* Body */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>Rencana Aksi</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{selected.rencana_aksi}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Rencana Aksi</p>
+                  <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))' }}>{selected.rencana_aksi}</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '2rem' }}>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>Tahun</p>
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{selected.tahun}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Tahun</p>
+                    <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))' }}>{selected.tahun}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>Status</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Status</p>
                     <span style={{
                       display: 'inline-block',
                       padding: '0.2rem 0.5rem',
@@ -568,21 +569,21 @@ export default function RencanaAksiPage() {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>OPD Penanggung Jawab</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{selected.opd}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>OPD Penanggung Jawab</p>
+                  <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))' }}>{selected.opd}</p>
                 </div>
 
                 {selected.kolaborasi && (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>OPD Kolaborasi</p>
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{selected.kolaborasi}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>OPD Kolaborasi</p>
+                    <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))' }}>{selected.kolaborasi}</p>
                   </div>
                 )}
 
                 {selected.catatan && (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>Catatan</p>
-                    <p className="text-sm" style={{ color: 'var(--color-text)' }}>{selected.catatan}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Catatan</p>
+                    <p className="text-sm" style={{ color: 'hsl(var(--ds-foreground))' }}>{selected.catatan}</p>
                   </div>
                 )}
               </div>
@@ -591,7 +592,7 @@ export default function RencanaAksiPage() {
               <button
                 onClick={() => setSelected(null)}
                 className="mt-2 p-2 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                style={{ color: 'var(--color-text-secondary)', alignSelf: 'center' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))', alignSelf: 'center' }}
               >
                 Tutup
               </button>
