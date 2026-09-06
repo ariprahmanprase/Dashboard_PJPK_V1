@@ -4,12 +4,10 @@ import { Trophy, Medal, Award, Loader2, ListOrdered } from 'lucide-react';
 interface RankRow {
   peringkat: number;
   opd: string;
-  indikator_on_track: number;
-  indikator_total: number;
-  pct_indikator: number;
-  renaksi_terlaksana: number;
   renaksi_total: number;
-  pct_renaksi: number;
+  renaksi_tercapai: number;
+  renaksi_terlaksana: number;
+  pct_tercapai: number;
   skor: number;
 }
 
@@ -45,7 +43,7 @@ export default function RankPage() {
         <div>
           <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Peringkat OPD</h2>
           <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
-            Skor gabungan: 50% indikator On Track + 50% rencana aksi terlaksana
+            Berdasarkan persentase rencana aksi yang Tercapai pada tahun {tahun}
           </p>
         </div>
         <select
@@ -78,10 +76,10 @@ export default function RankPage() {
               alignItems: 'end',
             }}
           >
-            {/* Urutan tampilan: 2, 1, 3 di layar lebar (juara 1 di tengah lebih tinggi) */}
+            {/* Urutan tampilan: 2, 1, 3 (juara 1 di tengah lebih menonjol) */}
             {[podium[1], podium[0], podium[2]].map((row, idx) => {
               if (!row) return <div key={idx} />;
-              const rank = row.peringkat; // 1,2,3
+              const rank = row.peringkat;
               const m = MEDAL[rank - 1];
               const isFirst = rank === 1;
               return (
@@ -115,9 +113,11 @@ export default function RankPage() {
                     {row.opd}
                   </p>
                   <p style={{ fontSize: '1.75rem', fontWeight: 800, color: 'hsl(var(--ds-primary))', marginTop: '0.5rem', fontVariantNumeric: 'tabular-nums' }}>
-                    {row.skor}
+                    {row.pct_tercapai}%
                   </p>
-                  <p style={{ fontSize: '0.688rem', color: 'hsl(var(--ds-muted-foreground))' }}>skor</p>
+                  <p style={{ fontSize: '0.688rem', color: 'hsl(var(--ds-muted-foreground))' }}>
+                    {row.renaksi_tercapai} dari {row.renaksi_total} renaksi tercapai
+                  </p>
                 </div>
               );
             })}
@@ -130,23 +130,14 @@ export default function RankPage() {
             </p>
             <div className="ds-card" style={{ overflow: 'hidden' }}>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: 760, borderCollapse: 'collapse' }}>
+                <table className="w-full text-sm" style={{ minWidth: 680, borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))', background: 'hsl(var(--ds-muted) / 0.4)' }}>
-                      {['Rank', 'OPD', 'Indikator On Track', 'Renaksi Terlaksana', 'Skor'].map((h, i) => (
-                        <th
-                          key={h}
-                          className="font-semibold uppercase tracking-wider"
-                          style={{
-                            color: 'hsl(var(--ds-muted-foreground))',
-                            fontSize: '0.688rem',
-                            padding: '0.75rem 1.25rem',
-                            textAlign: i >= 2 ? 'center' : 'left',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
+                      <th className="font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.75rem 1.25rem', textAlign: 'left' }}>Rank</th>
+                      <th className="font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.75rem 1.25rem', textAlign: 'left' }}>OPD</th>
+                      <th className="font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.75rem 1.25rem', textAlign: 'center' }}>Total Renaksi</th>
+                      <th className="font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.75rem 1.25rem', textAlign: 'center' }}>Tercapai</th>
+                      <th className="font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.688rem', padding: '0.75rem 1.25rem', textAlign: 'left' }}>% Tercapai</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -156,19 +147,19 @@ export default function RankPage() {
                           {row.peringkat}
                         </td>
                         <td style={{ padding: '0.75rem 1.25rem', fontWeight: 500, color: 'hsl(var(--ds-foreground))' }}>{row.opd}</td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'center', color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.813rem' }}>
-                          {row.indikator_total > 0 ? `${row.indikator_on_track}/${row.indikator_total} (${row.pct_indikator}%)` : '—'}
+                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'center', color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.813rem', fontVariantNumeric: 'tabular-nums' }}>
+                          {row.renaksi_total}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'center', color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.813rem' }}>
-                          {row.renaksi_total > 0 ? `${row.renaksi_terlaksana}/${row.renaksi_total} (${row.pct_renaksi}%)` : '—'}
+                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'center', fontSize: '0.813rem', fontVariantNumeric: 'tabular-nums' }}>
+                          <span style={{ color: 'hsl(var(--ds-primary))', fontWeight: 600 }}>{row.renaksi_tercapai}</span>
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', minWidth: 160 }}>
+                        <td style={{ padding: '0.75rem 1.25rem', minWidth: 180 }}>
                           <div className="flex items-center gap-2">
                             <div style={{ flex: 1, height: 8, borderRadius: 999, background: 'hsl(var(--ds-muted))', overflow: 'hidden' }}>
                               <div style={{ width: `${(row.skor / maxSkor) * 100}%`, height: '100%', background: 'linear-gradient(90deg, hsl(var(--ds-primary)), hsl(var(--ds-secondary)))', borderRadius: 999 }} />
                             </div>
-                            <span style={{ fontWeight: 700, color: 'hsl(var(--ds-foreground))', fontVariantNumeric: 'tabular-nums', fontSize: '0.813rem', minWidth: 40, textAlign: 'right' }}>
-                              {row.skor}
+                            <span style={{ fontWeight: 700, color: 'hsl(var(--ds-foreground))', fontVariantNumeric: 'tabular-nums', fontSize: '0.813rem', minWidth: 44, textAlign: 'right' }}>
+                              {row.pct_tercapai}%
                             </span>
                           </div>
                         </td>

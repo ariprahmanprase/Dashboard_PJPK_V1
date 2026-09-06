@@ -920,76 +920,50 @@ class DashboardService
     }
 
     // ─────────────────────────────────────────────────────
-    //  RANK OPD — gabungan kinerja indikator + pelaksanaan renaksi
-    //  Skor = 50% × (% indikator On Track) + 50% × (% renaksi Terlaksana)
+    //  RANK OPD — berdasarkan pelaksanaan rencana aksi
+    //  Diurutkan dari % renaksi Tercapai tertinggi.
+    //  Menampilkan total renaksi & jumlah tercapai per OPD.
     // ─────────────────────────────────────────────────────
     public function getRankOpd(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
 
-        // --- A. Kinerja indikator per OPD (status TL tahun tsb) ---
-        $indikators = Indikator::query()->with('opds')->get();
-        $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
-            ->where('tahun', $tahun)
-            ->select('indikator_id', 'target', 'capaian')
-            ->get()
-            ->keyBy('indikator_id');
-
-        $indikatorAgg = []; // namaInduk => ['on_track'=>n, 'total'=>n]
-        foreach ($indikators as $ind) {
-            $tc = $tcs->get($ind->id);
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
-            $onTrack = $s['status_tl'] === 'On Track';
-            foreach ($ind->opds as $opd) {
-                $name = $this->normalizeOpdName($opd->nama_opd);
-                if (!isset($indikatorAgg[$name])) $indikatorAgg[$name] = ['on_track' => 0, 'total' => 0];
-                $indikatorAgg[$name]['total']++;
-                if ($onTrack) $indikatorAgg[$name]['on_track']++;
-            }
-        }
-
-        // --- B. Pelaksanaan renaksi per dinas (tahun tsb) ---
+        // Pelaksanaan renaksi per dinas (tahun tsb)
         $renaksi = RenaksiProgram::query()
             ->where('tahun', $tahun)
             ->select('dinas_text', 'status')
             ->get();
 
-        $renaksiAgg = []; // namaInduk => ['terlaksana'=>n, 'total'=>n]
+        $agg = []; // namaInduk => ['tercapai'=>n, 'terlaksana'=>n, 'total'=>n]
         foreach ($renaksi as $r) {
             $name = $this->normalizeOpdName($r->dinas_text);
             if ($name === '-' || $name === '') continue;
-            if (!isset($renaksiAgg[$name])) $renaksiAgg[$name] = ['terlaksana' => 0, 'total' => 0];
-            $renaksiAgg[$name]['total']++;
-            if (in_array($r->status, ['Tercapai', 'Hampir Tercapai'], true)) {
-                $renaksiAgg[$name]['terlaksana']++;
-            }
+            if (!isset($agg[$name])) $agg[$name] = ['tercapai' => 0, 'terlaksana' => 0, 'total' => 0];
+            $agg[$name]['total']++;
+            if ($r->status === 'Tercapai') $agg[$name]['tercapai']++;
+            if (in_array($r->status, ['Tercapai', 'Hampir Tercapai'], true)) $agg[$name]['terlaksana']++;
         }
 
-        // --- C. Gabungkan semua OPD (union nama induk) ---
-        $names = array_unique(array_merge(array_keys($indikatorAgg), array_keys($renaksiAgg)));
         $rows = [];
-        foreach ($names as $name) {
-            $ind = $indikatorAgg[$name] ?? ['on_track' => 0, 'total' => 0];
-            $ren = $renaksiAgg[$name] ?? ['terlaksana' => 0, 'total' => 0];
-
-            $pctIndikator = $ind['total'] > 0 ? ($ind['on_track'] / $ind['total']) * 100 : 0;
-            $pctRenaksi = $ren['total'] > 0 ? ($ren['terlaksana'] / $ren['total']) * 100 : 0;
-            $skor = round(($pctIndikator + $pctRenaksi) / 2, 1);
-
+        foreach ($agg as $name => $a) {
+            $pct = $a['total'] > 0 ? ($a['tercapai'] / $a['total']) * 100 : 0;
             $rows[] = [
                 'opd' => $name,
-                'indikator_on_track' => $ind['on_track'],
-                'indikator_total' => $ind['total'],
-                'pct_indikator' => round($pctIndikator, 1),
-                'renaksi_terlaksana' => $ren['terlaksana'],
-                'renaksi_total' => $ren['total'],
-                'pct_renaksi' => round($pctRenaksi, 1),
-                'skor' => $skor,
+                'renaksi_total' => $a['total'],
+                'renaksi_tercapai' => $a['tercapai'],
+                'renaksi_terlaksana' => $a['terlaksana'],
+                'pct_tercapai' => round($pct, 1),
+                'skor' => round($pct, 1),
             ];
         }
 
-        // Urutkan skor tertinggi → nama
-        usort($rows, fn($a, $b) => $b['skor'] <=> $a['skor'] ?: strcmp($a['opd'], $b['opd']));
+        // Urutkan % tercapai tertinggi → jumlah tercapai terbanyak → total terbanyak → nama
+        usort($rows, fn($a, $b) =>
+            $b['pct_tercapai'] <=> $a['pct_tercapai']
+            ?: $b['renaksi_tercapai'] <=> $a['renaksi_tercapai']
+            ?: $b['renaksi_total'] <=> $a['renaksi_total']
+            ?: strcmp($a['opd'], $b['opd'])
+        );
         foreach ($rows as $i => &$row) $row['peringkat'] = $i + 1;
         unset($row);
 
