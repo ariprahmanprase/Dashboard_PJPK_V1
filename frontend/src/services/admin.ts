@@ -199,6 +199,78 @@ export async function deleteAiRecommendation(id: number): Promise<void> {
   await request(`/admin/renaksi-programs/${id}/ai-recommendation`, { method: 'DELETE' });
 }
 
+// ── P1: Analisis Kinerja Indikator (AI) ──
+export interface AiIndikatorOption {
+  kode: string;
+  nama_indikator: string;
+  pilar: string | null;
+}
+
+export interface AiIndikatorResult {
+  hasil: string;
+  model: string | null;
+  updated_at: string | null;
+  oleh: string | null;
+}
+
+export async function fetchAiIndikatorOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[] }>('/admin/ai/indikator/options');
+  return { indikator: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiIndikator(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/indikator?${qs}`);
+  return data.data;
+}
+
+export async function generateAiIndikator(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/indikator', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiIndikator(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/indikator', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P2: Analisis Portofolio OPD (AI) ──
+export interface AiOpdOption {
+  id: number;
+  nama_opd: string;
+}
+
+export async function fetchAiOpdOptions(): Promise<{ opd: AiOpdOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiOpdOption[]; tahun: string[] }>('/admin/ai/opd/options');
+  return { opd: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiOpd(opdId: number, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ opd_id: String(opdId), tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/opd?${qs}`);
+  return data.data;
+}
+
+export async function generateAiOpd(opdId: number, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/opd', {
+    method: 'POST',
+    body: JSON.stringify({ opd_id: opdId, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiOpd(opdId: number, tahun: string): Promise<void> {
+  await request('/admin/ai/opd', {
+    method: 'DELETE',
+    body: JSON.stringify({ opd_id: opdId, tahun }),
+  });
+}
+
 export interface RenaksiCreatePayload {
   tahun: string;
   opd_id: number;

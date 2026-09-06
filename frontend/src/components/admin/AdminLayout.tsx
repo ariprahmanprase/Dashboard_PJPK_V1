@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Briefcase,
   ClipboardList,
   ExternalLink,
   FileText,
@@ -8,6 +9,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Sparkles,
   Sun,
   UserRound,
   Users,
@@ -16,7 +18,7 @@ import {
 import { useTheme } from 'next-themes';
 import type { AdminUser } from '@/services/admin';
 
-export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile';
+export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile' | 'analisis-indikator' | 'portofolio-opd';
 
 interface AdminMenuItem {
   key: AdminPageName;
@@ -38,6 +40,12 @@ interface Props {
 
 const MENUS: AdminMenuItem[] = [
   { key: 'renaksi', label: 'Admin Renaksi', icon: ClipboardList },
+];
+
+// Menu analisis AI — semua role (hak akses indikator/OPD dibatasi di backend)
+const AI_MENUS: AdminMenuItem[] = [
+  { key: 'analisis-indikator', label: 'Analisis Indikator', icon: Sparkles },
+  { key: 'portofolio-opd', label: 'Portofolio OPD', icon: Briefcase },
 ];
 
 // Menu untuk semua role — edit biodata & password sendiri
@@ -208,7 +216,7 @@ function AdminSidebarContent({
             Menu
           </p>
         )}
-        {[...MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => {
+        {[...MENUS, ...AI_MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => {
           const Icon = m.icon;
           return (
             <a

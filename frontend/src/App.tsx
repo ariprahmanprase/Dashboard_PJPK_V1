@@ -10,6 +10,8 @@ import AdminRenaksiPage from '@/pages/admin/AdminRenaksiPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminReportPage from '@/pages/admin/AdminReportPage';
 import AdminProfilePage from '@/pages/admin/AdminProfilePage';
+import AdminAnalisisIndikatorPage from '@/pages/admin/AdminAnalisisIndikatorPage';
+import AdminPortofolioOpdPage from '@/pages/admin/AdminPortofolioOpdPage';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { clearSession, fetchMe, getStoredUser, getToken, logout, type AdminUser } from '@/services/admin';
 
@@ -112,6 +114,16 @@ function AdminArea() {
 
   if (page === 'renaksi') {
     return <AdminRenaksiPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  // P1 — Analisis Kinerja Indikator (AI) — semua role
+  if (page === 'analisis-indikator') {
+    return <AdminAnalisisIndikatorPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
+  }
+
+  // P2 — Analisis Portofolio OPD (AI) — semua role
+  if (page === 'portofolio-opd') {
+    return <AdminPortofolioOpdPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
   }
 
   // Admin OPD: hanya menu Admin Renaksi

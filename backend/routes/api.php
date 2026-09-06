@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AdminAiIndikatorController;
+use App\Http\Controllers\Api\AdminAiOpdController;
 use App\Http\Controllers\Api\AdminIndikatorController;
 use App\Http\Controllers\Api\AdminRenaksiProgramController;
 use App\Http\Controllers\Api\AdminUserController;
@@ -27,6 +29,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/admin/renaksi-programs/{renaksiProgram}', [AdminRenaksiProgramController::class, 'destroy']);
     Route::post('/admin/renaksi-programs/{renaksiProgram}/ai-recommendation', [AdminRenaksiProgramController::class, 'generateAiRecommendation']);
     Route::delete('/admin/renaksi-programs/{renaksiProgram}/ai-recommendation', [AdminRenaksiProgramController::class, 'deleteAiRecommendation']);
+
+    // P1 — Analisis Kinerja Indikator (AI)
+    Route::get('/admin/ai/indikator/options', [AdminAiIndikatorController::class, 'options']);
+    Route::get('/admin/ai/indikator', [AdminAiIndikatorController::class, 'show']);
+    Route::post('/admin/ai/indikator', [AdminAiIndikatorController::class, 'generate']);
+    Route::delete('/admin/ai/indikator', [AdminAiIndikatorController::class, 'destroy']);
+
+    // P2 — Analisis Portofolio OPD (AI)
+    Route::get('/admin/ai/opd/options', [AdminAiOpdController::class, 'options']);
+    Route::get('/admin/ai/opd', [AdminAiOpdController::class, 'show']);
+    Route::post('/admin/ai/opd', [AdminAiOpdController::class, 'generate']);
+    Route::delete('/admin/ai/opd', [AdminAiOpdController::class, 'destroy']);
 
     // Pilar options — super admin & admin analis (untuk form edit di Admin Report)
     Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);

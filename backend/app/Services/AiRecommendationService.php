@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Http;
 
 class AiRecommendationService
 {
+    public function __construct(private AiPromptLibrary $promptLibrary)
+    {
+    }
+
     /**
      * Generate Analisis & Rekomendasi untuk satu renaksi program via Sumopod
      * (API OpenAI-compatible: POST {base_url}/chat/completions).
@@ -29,7 +33,7 @@ class AiRecommendationService
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'Kamu adalah analis monitoring & evaluasi pembangunan kependudukan (PJPK) Kabupaten Sidoarjo. Jawab dalam bahasa Indonesia.',
+                        'content' => $this->promptLibrary->master(),
                     ],
                     [
                         'role' => 'user',
