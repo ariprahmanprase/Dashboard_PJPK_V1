@@ -930,15 +930,16 @@ class DashboardService
     }
 
     // ─────────────────────────────────────────────────────
-    //  RANK OPD — berdasarkan pelaksanaan rencana aksi
-    //  Diurutkan dari % renaksi Tercapai tertinggi.
-    //  Menampilkan total renaksi & jumlah tercapai per OPD.
+    //  RANK OPD — 2 papan peringkat:
+    //   1. renaksi  → % renaksi Tercapai tertinggi
+    //   2. indikator → % indikator On Track tertinggi
+    //  Keduanya menampilkan total & jumlah per OPD.
     // ─────────────────────────────────────────────────────
     public function getRankOpd(array $filters = []): array
     {
         $tahun = $filters['tahun'] ?? '2025';
 
-        // Pelaksanaan renaksi per dinas (tahun tsb)
+        // ── Papan 1: pelaksanaan renaksi per dinas ──
         $renaksi = RenaksiProgram::query()
             ->where('tahun', $tahun)
             ->select('dinas_text', 'status')
@@ -954,10 +955,10 @@ class DashboardService
             if (in_array($r->status, ['Tercapai', 'Hampir Tercapai'], true)) $agg[$name]['terlaksana']++;
         }
 
-        $rows = [];
+        $renaksiRows = [];
         foreach ($agg as $name => $a) {
             $pct = $a['total'] > 0 ? ($a['tercapai'] / $a['total']) * 100 : 0;
-            $rows[] = [
+            $renaksiRows[] = [
                 'opd' => $name,
                 'renaksi_total' => $a['total'],
                 'renaksi_tercapai' => $a['tercapai'],
@@ -966,18 +967,61 @@ class DashboardService
                 'skor' => round($pct, 1),
             ];
         }
-
-        // Urutkan % tercapai tertinggi → jumlah tercapai terbanyak → total terbanyak → nama
-        usort($rows, fn($a, $b) =>
+        usort($renaksiRows, fn($a, $b) =>
             $b['pct_tercapai'] <=> $a['pct_tercapai']
             ?: $b['renaksi_tercapai'] <=> $a['renaksi_tercapai']
             ?: $b['renaksi_total'] <=> $a['renaksi_total']
             ?: strcmp($a['opd'], $b['opd'])
         );
-        foreach ($rows as $i => &$row) $row['peringkat'] = $i + 1;
+        foreach ($renaksiRows as $i => &$row) $row['peringkat'] = $i + 1;
         unset($row);
 
-        return $rows;
+        // ── Papan 2: kinerja indikator per OPD (% On Track) ──
+        $indikators = Indikator::query()->with('opds')->get();
+        $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
+            ->where('tahun', $tahun)
+            ->select('indikator_id', 'target', 'capaian')
+            ->get()
+            ->keyBy('indikator_id');
+
+        $indAgg = []; // namaInduk => ['on_track'=>n, 'total'=>n]
+        foreach ($indikators as $ind) {
+            $tc = $tcs->get($ind->id);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
+            $onTrack = $s['status_tl'] === 'On Track';
+            foreach ($ind->opds as $opd) {
+                $name = $this->normalizeOpdName($opd->nama_opd);
+                if ($name === '-' || $name === '') continue;
+                if (!isset($indAgg[$name])) $indAgg[$name] = ['on_track' => 0, 'total' => 0];
+                $indAgg[$name]['total']++;
+                if ($onTrack) $indAgg[$name]['on_track']++;
+            }
+        }
+
+        $indikatorRows = [];
+        foreach ($indAgg as $name => $a) {
+            $pct = $a['total'] > 0 ? ($a['on_track'] / $a['total']) * 100 : 0;
+            $indikatorRows[] = [
+                'opd' => $name,
+                'indikator_on_track' => $a['on_track'],
+                'indikator_total' => $a['total'],
+                'pct_on_track' => round($pct, 1),
+                'skor' => round($pct, 1),
+            ];
+        }
+        usort($indikatorRows, fn($a, $b) =>
+            $b['pct_on_track'] <=> $a['pct_on_track']
+            ?: $b['indikator_on_track'] <=> $a['indikator_on_track']
+            ?: $b['indikator_total'] <=> $a['indikator_total']
+            ?: strcmp($a['opd'], $b['opd'])
+        );
+        foreach ($indikatorRows as $i => &$row) $row['peringkat'] = $i + 1;
+        unset($row);
+
+        return [
+            'renaksi' => $renaksiRows,
+            'indikator' => $indikatorRows,
+        ];
     }
 
     /**
