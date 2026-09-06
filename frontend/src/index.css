@@ -74,6 +74,15 @@
   min-height: 100vh;
   transition: background-color 0.25s, color 0.25s;
 }
+
+/* Saat halaman publik aktif, warnai juga body & html sampai tepi atas layar
+   supaya tidak ada strip putih dari --color-bg bawaan yang mengintip. */
+body:has(> #root > .public-scope),
+body:has(.public-scope) {
+  background-color: hsl(var(--ds-background));
+  background-image: var(--ds-gradient-page);
+  background-attachment: fixed;
+}
 .public-scope .mono { font-family: 'JetBrains Mono', 'Consolas', monospace; }
 
 /* ── Card shadcn-style (publik) ── */
