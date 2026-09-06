@@ -37,7 +37,12 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
           className="flex items-center gap-2.5 shrink-0"
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', color: 'hsl(var(--ds-foreground))', whiteSpace: 'nowrap' }}
         >
-          <span className="ds-brand-mark">P</span>
+          <img
+            src="/logo-sidoarjo.webp"
+            alt="Logo Kabupaten Sidoarjo"
+            className="ds-brand-logo"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
           <span>
             Dashboard PJPK
             <span style={{ display: 'block', fontSize: '0.625rem', fontWeight: 500, color: 'hsl(var(--ds-muted-foreground))', lineHeight: 1.2 }}>
