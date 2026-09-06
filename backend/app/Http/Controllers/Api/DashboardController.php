@@ -119,7 +119,7 @@ class DashboardController extends Controller
 
     public function renaksiProgramList(Request $request, DashboardService $service)
     {
-        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'status_renaksi', 'search', 'tahun', 'dinas']);
+        $filters = $request->only(['opd_id', 'pilar_id', 'indikator_id', 'status_renaksi', 'search', 'tahun', 'dinas', 'dinas_induk']);
         return response()->json($service->getRenaksiProgramList($filters));
     }
 

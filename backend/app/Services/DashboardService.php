@@ -715,6 +715,16 @@ class DashboardService
         if (!empty($filters['dinas'])) {
             $query->where('dinas_text', $filters['dinas']);
         }
+        // Filter by dinas INDUK (nama dinormalisasi — untuk popup dari halaman Rank):
+        // cocokkan dinas_text yang persis sama ATAU yang merupakan turunan (induk + ':' / '(')
+        if (!empty($filters['dinas_induk'])) {
+            $induk = $filters['dinas_induk'];
+            $query->where(function ($q) use ($induk) {
+                $q->where('dinas_text', $induk)
+                  ->orWhere('dinas_text', 'like', $induk . ':%')
+                  ->orWhere('dinas_text', 'like', $induk . ' (%');
+            });
+        }
         // Filter by OPD id (fallback)
         if ($opdIds = $this->opdIds($filters)) {
             $query->whereIn('opd_id', $opdIds);

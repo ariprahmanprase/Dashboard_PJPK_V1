@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Medal, Award, Loader2, ListOrdered } from 'lucide-react';
+import ScorecardPopupModal from '@/components/ScorecardPopupModal';
+import type { RenaksiProgramRow } from '@/types';
 
 interface RankRow {
   peringkat: number;
@@ -23,6 +25,26 @@ export default function RankPage() {
   const [tahun, setTahun] = useState('2025');
   const [data, setData] = useState<RankRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Popup detail renaksi per OPD
+  const [popupOpd, setPopupOpd] = useState<string | null>(null);
+  const [popupRows, setPopupRows] = useState<RenaksiProgramRow[]>([]);
+  const [popupLoading, setPopupLoading] = useState(false);
+
+  async function openOpdDetail(opd: string) {
+    setPopupOpd(opd);
+    setPopupRows([]);
+    setPopupLoading(true);
+    try {
+      const resp = await fetch(`/api/dashboard/renaksi-program-list?tahun=${tahun}&dinas_induk=${encodeURIComponent(opd)}`);
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
+      setPopupRows(await resp.json());
+    } catch (err) {
+      console.error('[PJPK] rank detail fetch error:', err);
+    } finally {
+      setPopupLoading(false);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -86,10 +108,13 @@ export default function RankPage() {
                 <div
                   key={row.opd}
                   className="ds-card"
+                  onClick={() => openOpdDetail(row.opd)}
+                  title="Lihat daftar rencana aksi"
                   style={{
                     padding: '1.5rem',
                     textAlign: 'center',
                     order: idx,
+                    cursor: 'pointer',
                     transform: isFirst ? 'translateY(-8px)' : 'none',
                     border: `1px solid ${m.color}`,
                     boxShadow: isFirst ? `0 8px 24px ${m.bg}` : undefined,
@@ -142,7 +167,13 @@ export default function RankPage() {
                   </thead>
                   <tbody>
                     {data.map(row => (
-                      <tr key={row.opd} style={{ borderBottom: '1px solid hsl(var(--ds-border))' }} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <tr
+                        key={row.opd}
+                        onClick={() => openOpdDetail(row.opd)}
+                        title="Lihat daftar rencana aksi"
+                        style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      >
                         <td style={{ padding: '0.75rem 1.25rem', fontWeight: 700, color: row.peringkat <= 3 ? MEDAL[row.peringkat - 1].color : 'hsl(var(--ds-muted-foreground))', width: 60 }}>
                           {row.peringkat}
                         </td>
@@ -172,6 +203,25 @@ export default function RankPage() {
           </div>
         </>
       )}
+
+      {/* ── Popup detail renaksi per OPD ── */}
+      {popupOpd !== null && popupLoading && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setPopupOpd(null)}
+        >
+          <div className="ds-card flex items-center justify-center" style={{ padding: '3rem 4rem' }} onClick={e => e.stopPropagation()}>
+            <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+          </div>
+        </div>
+      )}
+      <ScorecardPopupModal
+        open={popupOpd !== null && !popupLoading}
+        title={`Rencana Aksi — ${popupOpd ?? ''}`}
+        rows={popupRows}
+        onClose={() => setPopupOpd(null)}
+      />
     </div>
   );
 }
