@@ -329,3 +329,88 @@ export async function updateIndikator(kode: string, payload: IndikatorUpdatePayl
 export async function deleteIndikator(kode: string): Promise<void> {
   await request(`/admin/indikators/${encodeURIComponent(kode)}`, { method: 'DELETE' });
 }
+
+/* ── Impor renaksi dari Excel (admin OPD / super admin) ── */
+
+/** Satu baris hasil parse preview dari backend. */
+export interface ImportPreviewRow {
+  no: number;
+  valid: boolean;
+  errors: string[];
+  data: {
+    tahun: string;
+    kode_program: string | null;
+    program: string | null;
+    rencana_aksi: string;
+    jenis_target: 'kuantitatif' | 'kualitatif';
+    target: string | null;
+    target_nilai: number | null;
+    target_satuan: string | null;
+    realisasi: string | null;
+    realisasi_nilai: number | null;
+    kendala: string | null;
+    catatan: string | null;
+    dokumentasi: string | null;
+  };
+}
+
+export interface ImportPreviewResponse {
+  message: string;
+  valid_count: number;
+  error_count: number;
+  rows: ImportPreviewRow[];
+}
+
+/** Unduh template Excel (memicu download di browser). */
+export async function downloadImportTemplate(): Promise<void> {
+  const token = getToken();
+  const resp = await fetch('/api/admin/renaksi-programs/import-template', {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (resp.status === 401) {
+    clearSession();
+    window.location.href = '/admin';
+    throw new Error('Sesi berakhir, silakan masuk kembali.');
+  }
+  if (!resp.ok) throw new Error(`Gagal mengunduh template (${resp.status}).`);
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'template-renaksi.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Upload file untuk dibaca & divalidasi (preview). */
+export async function previewImportRenaksi(file: File): Promise<ImportPreviewResponse> {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const resp = await fetch('/api/admin/renaksi-programs/import-preview', {
+    method: 'POST',
+    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
+  });
+  if (resp.status === 401) {
+    clearSession();
+    window.location.href = '/admin';
+    throw new Error('Sesi berakhir, silakan masuk kembali.');
+  }
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const firstError = body?.errors ? (Object.values(body.errors).flat()[0] as string) : body?.message;
+    throw new Error(firstError || `Gagal membaca file (${resp.status}).`);
+  }
+  return body as ImportPreviewResponse;
+}
+
+/** Simpan batch baris valid (data dari preview). */
+export async function storeImportRenaksi(rows: ImportPreviewRow['data'][]): Promise<{ message: string; saved: number }> {
+  return request<{ message: string; saved: number }>('/admin/renaksi-programs/import-store', {
+    method: 'POST',
+    body: JSON.stringify({ rows }),
+  });
+}

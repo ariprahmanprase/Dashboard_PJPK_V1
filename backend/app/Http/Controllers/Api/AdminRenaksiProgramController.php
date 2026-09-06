@@ -440,4 +440,106 @@ class AdminRenaksiProgramController extends Controller
             'indikator_4_id' => $ids[3] ?? null,
         ]);
     }
+
+    // ─────────────────────────────────────────────────────
+    //  IMPOR RENAKSI DARI EXCEL (khusus super admin & admin OPD)
+    //  Indikator tidak di file — dilengkapi di aplikasi.
+    // ─────────────────────────────────────────────────────
+
+    /** Unduh template Excel kosong. */
+    public function importTemplate(\App\Services\RenaksiImportService $service)
+    {
+        return $service->downloadTemplate();
+    }
+
+    /**
+     * Terima file Excel, parse + validasi, kembalikan preview baris (tanpa menyimpan).
+     * File divalidasi, dibaca, lalu dihapus — tidak disimpan permanen.
+     */
+    public function importPreview(Request $request, \App\Services\RenaksiImportService $service)
+    {
+        $user = $request->user();
+        if ($user->isAdminAnalis()) {
+            return response()->json(['message' => 'Admin analis tidak berhak mengimpor data.'], 403);
+        }
+        if ($user->isAdminOpd() && !$user->opd_id) {
+            return response()->json(['message' => 'Akun Anda belum terhubung ke OPD.'], 422);
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'], // maks 5 MB
+        ]);
+
+        $tmpPath = $request->file('file')->getRealPath();
+
+        try {
+            $result = $service->parseAndValidate($tmpPath);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'File tidak dapat dibaca. Pastikan format sesuai template.'], 422);
+        }
+
+        if (empty($result['rows'])) {
+            return response()->json(['message' => 'Tidak ada baris data yang terbaca. Periksa kembali isi file.'], 422);
+        }
+
+        return response()->json([
+            'message' => 'File berhasil dibaca.',
+            'valid_count' => $result['valid_count'],
+            'error_count' => $result['error_count'],
+            'rows' => $result['rows'],
+        ]);
+    }
+
+    /**
+     * Simpan batch renaksi dari hasil preview (hanya baris valid yang dikirim).
+     * Menerima ulang array 'data' dari baris valid yang dipilih admin.
+     */
+    public function importStore(Request $request, \App\Services\RenaksiImportService $service)
+    {
+        $user = $request->user();
+        if ($user->isAdminAnalis()) {
+            return response()->json(['message' => 'Admin analis tidak berhak mengimpor data.'], 403);
+        }
+
+        // Tentukan OPD: admin OPD dipaksa ke dinasnya sendiri
+        if ($user->isAdminOpd()) {
+            $opdId = $user->opd_id;
+        } else {
+            $opdId = $request->integer('opd_id');
+        }
+        if (!$opdId) {
+            return response()->json(['message' => 'Dinas/OPD tidak dapat ditentukan.'], 422);
+        }
+
+        $validated = $request->validate([
+            'rows' => ['required', 'array', 'min:1'],
+            'rows.*.tahun' => ['required', 'digits:4'],
+            'rows.*.rencana_aksi' => ['required', 'string'],
+            'rows.*.jenis_target' => ['required', Rule::in(['kuantitatif', 'kualitatif'])],
+            'rows.*.kode_program' => ['nullable', 'string', 'max:20'],
+            'rows.*.program' => ['nullable', 'string', 'max:255'],
+            'rows.*.target' => ['nullable', 'string'],
+            'rows.*.target_nilai' => ['nullable', 'numeric', 'min:0'],
+            'rows.*.target_satuan' => ['nullable', 'string', 'max:50'],
+            'rows.*.realisasi' => ['nullable', 'string'],
+            'rows.*.realisasi_nilai' => ['nullable', 'numeric', 'min:0'],
+            'rows.*.kendala' => ['nullable', 'string'],
+            'rows.*.catatan' => ['nullable', 'string'],
+            'rows.*.dokumentasi' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        $opd = \App\Models\Opd::findOrFail($opdId);
+
+        $saved = $service->storeBatch(
+            $validated['rows'],
+            $opdId,
+            $opd->nama_opd,
+            $user->id
+        );
+
+        return response()->json([
+            'message' => "{$saved} renaksi berhasil diimpor. Silakan lengkapi indikator terkait lewat edit.",
+            'saved' => $saved,
+        ], 201);
+    }
 }

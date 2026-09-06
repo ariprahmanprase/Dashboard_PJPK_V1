@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle, UserRound, Clock } from 'lucide-react';
+import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle, UserRound, Clock, FileUp } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
+import ImportRenaksiModal from '@/components/admin/ImportRenaksiModal';
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
 import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
@@ -259,6 +260,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [editing, setEditing] = useState<AdminRenaksi | null>(null);
   const [deleting, setDeleting] = useState<AdminRenaksi | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [opdOptions, setOpdOptions] = useState<OpdOption[]>([]);
   const [allIndikatorOptions, setAllIndikatorOptions] = useState<IndikatorOption[]>([]);
 
@@ -470,6 +472,15 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
 
           {canCreate && (
             <button
+              onClick={() => setImporting(true)}
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors w-full sm:w-auto"
+              style={{ border: '1px solid var(--color-border)', color: 'var(--color-text)', backgroundColor: 'transparent' }}
+            >
+              <FileUp size={15} /> Impor Excel
+            </button>
+          )}
+          {canCreate && (
+            <button
               onClick={() => setCreating(true)}
               className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 w-full sm:w-auto"
               style={{ backgroundColor: 'var(--color-primary)' }}
@@ -562,6 +573,13 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           }}
         />
       )}
+
+      {/* Modal impor renaksi dari Excel */}
+      <ImportRenaksiModal
+        open={importing}
+        onClose={() => setImporting(false)}
+        onImported={() => load()}
+      />
 
       {/* Popup daftar renaksi per status (dari stacked bar) */}
       <ScorecardPopupModal
