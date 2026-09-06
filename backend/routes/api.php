@@ -59,3 +59,4 @@ Route::get('/dashboard/renaksi-program-list', [DashboardController::class, 'rena
 Route::get('/dashboard/renaksi-program-summary', [DashboardController::class, 'renaksiProgramSummary']);
 Route::get('/dashboard/renaksi-program-dinas', [DashboardController::class, 'renaksiProgramDinas']);
 Route::get('/dashboard/renaksi-program-indikators', [DashboardController::class, 'renaksiProgramIndikators']);
+Route::get('/dashboard/rank-opd', [DashboardController::class, 'rankOpd']);

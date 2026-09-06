@@ -918,4 +918,100 @@ class DashboardService
 
         return $query->get()->toArray();
     }
+
+    // ─────────────────────────────────────────────────────
+    //  RANK OPD — gabungan kinerja indikator + pelaksanaan renaksi
+    //  Skor = 50% × (% indikator On Track) + 50% × (% renaksi Terlaksana)
+    // ─────────────────────────────────────────────────────
+    public function getRankOpd(array $filters = []): array
+    {
+        $tahun = $filters['tahun'] ?? '2025';
+
+        // --- A. Kinerja indikator per OPD (status TL tahun tsb) ---
+        $indikators = Indikator::query()->with('opds')->get();
+        $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
+            ->where('tahun', $tahun)
+            ->select('indikator_id', 'target', 'capaian')
+            ->get()
+            ->keyBy('indikator_id');
+
+        $indikatorAgg = []; // namaInduk => ['on_track'=>n, 'total'=>n]
+        foreach ($indikators as $ind) {
+            $tc = $tcs->get($ind->id);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
+            $onTrack = $s['status_tl'] === 'On Track';
+            foreach ($ind->opds as $opd) {
+                $name = $this->normalizeOpdName($opd->nama_opd);
+                if (!isset($indikatorAgg[$name])) $indikatorAgg[$name] = ['on_track' => 0, 'total' => 0];
+                $indikatorAgg[$name]['total']++;
+                if ($onTrack) $indikatorAgg[$name]['on_track']++;
+            }
+        }
+
+        // --- B. Pelaksanaan renaksi per dinas (tahun tsb) ---
+        $renaksi = RenaksiProgram::query()
+            ->where('tahun', $tahun)
+            ->select('dinas_text', 'status')
+            ->get();
+
+        $renaksiAgg = []; // namaInduk => ['terlaksana'=>n, 'total'=>n]
+        foreach ($renaksi as $r) {
+            $name = $this->normalizeOpdName($r->dinas_text);
+            if ($name === '-' || $name === '') continue;
+            if (!isset($renaksiAgg[$name])) $renaksiAgg[$name] = ['terlaksana' => 0, 'total' => 0];
+            $renaksiAgg[$name]['total']++;
+            if (in_array($r->status, ['Tercapai', 'Hampir Tercapai'], true)) {
+                $renaksiAgg[$name]['terlaksana']++;
+            }
+        }
+
+        // --- C. Gabungkan semua OPD (union nama induk) ---
+        $names = array_unique(array_merge(array_keys($indikatorAgg), array_keys($renaksiAgg)));
+        $rows = [];
+        foreach ($names as $name) {
+            $ind = $indikatorAgg[$name] ?? ['on_track' => 0, 'total' => 0];
+            $ren = $renaksiAgg[$name] ?? ['terlaksana' => 0, 'total' => 0];
+
+            $pctIndikator = $ind['total'] > 0 ? ($ind['on_track'] / $ind['total']) * 100 : 0;
+            $pctRenaksi = $ren['total'] > 0 ? ($ren['terlaksana'] / $ren['total']) * 100 : 0;
+            $skor = round(($pctIndikator + $pctRenaksi) / 2, 1);
+
+            $rows[] = [
+                'opd' => $name,
+                'indikator_on_track' => $ind['on_track'],
+                'indikator_total' => $ind['total'],
+                'pct_indikator' => round($pctIndikator, 1),
+                'renaksi_terlaksana' => $ren['terlaksana'],
+                'renaksi_total' => $ren['total'],
+                'pct_renaksi' => round($pctRenaksi, 1),
+                'skor' => $skor,
+            ];
+        }
+
+        // Urutkan skor tertinggi → nama
+        usort($rows, fn($a, $b) => $b['skor'] <=> $a['skor'] ?: strcmp($a['opd'], $b['opd']));
+        foreach ($rows as $i => &$row) $row['peringkat'] = $i + 1;
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Normalisasi nama OPD/dinas ke dinas induk (port dari frontend lib/opd.ts opdInduk).
+     * "Dinas X: Bidang Y" → "Dinas X", "Dinas X (Sesuatu)" → "Dinas X".
+     */
+    private function normalizeOpdName(?string $nama): string
+    {
+        if (!$nama) return '-';
+        $s = trim((string) $nama);
+        if ($s === '') return '-';
+        if (preg_match('/^(Cabang|TP\s+PKK|UPTD)/i', $s)) return $s;
+        $colon = mb_strpos($s, ':');
+        if ($colon > 0) $s = mb_substr($s, 0, $colon);
+        $paren = mb_strpos($s, '(');
+        if ($paren > 0) $s = mb_substr($s, 0, $paren);
+        $s = preg_replace('/[\s,;\-–:]+$/u', '', $s);
+        $s = trim($s);
+        return $s !== '' ? $s : trim((string) $nama);
+    }
 }

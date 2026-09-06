@@ -147,4 +147,10 @@ class DashboardController extends Controller
         }
         return response()->json($detail);
     }
+
+    public function rankOpd(Request $request, DashboardService $service)
+    {
+        $filters = $request->only(['tahun']);
+        return response()->json($service->getRankOpd($filters));
+    }
 }

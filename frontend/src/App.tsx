@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import type { PageName } from '@/components/Sidebar';
 import ReportPage from '@/pages/ReportPage';
 import RencanaAksiPage from '@/pages/RencanaAksiPage';
+import RankPage from '@/pages/RankPage';
 import AdminLoginPage from '@/pages/admin/AdminLoginPage';
 import AdminRenaksiPage from '@/pages/admin/AdminRenaksiPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
@@ -13,7 +14,16 @@ import type { AdminPageName } from '@/components/admin/AdminLayout';
 import { clearSession, fetchMe, getStoredUser, getToken, logout, type AdminUser } from '@/services/admin';
 
 function publicPageFromPath(): PageName {
-  return window.location.pathname.startsWith('/rencana-aksi') ? 'rencana-aksi' : 'report';
+  const p = window.location.pathname;
+  if (p.startsWith('/rencana-aksi')) return 'rencana-aksi';
+  if (p.startsWith('/rank')) return 'rank';
+  return 'report';
+}
+
+function publicPathFromPage(page: PageName): string {
+  if (page === 'rencana-aksi') return '/rencana-aksi';
+  if (page === 'rank') return '/rank';
+  return '/';
 }
 
 export default function App() {
@@ -23,7 +33,7 @@ export default function App() {
   // Sinkron URL saat navigasi; dukung tombol back/forward browser
   const setPage = (p: PageName) => {
     setPageState(p);
-    const path = p === 'report' ? '/' : '/rencana-aksi';
+    const path = publicPathFromPage(p);
     if (window.location.pathname !== path) window.history.pushState(null, '', path);
   };
 
@@ -45,7 +55,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <Layout activePage={page} onNavigate={setPage}>
-        {page === 'report' ? <ReportPage /> : <RencanaAksiPage />}
+        {page === 'report' ? <ReportPage /> : page === 'rank' ? <RankPage /> : <RencanaAksiPage />}
       </Layout>
     </ThemeProvider>
   );

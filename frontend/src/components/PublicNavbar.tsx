@@ -54,6 +54,9 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
           <button className={`ds-nav-link ${activePage === 'rencana-aksi' ? 'active' : ''}`} onClick={() => go('rencana-aksi')}>
             Rencana Aksi
           </button>
+          <button className={`ds-nav-link ${activePage === 'rank' ? 'active' : ''}`} onClick={() => go('rank')}>
+            Rank
+          </button>
         </nav>
 
         {/* Aksi kanan */}

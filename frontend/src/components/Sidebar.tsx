@@ -1,7 +1,7 @@
 import { FileText, ListChecks, X, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react';
 import { getToken, getStoredUser } from '@/services/admin';
 
-export type PageName = 'report' | 'rencana-aksi';
+export type PageName = 'report' | 'rencana-aksi' | 'rank';
 
 interface Props {
   collapsed: boolean;
