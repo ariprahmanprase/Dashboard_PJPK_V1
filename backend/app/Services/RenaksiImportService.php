@@ -46,7 +46,7 @@ class RenaksiImportService
             $sheet->getStyle("{$col}1")->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '00A651']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::CENTER_VERTICAL, 'wrapText' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             ]);
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
