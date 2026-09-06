@@ -5,10 +5,10 @@ import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import RenaksiProgramModal from './RenaksiProgramModal';
 
 const BAR_SEGMENTS = [
-  { key: 'Tercapai', color: '#16a34a' },
-  { key: 'Hampir Tercapai', color: '#ca8a04' },
-  { key: 'Tidak Tercapai', color: '#dc2626' },
-  { key: 'Belum diisi', color: '#64748b' },
+  { key: 'Tercapai', color: '#00a651' },
+  { key: 'Hampir Tercapai', color: '#e6c800' },
+  { key: 'Tidak Tercapai', color: '#ef4444' },
+  { key: 'Belum diisi', color: 'hsl(var(--ds-muted-foreground))' },
 ] as const;
 
 interface Props {
@@ -67,8 +67,8 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
       <div
         className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          border: '1px solid hsl(var(--ds-border))',
           maxHeight: '80vh',
           overflow: 'hidden',
         }}
@@ -77,22 +77,22 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
         {/* Header */}
         <div
           className="flex items-start justify-between gap-3"
-          style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}
+          style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--ds-border))', flexShrink: 0 }}
         >
           <div style={{ minWidth: 0 }}>
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="font-mono text-xs font-bold px-2 py-0.5 rounded"
-                style={{ backgroundColor: '#3b82f620', color: '#3b82f6' }}
+                style={{ backgroundColor: 'rgba(0, 174, 239, 0.13)', color: '#00aeef' }}
               >
                 {kode}
               </span>
               <span
                 className="text-xs px-2 py-0.5 rounded-full"
                 style={{
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  color: 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'hsl(var(--ds-muted))',
+                  color: 'hsl(var(--ds-muted-foreground))',
+                  border: '1px solid hsl(var(--ds-border))',
                 }}
               >
                 Tahun {tahun}
@@ -101,23 +101,23 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
                 <span
                   className="text-xs px-2 py-0.5 rounded-full"
                   style={{
-                    backgroundColor: 'var(--color-bg-tertiary)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'hsl(var(--ds-muted))',
+                    color: 'hsl(var(--ds-muted-foreground))',
+                    border: '1px solid hsl(var(--ds-border))',
                   }}
                 >
                   {detail.pilar}
                 </span>
               )}
             </div>
-            <h3 className="text-base font-bold mt-1" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>
+            <h3 className="text-base font-bold mt-1" style={{ color: 'hsl(var(--ds-foreground))', overflowWrap: 'anywhere' }}>
               {detail?.nama_indikator ?? 'Rencana Aksi'}
             </h3>
           </div>
           <button
             onClick={onClose}
             className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
           >
             <X size={18} />
           </button>
@@ -127,23 +127,23 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '1rem 1.5rem' }}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="animate-spin" size={28} style={{ color: 'var(--color-text-secondary)' }} />
+              <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <FileX size={36} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Gagal memuat data</p>
+              <FileX size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Gagal memuat data</p>
             </div>
           ) : sorted.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <FileX size={36} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <FileX size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 Belum ada data rencana aksi tahun {tahun} untuk indikator ini
               </p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 {sorted.length} rencana aksi — tahun {tahun}
               </p>
 
@@ -151,18 +151,18 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
               <div
                 className="rounded-lg border"
                 style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderColor: 'var(--color-border)',
+                  backgroundColor: 'hsl(var(--ds-card))',
+                  borderColor: 'hsl(var(--ds-border))',
                   padding: '0.75rem 0.875rem',
                   marginBottom: '0.375rem',
                 }}
               >
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.625rem' }}>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.625rem' }}>
                   Persentase Status Renaksi
                 </p>
                 <div
                   className="flex w-full overflow-hidden"
-                  style={{ height: 24, borderRadius: 6, backgroundColor: 'var(--color-bg-primary)' }}
+                  style={{ height: 24, borderRadius: 6, backgroundColor: 'hsl(var(--ds-card))' }}
                   role="img"
                   aria-label="Distribusi status renaksi indikator ini"
                 >
@@ -192,9 +192,9 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
                   {barSegs.map(s => (
                     <div key={s.key} className="flex items-center gap-1.5">
                       <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: s.color, display: 'inline-block' }} />
-                      <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{s.key}</span>
-                      <span className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>{s.pct.toFixed(1)}%</span>
-                      <span className="text-xs" style={{ color: 'var(--color-text-secondary)', opacity: 0.7 }}>({s.count})</span>
+                      <span className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>{s.key}</span>
+                      <span className="text-xs font-semibold" style={{ color: 'hsl(var(--ds-foreground))' }}>{s.pct.toFixed(1)}%</span>
+                      <span className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.7 }}>({s.count})</span>
                     </div>
                   ))}
                 </div>
@@ -224,8 +224,8 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
                       status: r.status,
                     })}
                     style={{
-                      backgroundColor: 'var(--color-bg-tertiary)',
-                      border: `1px solid ${isSelectedYear ? st.color : 'var(--color-border)'}`,
+                      backgroundColor: 'hsl(var(--ds-muted))',
+                      border: `1px solid ${isSelectedYear ? st.color : 'hsl(var(--ds-border))'}`,
                       borderRadius: '0.5rem',
                       padding: '0.625rem 0.875rem',
                       cursor: 'pointer',
@@ -233,10 +233,10 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div style={{ minWidth: 0 }}>
-                        <p className="text-sm font-medium" style={{ color: 'var(--color-text)', lineHeight: 1.4 }}>
+                        <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))', lineHeight: 1.4 }}>
                           {r.rencana_aksi}
                         </p>
-                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+                        <p className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))', marginTop: '0.25rem' }}>
                           {r.dinas} · {r.tahun}
                           {r.target !== '-' ? ` · Target: ${r.target}` : ''}
                           {r.realisasi !== '-' ? ` · Realisasi: ${r.realisasi}` : ''}

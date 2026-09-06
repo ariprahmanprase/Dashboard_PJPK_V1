@@ -7,10 +7,10 @@ interface Props {
 }
 
 const SEGMENTS: Array<{ key: 'tercapai' | 'hampir_tercapai' | 'tidak_tercapai' | 'belum_diisi'; label: string; color: string }> = [
-  { key: 'tercapai', label: 'Tercapai', color: '#16a34a' },
-  { key: 'hampir_tercapai', label: 'Hampir Tercapai', color: '#ca8a04' },
-  { key: 'tidak_tercapai', label: 'Tidak Tercapai', color: '#dc2626' },
-  { key: 'belum_diisi', label: 'Belum diisi', color: '#64748b' },
+  { key: 'tercapai', label: 'Tercapai', color: '#00a651' },
+  { key: 'hampir_tercapai', label: 'Hampir Tercapai', color: '#e6c800' },
+  { key: 'tidak_tercapai', label: 'Tidak Tercapai', color: '#ef4444' },
+  { key: 'belum_diisi', label: 'Belum diisi', color: 'hsl(var(--ds-muted-foreground))' },
 ];
 
 export default function RenaksiStatusBar({ data, loading, onSegmentClick }: Props) {
@@ -18,7 +18,7 @@ export default function RenaksiStatusBar({ data, loading, onSegmentClick }: Prop
     return (
       <div
         className="rounded-xl border animate-pulse"
-        style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1.25rem 1.5rem' }}
+        style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1.25rem 1.5rem' }}
       >
         <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-40 mb-3" />
         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded" />
@@ -36,21 +36,21 @@ export default function RenaksiStatusBar({ data, loading, onSegmentClick }: Prop
   return (
     <div
       className="rounded-xl border"
-      style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)', padding: '1.25rem 1.5rem' }}
+      style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1.25rem 1.5rem' }}
     >
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)', marginBottom: '0.875rem' }}>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.875rem' }}>
         Persentase Status Renaksi
       </p>
 
       {/* Stacked bar */}
       <div
         className="flex w-full overflow-hidden"
-        style={{ height: 28, borderRadius: 8, backgroundColor: 'var(--color-bg-primary)' }}
+        style={{ height: 28, borderRadius: 8, backgroundColor: 'hsl(var(--ds-card))' }}
         role="img"
         aria-label="Distribusi status renaksi"
       >
         {total === 0 ? (
-          <div className="flex items-center justify-center w-full text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <div className="flex items-center justify-center w-full text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
             Tidak ada data
           </div>
         ) : (
@@ -96,13 +96,13 @@ export default function RenaksiStatusBar({ data, loading, onSegmentClick }: Prop
             }}
           >
             <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: s.color, display: 'inline-block' }} />
-            <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            <span className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
               {s.label}
             </span>
-            <span className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>
+            <span className="text-xs font-semibold" style={{ color: 'hsl(var(--ds-foreground))' }}>
               {s.pct.toFixed(1)}%
             </span>
-            <span className="text-xs" style={{ color: 'var(--color-text-secondary)', opacity: 0.7 }}>
+            <span className="text-xs" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.7 }}>
               ({s.count})
             </span>
           </button>

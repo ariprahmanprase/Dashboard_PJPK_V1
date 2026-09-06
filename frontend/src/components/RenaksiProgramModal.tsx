@@ -27,8 +27,8 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
       <div
         className="rounded-2xl shadow-2xl w-full mx-4 flex flex-col"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          border: '1px solid hsl(var(--ds-border))',
           maxWidth: 700,
           maxHeight: '80vh',
           overflow: 'hidden',
@@ -40,7 +40,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
           className="flex items-start justify-between gap-3"
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid var(--color-border)',
+            borderBottom: '1px solid hsl(var(--ds-border))',
             flexShrink: 0,
           }}
         >
@@ -60,14 +60,14 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
             <div style={{ minWidth: 0 }}>
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))', overflowWrap: 'anywhere' }}
               >
                 {data.dinas}{data.kode_program ? ` — ${data.kode_program}` : ''}
               </p>
-              <h3 className="text-base font-bold mt-0.5" style={{ color: 'var(--color-text)', overflowWrap: 'anywhere' }}>
+              <h3 className="text-base font-bold mt-0.5" style={{ color: 'hsl(var(--ds-foreground))', overflowWrap: 'anywhere' }}>
                 {data.program}
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--ds-muted-foreground))', overflowWrap: 'anywhere' }}>
                 {data.rencana_aksi}
               </p>
             </div>
@@ -75,7 +75,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
           <button
             onClick={onClose}
             className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
           >
             <X size={18} />
           </button>
@@ -88,40 +88,40 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-1"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Tahun
               </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-foreground))' }}>
                 {data.tahun}
               </p>
             </div>
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-1"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Target
               </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-foreground))' }}>
                 {data.target}
               </p>
             </div>
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-1"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Realisasi
               </p>
-              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-foreground))' }}>
                 {data.realisasi}
               </p>
             </div>
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-1"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Status
               </p>
@@ -144,18 +144,18 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
           {/* Additional Info — susun vertikal ke bawah */}
           <div
             className="flex flex-col gap-6 pt-8 mt-2"
-            style={{ borderTop: '1px solid var(--color-border)' }}
+            style={{ borderTop: '1px solid hsl(var(--ds-border))' }}
           >
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Kendala
               </p>
               <p
                 className="text-sm whitespace-pre-wrap"
-                style={{ color: 'var(--color-text)' }}
+                style={{ color: 'hsl(var(--ds-foreground))' }}
               >
                 {data.kendala || '-'}
               </p>
@@ -163,13 +163,13 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Catatan
               </p>
               <p
                 className="text-sm whitespace-pre-wrap"
-                style={{ color: 'var(--color-text)' }}
+                style={{ color: 'hsl(var(--ds-foreground))' }}
               >
                 {data.catatan || '-'}
               </p>
@@ -178,7 +178,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
               <div>
                 <p
                   className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-                  style={{ color: 'var(--color-text-secondary)' }}
+                  style={{ color: 'hsl(var(--ds-muted-foreground))' }}
                 >
                   Dokumentasi
                 </p>
@@ -188,8 +188,8 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-3 py-2 transition-opacity hover:opacity-80"
                   style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    color: '#3b82f6',
+                    backgroundColor: 'rgba(0, 174, 239, 0.1)',
+                    color: '#00aeef',
                     wordBreak: 'break-all',
                   }}
                 >
@@ -201,7 +201,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Indikator Terkait
               </p>
@@ -211,14 +211,14 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
                     <span
                       key={idx}
                       className="px-2 py-1 rounded-lg text-xs font-medium"
-                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}
+                      style={{ backgroundColor: 'rgba(0, 174, 239, 0.12)', color: '#00aeef' }}
                     >
                       {ind}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                   -
                 </p>
               )}
@@ -226,7 +226,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
             <div>
               <p
                 className="text-[10px] font-semibold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
               >
                 Pilar Terkait
               </p>
@@ -243,7 +243,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
                   ))}
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                   -
                 </p>
               )}
@@ -252,7 +252,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
 
           {/* Konten tambahan (mis. Analisis & Rekomendasi AI di area admin) */}
           {extra && (
-            <div className="pt-8 mt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="pt-8 mt-2" style={{ borderTop: '1px solid hsl(var(--ds-border))' }}>
               {extra}
             </div>
           )}

@@ -33,7 +33,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
 
   // Helpers
   const labelStyle: React.CSSProperties = {
-    color: 'var(--color-text-secondary)',
+    color: 'hsl(var(--ds-muted-foreground))',
     fontSize: '0.75rem',
     fontWeight: 600,
     textTransform: 'uppercase' as const,
@@ -42,7 +42,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
   };
 
   const valueStyle: React.CSSProperties = {
-    color: 'var(--color-text)',
+    color: 'hsl(var(--ds-foreground))',
     fontSize: '0.875rem',
   };
 
@@ -74,8 +74,8 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
       <div
         className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          border: '1px solid hsl(var(--ds-border))',
           maxHeight: '85vh',
         }}
         onClick={e => e.stopPropagation()}
@@ -85,35 +85,35 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
           className="flex items-center justify-between"
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid var(--color-border)',
+            borderBottom: '1px solid hsl(var(--ds-border))',
           }}
         >
           <div>
             <div className="flex items-center gap-2">
               <span
                 className="font-mono text-xs font-bold px-2 py-0.5 rounded"
-                style={{ backgroundColor: '#3b82f620', color: '#3b82f6' }}
+                style={{ backgroundColor: 'rgba(0, 174, 239, 0.13)', color: '#00aeef' }}
               >
                 {kode}
               </span>
               {detail && (
                 <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  color: 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'hsl(var(--ds-muted))',
+                  color: 'hsl(var(--ds-muted-foreground))',
+                  border: '1px solid hsl(var(--ds-border))',
                 }}>
                   {detail.pilar}
                 </span>
               )}
             </div>
-            <h3 className="text-lg font-bold mt-1" style={{ color: 'var(--color-text)' }}>
+            <h3 className="text-lg font-bold mt-1" style={{ color: 'hsl(var(--ds-foreground))' }}>
               {detail?.nama_indikator ?? 'Detail Indikator'}
             </h3>
           </div>
           <button
             onClick={onClose}
             className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
           >
             <X size={18} />
           </button>
@@ -123,12 +123,12 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
         <div style={{ overflowY: 'auto', maxHeight: 'calc(85vh - 80px)', padding: '1.5rem' }}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="animate-spin" size={28} style={{ color: 'var(--color-text-secondary)' }} />
+              <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <FileX size={36} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <FileX size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 Gagal memuat data
               </p>
             </div>
@@ -142,9 +142,9 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
                       key={i}
                       className="text-xs px-2 py-0.5 rounded"
                       style={{
-                        backgroundColor: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'hsl(var(--ds-muted))',
+                        color: 'hsl(var(--ds-muted-foreground))',
+                        border: '1px solid hsl(var(--ds-border))',
                       }}
                     >
                       {opd}
@@ -154,7 +154,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
               </Field>
 
               {/* Divider */}
-              <div style={{ borderBottom: '1px solid var(--color-border)', margin: '0.5rem 0 1.25rem' }} />
+              <div style={{ borderBottom: '1px solid hsl(var(--ds-border))', margin: '0.5rem 0 1.25rem' }} />
 
               {/* Grid layout for key-value pairs */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 2rem' }}>
@@ -165,15 +165,15 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
               <Field label="Pengintegrasian Dalam Dokrenda">{detail.dokrenda || '—'}</Field>
 
               {/* Divider */}
-              <div style={{ borderBottom: '1px solid var(--color-border)', margin: '0.5rem 0 1.25rem' }} />
+              <div style={{ borderBottom: '1px solid hsl(var(--ds-border))', margin: '0.5rem 0 1.25rem' }} />
 
               {/* Kendala */}
               {detail.kendala ? (
                 <Field label="Kendala">
                   <div
                     style={{
-                      backgroundColor: 'var(--color-bg-tertiary)',
-                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'hsl(var(--ds-muted))',
+                      border: '1px solid hsl(var(--ds-border))',
                       borderRadius: '0.5rem',
                       padding: '0.75rem 1rem',
                       lineHeight: 1.6,
@@ -192,8 +192,8 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
                 <Field label="Inovasi">
                   <div
                     style={{
-                      backgroundColor: 'var(--color-bg-tertiary)',
-                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'hsl(var(--ds-muted))',
+                      border: '1px solid hsl(var(--ds-border))',
                       borderRadius: '0.5rem',
                       padding: '0.75rem 1rem',
                       lineHeight: 1.6,
@@ -208,7 +208,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
               )}
 
               {/* Divider */}
-              <div style={{ borderBottom: '1px solid var(--color-border)', margin: '0.5rem 0 1.25rem' }} />
+              <div style={{ borderBottom: '1px solid hsl(var(--ds-border))', margin: '0.5rem 0 1.25rem' }} />
 
               {/* Rencana Aksi + Status */}
               <div>
@@ -228,8 +228,8 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
                         <div
                           key={r.id}
                           style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            border: '1px solid var(--color-border)',
+                            backgroundColor: 'hsl(var(--ds-muted))',
+                            border: '1px solid hsl(var(--ds-border))',
                             borderRadius: '0.5rem',
                             padding: '0.625rem 0.875rem',
                           }}
@@ -239,7 +239,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
                               <p style={{ ...valueStyle, fontWeight: 500, lineHeight: 1.4 }}>
                                 {r.rencana_aksi}
                               </p>
-                              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                              <p style={{ color: 'hsl(var(--ds-muted-foreground))', fontSize: '0.75rem', marginTop: '0.25rem' }}>
                                 {r.dinas} · {r.tahun}
                                 {r.target !== '-' ? ` · Target: ${r.target}` : ''}
                                 {r.realisasi !== '-' ? ` · Realisasi: ${r.realisasi}` : ''}

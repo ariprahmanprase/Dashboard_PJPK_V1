@@ -10,12 +10,14 @@ interface Props {
 }
 
 const colors: Record<string, { bg: string; accent: string; text: string; border: string }> = {
-  info: { bg: '#eff6ff', accent: '#3b82f6', text: '#1d4ed8', border: '#bfdbfe' },
-  success: { bg: '#f0fdf4', accent: '#22c55e', text: '#15803d', border: '#bbf7d0' },
-  warning: { bg: '#fffbeb', accent: '#f59e0b', text: '#b45309', border: '#fde68a' },
-  danger: { bg: '#fef2f2', accent: '#ef4444', text: '#b91c1c', border: '#fecaca' },
-  default: { bg: 'var(--color-bg-secondary)', accent: '#94a3b8', text: 'var(--color-text)', border: 'var(--color-border)' },
+  info: { bg: 'hsl(var(--ds-secondary) / 0.10)', accent: '#00aeef', text: '#00aeef', border: 'hsl(var(--ds-secondary) / 0.35)' },
+  success: { bg: 'hsl(var(--ds-primary) / 0.10)', accent: '#00a651', text: '#00a651', border: 'hsl(var(--ds-primary) / 0.35)' },
+  warning: { bg: 'hsl(var(--ds-warning) / 0.12)', accent: '#e6c800', text: '#e6c800', border: 'hsl(var(--ds-warning) / 0.40)' },
+  danger: { bg: 'hsl(var(--ds-danger) / 0.10)', accent: '#ef4444', text: '#ef4444', border: 'hsl(var(--ds-danger) / 0.35)' },
+  default: { bg: 'hsl(var(--ds-card))', accent: 'hsl(var(--ds-muted-foreground))', text: 'hsl(var(--ds-foreground))', border: 'hsl(var(--ds-border))' },
 };
+
+const ACTIVE_COLOR = '#00aeef';
 
 export default function ScoreCard({ label, value, description, variant, active, onClick }: Props) {
   const c = colors[variant];
@@ -26,11 +28,11 @@ export default function ScoreCard({ label, value, description, variant, active, 
       className="rounded-xl border overflow-hidden text-left w-full transition-all duration-150 hover:shadow-md"
       style={{
         backgroundColor: c.bg,
-        borderColor: active ? '#3b82f6' : c.border,
+        borderColor: active ? ACTIVE_COLOR : c.border,
         padding: '1.25rem',
         position: 'relative',
         cursor: 'pointer',
-        outline: active ? '2px solid #3b82f6' : 'none',
+        outline: active ? `2px solid ${ACTIVE_COLOR}` : 'none',
         outlineOffset: '2px',
         borderWidth: active ? '2px' : '1px',
       }}
@@ -48,7 +50,7 @@ export default function ScoreCard({ label, value, description, variant, active, 
       />
       <p
         className="text-[11px] font-medium uppercase tracking-wider"
-        style={{ color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}
+        style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.5rem' }}
       >
         {label}
       </p>
@@ -56,7 +58,7 @@ export default function ScoreCard({ label, value, description, variant, active, 
         {value}
       </p>
       {description && (
-        <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }}>
+        <p className="text-[10px] mt-1" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.8 }}>
           {description}
         </p>
       )}

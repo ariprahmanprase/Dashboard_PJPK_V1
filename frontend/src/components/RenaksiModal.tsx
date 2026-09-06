@@ -26,8 +26,8 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
       <div
         className="rounded-2xl shadow-2xl w-full max-w-3xl mx-4 flex flex-col"
         style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'hsl(var(--ds-card))',
+          border: '1px solid hsl(var(--ds-border))',
           maxHeight: '80vh',
           overflow: 'hidden',
         }}
@@ -38,31 +38,31 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
           className="flex items-start justify-between gap-3"
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid var(--color-border)',
+            borderBottom: '1px solid hsl(var(--ds-border))',
             flexShrink: 0,
           }}
         >
           <div style={{ minWidth: 0 }}>
             <h3
               className="text-lg font-bold"
-              style={{ color: 'var(--color-text)' }}
+              style={{ color: 'hsl(var(--ds-foreground))' }}
             >
               Rencana Aksi
             </h3>
             {isAll ? (
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}>
+              <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--ds-muted-foreground))', overflowWrap: 'anywhere' }}>
                 {kode}
               </p>
             ) : (
               <p
                 className="text-sm mt-0.5"
-                style={{ color: 'var(--color-text-secondary)', overflowWrap: 'anywhere' }}
+                style={{ color: 'hsl(var(--ds-muted-foreground))', overflowWrap: 'anywhere' }}
               >
                 <span
                   className="font-mono font-medium"
                   style={{
-                    backgroundColor: '#eff6ff',
-                    color: '#3b82f6',
+                    backgroundColor: 'rgba(0, 174, 239, 0.13)',
+                    color: '#00aeef',
                     padding: '0.125rem 0.5rem',
                     borderRadius: '0.375rem',
                     fontSize: '0.75rem',
@@ -78,7 +78,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
           <button
             onClick={onClose}
             className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
           >
             <X size={18} />
           </button>
@@ -88,19 +88,19 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="animate-spin" size={28} style={{ color: 'var(--color-text-secondary)' }} />
+              <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
             </div>
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <FileX size={36} style={{ color: 'var(--color-text-secondary)', opacity: 0.4 }} />
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <FileX size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+              <p className="text-sm" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
                 Belum ada rencana aksi
               </p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <tr style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}>
                   {(isAll
                     ? ['No', 'Indikator', 'Rencana Aksi', 'OPD', 'Tahun', 'Status', 'Catatan']
                     : ['No', 'Rencana Aksi', 'OPD', 'Tahun', 'Status', 'Catatan']
@@ -109,10 +109,10 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                       key={h}
                       className="text-left font-medium uppercase tracking-wider"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.688rem',
                         padding: '0.75rem 1.25rem',
-                        backgroundColor: 'var(--color-bg-secondary)',
+                        backgroundColor: 'hsl(var(--ds-card))',
                       }}
                     >
                       {h}
@@ -124,13 +124,13 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                 {data.map(item => (
                   <tr
                     key={item.no}
-                    style={{ borderBottom: '1px solid var(--color-border)' }}
+                    style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.75rem',
                         padding: '0.75rem 1.25rem',
                         width: '3rem',
@@ -142,7 +142,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                       <td
                         className="align-middle"
                         style={{
-                          color: 'var(--color-text-secondary)',
+                          color: 'hsl(var(--ds-muted-foreground))',
                           fontSize: '0.75rem',
                           padding: '0.75rem 1.25rem',
                         }}
@@ -153,7 +153,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                     <td
                       className="font-medium align-middle"
                       style={{
-                        color: 'var(--color-text)',
+                        color: 'hsl(var(--ds-foreground))',
                         padding: '0.75rem 1.25rem',
                       }}
                     >
@@ -162,7 +162,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.8125rem',
                         padding: '0.75rem 1.25rem',
                       }}
@@ -172,7 +172,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                     <td
                       className="align-middle font-mono"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.75rem',
                         padding: '0.75rem 1.25rem',
                       }}
@@ -195,7 +195,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                     <td
                       className="align-middle"
                       style={{
-                        color: 'var(--color-text-secondary)',
+                        color: 'hsl(var(--ds-muted-foreground))',
                         fontSize: '0.8125rem',
                         padding: '0.75rem 1.25rem',
                       }}

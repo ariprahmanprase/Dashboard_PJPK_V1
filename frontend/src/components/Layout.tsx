@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import Sidebar, { type PageName } from './Sidebar';
-import Header from './Header';
+import PublicNavbar from './PublicNavbar';
+import type { PageName } from './Sidebar';
 
 interface Props {
   children: React.ReactNode;
@@ -8,35 +7,36 @@ interface Props {
   onNavigate: (page: PageName) => void;
 }
 
+/**
+ * Layout halaman publik — navbar atas floating (draft UI).
+ * Sidebar & Header lama tidak dipakai lagi di area publik.
+ */
 export default function Layout({ children, activePage, onNavigate }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const sidebarW = collapsed ? 64 : 256;
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <Sidebar
-        collapsed={collapsed}
-        activePage={activePage}
-        onNavigate={onNavigate}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-        onToggle={() => setCollapsed(!collapsed)}
-      />
-
-      <div
-        className="min-h-screen transition-all duration-300 ease-in-out layout-content"
+    <div className="public-scope">
+      <PublicNavbar activePage={activePage} onNavigate={onNavigate} />
+      <main
         style={{
-          marginLeft: `${sidebarW}px`,
-          marginRight: collapsed ? `${sidebarW}px` : '0px',
+          maxWidth: 1400,
+          margin: '0 auto',
+          padding: '2.25rem 1.5rem 3rem',
         }}
       >
-        <Header onMobileMenu={() => setMobileOpen(true)} />
-        <main style={{ padding: '1.5rem' }}>
-          {children}
-        </main>
-      </div>
+        {children}
+      </main>
+      <footer
+        style={{
+          borderTop: '1px solid hsl(var(--ds-border))',
+          marginTop: '2rem',
+          padding: '1.5rem',
+          textAlign: 'center',
+          fontSize: '0.75rem',
+          color: 'hsl(var(--ds-muted-foreground))',
+        }}
+      >
+        <span style={{ color: 'hsl(var(--ds-primary))', fontWeight: 600 }}>Dashboard PJPK</span>
+        {' '}— Kabupaten Sidoarjo · © 2026
+      </footer>
     </div>
   );
 }
