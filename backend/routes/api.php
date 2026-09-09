@@ -1,7 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\AdminAiCorrectiveActionController;
+use App\Http\Controllers\Api\AdminAiCrossOpdController;
+use App\Http\Controllers\Api\AdminAiCrossPillarController;
+use App\Http\Controllers\Api\AdminAiDataGapController;
+use App\Http\Controllers\Api\AdminAiEfektivitasController;
+use App\Http\Controllers\Api\AdminAiExecutiveBriefController;
 use App\Http\Controllers\Api\AdminAiIndikatorController;
+use App\Http\Controllers\Api\AdminAiInnovationController;
 use App\Http\Controllers\Api\AdminAiOpdController;
+use App\Http\Controllers\Api\AdminAiPlanningBudgetController;
+use App\Http\Controllers\Api\AdminAiPsriController;
+use App\Http\Controllers\Api\AdminAiRedAlertController;
+use App\Http\Controllers\Api\AdminAiRootCauseController;
 use App\Http\Controllers\Api\AdminIndikatorController;
 use App\Http\Controllers\Api\AdminRenaksiProgramController;
 use App\Http\Controllers\Api\AdminUserController;
@@ -41,6 +52,79 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/ai/opd', [AdminAiOpdController::class, 'show']);
     Route::post('/admin/ai/opd', [AdminAiOpdController::class, 'generate']);
     Route::delete('/admin/ai/opd', [AdminAiOpdController::class, 'destroy']);
+
+    // P3 — Root Cause Analysis (AI)
+    Route::get('/admin/ai/root-cause/options', [AdminAiRootCauseController::class, 'options']);
+    Route::get('/admin/ai/root-cause', [AdminAiRootCauseController::class, 'show']);
+    Route::post('/admin/ai/root-cause', [AdminAiRootCauseController::class, 'generate']);
+    Route::delete('/admin/ai/root-cause', [AdminAiRootCauseController::class, 'destroy']);
+
+    // P4 — Activity-Outcome Effectiveness (AI)
+    Route::get('/admin/ai/efektivitas/options', [AdminAiEfektivitasController::class, 'options']);
+    Route::get('/admin/ai/efektivitas', [AdminAiEfektivitasController::class, 'show']);
+    Route::post('/admin/ai/efektivitas', [AdminAiEfektivitasController::class, 'generate']);
+    Route::delete('/admin/ai/efektivitas', [AdminAiEfektivitasController::class, 'destroy']);
+
+    // P5 — Corrective Action Generator (AI, chaining dari P1/P3/P4)
+    Route::get('/admin/ai/corrective-action/options', [AdminAiCorrectiveActionController::class, 'options']);
+    Route::get('/admin/ai/corrective-action', [AdminAiCorrectiveActionController::class, 'sumberTersedia']);
+    Route::post('/admin/ai/corrective-action', [AdminAiCorrectiveActionController::class, 'generate']);
+    Route::delete('/admin/ai/corrective-action', [AdminAiCorrectiveActionController::class, 'destroy']);
+
+    // P6 — Red Indicator Alert (AI, hanya indikator berstatus merah)
+    Route::get('/admin/ai/red-alert/tahun-options', [AdminAiRedAlertController::class, 'tahunOptions']);
+    Route::get('/admin/ai/red-alert/options', [AdminAiRedAlertController::class, 'options']);
+    Route::get('/admin/ai/red-alert', [AdminAiRedAlertController::class, 'show']);
+    Route::post('/admin/ai/red-alert', [AdminAiRedAlertController::class, 'generate']);
+    Route::delete('/admin/ai/red-alert', [AdminAiRedAlertController::class, 'destroy']);
+
+    // P7 — Data Gap Analysis (AI, indikator dengan data belum memadai)
+    Route::get('/admin/ai/data-gap/tahun-options', [AdminAiDataGapController::class, 'tahunOptions']);
+    Route::get('/admin/ai/data-gap/options', [AdminAiDataGapController::class, 'options']);
+    Route::get('/admin/ai/data-gap', [AdminAiDataGapController::class, 'show']);
+    Route::post('/admin/ai/data-gap', [AdminAiDataGapController::class, 'generate']);
+    Route::delete('/admin/ai/data-gap', [AdminAiDataGapController::class, 'destroy']);
+
+    // P8 — PSRI Policy Diagnosis (AI)
+    Route::get('/admin/ai/psri/options', [AdminAiPsriController::class, 'options']);
+    Route::get('/admin/ai/psri', [AdminAiPsriController::class, 'show']);
+    Route::post('/admin/ai/psri', [AdminAiPsriController::class, 'generate']);
+    Route::delete('/admin/ai/psri', [AdminAiPsriController::class, 'destroy']);
+
+    // P9 — Cross-OPD Coordination (AI, hanya indikator lintas sektor)
+    Route::get('/admin/ai/cross-opd/options', [AdminAiCrossOpdController::class, 'options']);
+    Route::get('/admin/ai/cross-opd', [AdminAiCrossOpdController::class, 'show']);
+    Route::post('/admin/ai/cross-opd', [AdminAiCrossOpdController::class, 'generate']);
+    Route::delete('/admin/ai/cross-opd', [AdminAiCrossOpdController::class, 'destroy']);
+
+    // P10 — Executive Brief (AI, chaining dari hasil analisis per indikator)
+    Route::get('/admin/ai/executive-brief/options', [AdminAiExecutiveBriefController::class, 'options']);
+    Route::get('/admin/ai/executive-brief', [AdminAiExecutiveBriefController::class, 'sumberTersedia']);
+    Route::post('/admin/ai/executive-brief', [AdminAiExecutiveBriefController::class, 'generate']);
+    Route::delete('/admin/ai/executive-brief', [AdminAiExecutiveBriefController::class, 'destroy']);
+
+    // P11 — Planning & Budget Alignment (AI). BELUM DITAMPILKAN DI UI —
+    // endpoint sengaja tersedia tapi tanpa halaman/menu frontend sampai data
+    // dokumen perencanaan & anggaran (RENSTRA/RKPD/RENJA/SUBKEGIATAN/ANGGARAN)
+    // tersedia di DB. Lihat catatan di AiPlanningBudgetService.
+    Route::get('/admin/ai/planning-budget/options', [AdminAiPlanningBudgetController::class, 'options']);
+    Route::get('/admin/ai/planning-budget', [AdminAiPlanningBudgetController::class, 'show']);
+    Route::post('/admin/ai/planning-budget', [AdminAiPlanningBudgetController::class, 'generate']);
+    Route::delete('/admin/ai/planning-budget', [AdminAiPlanningBudgetController::class, 'destroy']);
+
+    // P12 — Cross-Pillar Strategic Synthesis (AI, seluruh pilar sekaligus;
+    // hanya role lintas dinas — admin OPD ditolak di controller)
+    Route::get('/admin/ai/cross-pillar/options', [AdminAiCrossPillarController::class, 'options']);
+    Route::get('/admin/ai/cross-pillar', [AdminAiCrossPillarController::class, 'show']);
+    Route::post('/admin/ai/cross-pillar', [AdminAiCrossPillarController::class, 'generate']);
+    Route::delete('/admin/ai/cross-pillar', [AdminAiCrossPillarController::class, 'destroy']);
+
+    // P13 — Innovation Miner (AI, per renaksi/kegiatan)
+    Route::get('/admin/ai/innovation/tahun-options', [AdminAiInnovationController::class, 'tahunOptions']);
+    Route::get('/admin/ai/innovation/options', [AdminAiInnovationController::class, 'options']);
+    Route::get('/admin/ai/innovation', [AdminAiInnovationController::class, 'show']);
+    Route::post('/admin/ai/innovation', [AdminAiInnovationController::class, 'generate']);
+    Route::delete('/admin/ai/innovation', [AdminAiInnovationController::class, 'destroy']);
 
     // Pilar options — super admin & admin analis (untuk form edit di Admin Report)
     Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);

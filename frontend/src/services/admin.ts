@@ -271,6 +271,314 @@ export async function deleteAiOpd(opdId: number, tahun: string): Promise<void> {
   });
 }
 
+// ── P3: Root Cause Analysis (AI) ──
+export async function fetchAiRootCauseOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[] }>('/admin/ai/root-cause/options');
+  return { indikator: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiRootCause(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/root-cause?${qs}`);
+  return data.data;
+}
+
+export async function generateAiRootCause(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/root-cause', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiRootCause(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/root-cause', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P4: Activity-Outcome Effectiveness (AI) ──
+export async function fetchAiEfektivitasOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[] }>('/admin/ai/efektivitas/options');
+  return { indikator: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiEfektivitas(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/efektivitas?${qs}`);
+  return data.data;
+}
+
+export async function generateAiEfektivitas(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/efektivitas', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiEfektivitas(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/efektivitas', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P5: Corrective Action Generator (AI, chaining dari P1/P3/P4) ──
+export interface AiSumberOption {
+  kode: string;
+  nama: string;
+}
+
+export interface AiCorrectiveStatus {
+  sumber_tersedia: string[];
+  tersimpan: Record<string, AiIndikatorResult>;
+}
+
+export async function fetchAiCorrectiveOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[]; sumber: AiSumberOption[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[]; sumber: AiSumberOption[] }>('/admin/ai/corrective-action/options');
+  return { indikator: data.data, tahun: data.tahun, sumber: data.sumber };
+}
+
+export async function fetchAiCorrectiveStatus(kode: string, tahun: string): Promise<AiCorrectiveStatus> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  return request<AiCorrectiveStatus>(`/admin/ai/corrective-action?${qs}`);
+}
+
+export async function generateAiCorrective(kode: string, tahun: string, sumber: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/corrective-action', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun, sumber }),
+  });
+  return data.data;
+}
+
+export async function deleteAiCorrective(kode: string, tahun: string, sumber: string): Promise<void> {
+  await request('/admin/ai/corrective-action', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun, sumber }),
+  });
+}
+
+// ── P6: Red Indicator Alert (AI, hanya indikator berstatus merah) ──
+export async function fetchAiRedAlertTahun(): Promise<string[]> {
+  const data = await request<{ tahun: string[] }>('/admin/ai/red-alert/tahun-options');
+  return data.tahun;
+}
+
+export async function fetchAiRedAlertOptions(tahun: string): Promise<AiIndikatorOption[]> {
+  const qs = new URLSearchParams({ tahun }).toString();
+  const data = await request<{ data: AiIndikatorOption[] }>(`/admin/ai/red-alert/options?${qs}`);
+  return data.data;
+}
+
+export async function fetchAiRedAlert(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/red-alert?${qs}`);
+  return data.data;
+}
+
+export async function generateAiRedAlert(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/red-alert', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiRedAlert(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/red-alert', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P7: Data Gap Analysis (AI, indikator dengan data belum memadai) ──
+export async function fetchAiDataGapTahun(): Promise<string[]> {
+  const data = await request<{ tahun: string[] }>('/admin/ai/data-gap/tahun-options');
+  return data.tahun;
+}
+
+export async function fetchAiDataGapOptions(tahun: string): Promise<AiIndikatorOption[]> {
+  const qs = new URLSearchParams({ tahun }).toString();
+  const data = await request<{ data: AiIndikatorOption[] }>(`/admin/ai/data-gap/options?${qs}`);
+  return data.data;
+}
+
+export async function fetchAiDataGap(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/data-gap?${qs}`);
+  return data.data;
+}
+
+export async function generateAiDataGap(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/data-gap', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiDataGap(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/data-gap', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P8: PSRI Policy Diagnosis (AI) ──
+export async function fetchAiPsriOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[] }>('/admin/ai/psri/options');
+  return { indikator: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiPsri(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/psri?${qs}`);
+  return data.data;
+}
+
+export async function generateAiPsri(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/psri', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiPsri(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/psri', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P9: Cross-OPD Coordination (AI, hanya indikator lintas sektor) ──
+export interface AiCrossOpdOption extends AiIndikatorOption {
+  jumlah_opd: number;
+}
+
+export async function fetchAiCrossOpdOptions(): Promise<{ indikator: AiCrossOpdOption[]; tahun: string[] }> {
+  const data = await request<{ data: AiCrossOpdOption[]; tahun: string[] }>('/admin/ai/cross-opd/options');
+  return { indikator: data.data, tahun: data.tahun };
+}
+
+export async function fetchAiCrossOpd(kode: string, tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/cross-opd?${qs}`);
+  return data.data;
+}
+
+export async function generateAiCrossOpd(kode: string, tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/cross-opd', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiCrossOpd(kode: string, tahun: string): Promise<void> {
+  await request('/admin/ai/cross-opd', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun }),
+  });
+}
+
+// ── P10: Executive Brief (AI, chaining dari hasil analisis per indikator) ──
+export async function fetchAiExecBriefOptions(): Promise<{ indikator: AiIndikatorOption[]; tahun: string[]; sumber: AiSumberOption[] }> {
+  const data = await request<{ data: AiIndikatorOption[]; tahun: string[]; sumber: AiSumberOption[] }>('/admin/ai/executive-brief/options');
+  return { indikator: data.data, tahun: data.tahun, sumber: data.sumber };
+}
+
+export async function fetchAiExecBriefStatus(kode: string, tahun: string): Promise<AiCorrectiveStatus> {
+  const qs = new URLSearchParams({ kode, tahun }).toString();
+  return request<AiCorrectiveStatus>(`/admin/ai/executive-brief?${qs}`);
+}
+
+export async function generateAiExecBrief(kode: string, tahun: string, sumber: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/executive-brief', {
+    method: 'POST',
+    body: JSON.stringify({ kode, tahun, sumber }),
+  });
+  return data.data;
+}
+
+export async function deleteAiExecBrief(kode: string, tahun: string, sumber: string): Promise<void> {
+  await request('/admin/ai/executive-brief', {
+    method: 'DELETE',
+    body: JSON.stringify({ kode, tahun, sumber }),
+  });
+}
+
+// ── P12: Cross-Pillar Strategic Synthesis (AI, seluruh pilar sekaligus) ──
+export async function fetchAiCrossPillarOptions(): Promise<{ tahun: string[] }> {
+  const data = await request<{ tahun: string[] }>('/admin/ai/cross-pillar/options');
+  return { tahun: data.tahun };
+}
+
+export async function fetchAiCrossPillar(tahun: string): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ tahun }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/cross-pillar?${qs}`);
+  return data.data;
+}
+
+export async function generateAiCrossPillar(tahun: string): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/cross-pillar', {
+    method: 'POST',
+    body: JSON.stringify({ tahun }),
+  });
+  return data.data;
+}
+
+export async function deleteAiCrossPillar(tahun: string): Promise<void> {
+  await request('/admin/ai/cross-pillar', {
+    method: 'DELETE',
+    body: JSON.stringify({ tahun }),
+  });
+}
+
+// ── P13: Innovation Miner (AI, per renaksi/kegiatan) ──
+export interface AiRenaksiOption {
+  id: number;
+  rencana_aksi: string;
+  program: string | null;
+  opd: string | null;
+  status: string | null;
+}
+
+export async function fetchAiInnovationTahun(): Promise<string[]> {
+  const data = await request<{ tahun: string[] }>('/admin/ai/innovation/tahun-options');
+  return data.tahun;
+}
+
+export async function fetchAiInnovationOptions(tahun: string): Promise<AiRenaksiOption[]> {
+  const qs = new URLSearchParams({ tahun }).toString();
+  const data = await request<{ data: AiRenaksiOption[] }>(`/admin/ai/innovation/options?${qs}`);
+  return data.data;
+}
+
+export async function fetchAiInnovation(renaksiId: number): Promise<AiIndikatorResult | null> {
+  const qs = new URLSearchParams({ renaksi_id: String(renaksiId) }).toString();
+  const data = await request<{ data: AiIndikatorResult | null }>(`/admin/ai/innovation?${qs}`);
+  return data.data;
+}
+
+export async function generateAiInnovation(renaksiId: number): Promise<AiIndikatorResult> {
+  const data = await request<{ data: AiIndikatorResult }>('/admin/ai/innovation', {
+    method: 'POST',
+    body: JSON.stringify({ renaksi_id: renaksiId }),
+  });
+  return data.data;
+}
+
+export async function deleteAiInnovation(renaksiId: number): Promise<void> {
+  await request('/admin/ai/innovation', {
+    method: 'DELETE',
+    body: JSON.stringify({ renaksi_id: renaksiId }),
+  });
+}
+
 export interface RenaksiCreatePayload {
   tahun: string;
   opd_id: number;

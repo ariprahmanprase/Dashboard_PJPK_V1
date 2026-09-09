@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react';
 import {
   Briefcase,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
   ClipboardList,
+  DatabaseZap,
   ExternalLink,
   FileText,
+  Gauge,
+  Layers,
+  Lightbulb,
   LogOut,
   Menu,
   Moon,
+  Network,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
+  Siren,
   Sparkles,
+  Stethoscope,
   Sun,
   UserRound,
   Users,
@@ -18,7 +29,7 @@ import {
 import { useTheme } from 'next-themes';
 import type { AdminUser } from '@/services/admin';
 
-export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile' | 'analisis-indikator' | 'portofolio-opd';
+export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile' | 'analisis-indikator' | 'portofolio-opd' | 'root-cause' | 'efektivitas' | 'corrective-action' | 'red-alert' | 'data-gap' | 'psri' | 'cross-opd' | 'executive-brief' | 'cross-pillar' | 'innovation';
 
 interface AdminMenuItem {
   key: AdminPageName;
@@ -46,6 +57,20 @@ const MENUS: AdminMenuItem[] = [
 const AI_MENUS: AdminMenuItem[] = [
   { key: 'analisis-indikator', label: 'Analisis Indikator', icon: Sparkles },
   { key: 'portofolio-opd', label: 'Portofolio OPD', icon: Briefcase },
+  { key: 'root-cause', label: 'Root Cause', icon: Search },
+  { key: 'efektivitas', label: 'Efektivitas', icon: Gauge },
+  { key: 'corrective-action', label: 'Action Plan', icon: ClipboardCheck },
+  { key: 'red-alert', label: 'Red Alert', icon: Siren },
+  { key: 'data-gap', label: 'Data Gap', icon: DatabaseZap },
+  { key: 'psri', label: 'PSRI Diagnosis', icon: Stethoscope },
+  { key: 'cross-opd', label: 'Lintas OPD', icon: Network },
+  { key: 'executive-brief', label: 'Executive Brief', icon: FileText },
+  { key: 'innovation', label: 'Inovasi', icon: Lightbulb },
+];
+
+// Menu AI khusus role lintas dinas (bukan admin OPD) — sintesis seluruh pilar
+const AI_MENUS_LINTAS: AdminMenuItem[] = [
+  { key: 'cross-pillar', label: 'Sintesis Pilar', icon: Layers },
 ];
 
 // Menu untuk semua role — edit biodata & password sendiri
@@ -210,27 +235,30 @@ function AdminSidebarContent({
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {isExpanded && (
           <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--color-sidebar-muted)' }}>
             Menu
           </p>
         )}
-        {[...MENUS, ...AI_MENUS, ...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => {
-          const Icon = m.icon;
-          return (
-            <a
-              key={m.key}
-              href="#"
-              className={`sidebar-link ${!isExpanded ? 'justify-center px-0' : ''} ${activePage === m.key ? 'active' : ''}`}
-              style={{ padding: '16px 24px' }}
-              onClick={(e) => { e.preventDefault(); onNavigate(m.key); }}
-            >
-              <Icon size={20} />
-              {isExpanded && <span style={{ fontSize: '1rem' }}>{m.label}</span>}
-            </a>
-          );
-        })}
+
+        {/* Menu utama */}
+        {MENUS.map((m) => (
+          <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
+        ))}
+
+        {/* Grup Analisis AI (collapsible) */}
+        <AiMenuGroup
+          isExpanded={isExpanded}
+          user={user}
+          activePage={activePage}
+          onNavigate={onNavigate}
+        />
+
+        {/* Menu peran & profil */}
+        {[...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => (
+          <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
+        ))}
       </nav>
 
       {/* User + aksi */}
@@ -269,6 +297,106 @@ function AdminSidebarContent({
         </button>
       </div>
     </>
+  );
+}
+
+/* ── Satu item menu sidebar ── */
+function MenuLink({
+  m,
+  isExpanded,
+  activePage,
+  onNavigate,
+}: {
+  m: AdminMenuItem;
+  isExpanded: boolean;
+  activePage: AdminPageName;
+  onNavigate: (p: AdminPageName) => void;
+}) {
+  const Icon = m.icon;
+  return (
+    <a
+      href="#"
+      className={`sidebar-link ${!isExpanded ? 'justify-center px-0' : ''} ${activePage === m.key ? 'active' : ''}`}
+      style={{ padding: isExpanded ? '10px 16px' : '10px 0' }}
+      onClick={(e) => { e.preventDefault(); onNavigate(m.key); }}
+      title={!isExpanded ? m.label : undefined}
+    >
+      <Icon size={18} />
+      {isExpanded && <span style={{ fontSize: '0.875rem' }}>{m.label}</span>}
+    </a>
+  );
+}
+
+/* ── Grup menu Analisis AI (collapsible) ── */
+function AiMenuGroup({
+  isExpanded,
+  user,
+  activePage,
+  onNavigate,
+}: {
+  isExpanded: boolean;
+  user: AdminUser;
+  activePage: AdminPageName;
+  onNavigate: (p: AdminPageName) => void;
+}) {
+  const aiKeys = [...AI_MENUS, ...AI_MENUS_LINTAS].map((m) => m.key) as string[];
+  const adaAktif = aiKeys.includes(activePage);
+  const [buka, setBuka] = useState(adaAktif);
+
+  // Auto-buka grup saat salah satu menu AI aktif
+  useEffect(() => {
+    if (adaAktif) setBuka(true);
+  }, [adaAktif]);
+
+  const items = [...AI_MENUS, ...(user.role !== 'admin_opd' ? AI_MENUS_LINTAS : [])];
+
+  // Sidebar dilipat: tampilkan ikon AI saja, klik → buka sidebar + grup
+  if (!isExpanded) {
+    return (
+      <a
+        href="#"
+        className={`sidebar-link justify-center px-0 ${adaAktif ? 'active' : ''}`}
+        style={{ padding: '10px 0' }}
+        onClick={(e) => { e.preventDefault(); /* parent toggle membuka sidebar */ }}
+        title="Analisis AI"
+      >
+        <Sparkles size={18} />
+      </a>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setBuka((b) => !b)}
+        className="sidebar-link w-full"
+        style={{ padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer' }}
+      >
+        <Sparkles size={18} />
+        <span style={{ fontSize: '0.875rem', flex: 1, textAlign: 'left' }}>Analisis AI</span>
+        {buka ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      </button>
+      {buka && (
+        <div className="flex flex-col gap-0.5 mt-0.5 ml-4 pl-3 border-l" style={{ borderColor: 'var(--color-sidebar-border)' }}>
+          {items.map((m) => {
+            const Icon = m.icon;
+            return (
+              <a
+                key={m.key}
+                href="#"
+                className={`sidebar-link ${activePage === m.key ? 'active' : ''}`}
+                style={{ padding: '7px 12px' }}
+                onClick={(e) => { e.preventDefault(); onNavigate(m.key); }}
+              >
+                <Icon size={15} />
+                <span style={{ fontSize: '0.8125rem' }}>{m.label}</span>
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
