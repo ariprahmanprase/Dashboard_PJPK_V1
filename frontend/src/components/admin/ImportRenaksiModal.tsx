@@ -56,6 +56,26 @@ export default function ImportRenaksiModal({ open, onClose, onImported }: Props)
   const handleFile = async (file: File | null) => {
     if (!file) return;
     setError('');
+
+    // Tolak file non-Excel di sisi klien (melindungi jalur drag-drop yang
+    // melewati filter `accept` pada <input type="file">). Backend tetap
+    // memvalidasi ulang lewat `mimes`.
+    const extOk = /\.(xlsx|xls)$/i.test(file.name);
+    const mimeOk = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel',                                            // .xls
+    ].includes(file.type);
+    if (!extOk || !mimeOk) {
+      setError('Hanya file Excel (.xlsx / .xls) yang dapat diunggah.');
+      if (fileInput.current) fileInput.current.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Ukuran file melebihi 5 MB.');
+      if (fileInput.current) fileInput.current.value = '';
+      return;
+    }
+
     setLoading(true);
     setFileName(file.name);
     try {

@@ -468,6 +468,9 @@ class AdminRenaksiProgramController extends Controller
 
         $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'], // maks 5 MB
+        ], [
+            'file.mimes' => 'Hanya file Excel (.xlsx / .xls) yang dapat diunggah.',
+            'file.max'   => 'Ukuran file melebihi 5 MB.',
         ]);
 
         $tmpPath = $request->file('file')->getRealPath();
