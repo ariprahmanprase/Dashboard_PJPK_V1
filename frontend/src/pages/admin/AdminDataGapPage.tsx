@@ -122,7 +122,7 @@ export default function AdminDataGapPage({ user, onLogout, onNavigate }: Props) 
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Data Gap Analysis"
-      subtitle="P7 — Menutup kekosongan & kelemahan data (AI)"
+      subtitle="AI mendeteksi data yang kosong, janggal, atau belum diisi agar kualitas laporan tidak menyesatkan."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih tahun + indikator */}

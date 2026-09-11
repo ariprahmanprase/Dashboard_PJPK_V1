@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Loader2, Lock, LogIn } from 'lucide-react';
+import CaptchaBox, { makeCaptchaQuestion } from '@/components/admin/CaptchaBox';
 import { login } from '@/services/admin';
 
 interface Props {
@@ -12,15 +13,37 @@ export default function AdminLoginPage({ onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Captcha "Saya bukan robot"
+  const [captcha, setCaptcha] = useState(makeCaptchaQuestion);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+  const resetCaptcha = () => {
+    setCaptcha(makeCaptchaQuestion());
+    setCaptchaAnswer('');
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Validasi captcha dulu
+    if (captchaAnswer.trim() === '') {
+      setError('Silakan jawab verifikasi "Saya bukan robot" dulu.');
+      return;
+    }
+    if (Number(captchaAnswer) !== captcha.a + captcha.b) {
+      setError('Jawaban verifikasi salah, coba lagi.');
+      resetCaptcha();
+      return;
+    }
+
     setLoading(true);
     try {
       await login(email.trim(), password);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal masuk, coba lagi.');
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -95,6 +118,13 @@ export default function AdminLoginPage({ onSuccess }: Props) {
                 }}
               />
             </div>
+
+            <CaptchaBox
+              question={captcha}
+              answer={captchaAnswer}
+              onAnswer={setCaptchaAnswer}
+              onRefresh={resetCaptcha}
+            />
 
             {error && (
               <p

@@ -104,7 +104,7 @@ export default function AdminCrossPillarPage({ user, onLogout, onNavigate }: Pro
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Sintesis Lintas Pilar"
-      subtitle="P12 — Cross-Pillar Strategic Synthesis (AI)"
+      subtitle="AI membaca seluruh pilar sekaligus untuk melihat gambaran besar dan pola lintas pilar (khusus Sekda/Bappeda)."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih tahun */}

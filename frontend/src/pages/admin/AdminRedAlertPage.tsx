@@ -122,7 +122,7 @@ export default function AdminRedAlertPage({ user, onLogout, onNavigate }: Props)
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Red Indicator Alert"
-      subtitle="P6 — Analisis indikator berstatus merah (AI)"
+      subtitle="AI menyorot indikator berstatus MERAH tahun ini dan menjelaskan seberapa genting serta apa yang harus segera dilakukan."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih tahun + indikator merah */}

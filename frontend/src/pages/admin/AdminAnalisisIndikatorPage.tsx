@@ -109,7 +109,7 @@ export default function AdminAnalisisIndikatorPage({ user, onLogout, onNavigate 
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Analisis Kinerja Indikator"
-      subtitle="P1 — Indicator Performance Analysis (AI)"
+      subtitle="AI membaca data indikator dan menjelaskan capaiannya: apa yang berjalan baik, apa yang perlu diperhatikan."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun */}

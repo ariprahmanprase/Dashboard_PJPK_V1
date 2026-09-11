@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -83,6 +84,45 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Upload / ganti foto profil (avatar). Semua role.
+     * Frontend sudah mem-crop ke 1:1, tapi backend tetap memvalidasi
+     * tipe, ukuran, dan rasio sebagai lapis terakhir.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096', 'dimensions:ratio=1/1'],
+        ], [
+            'avatar.required' => 'Foto belum dipilih.',
+            'avatar.image' => 'File harus berupa gambar.',
+            'avatar.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
+            'avatar.max' => 'Ukuran foto tidak boleh lebih dari 4 MB.',
+            'avatar.dimensions' => 'Foto harus berbentuk persegi (rasio 1:1).',
+        ]);
+
+        $file = $validated['avatar'];
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = 'avatars/'.$user->id.'-'.time().'.'.$ext;
+
+        // Hapus avatar lama agar tidak menumpuk
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        Storage::disk('public')->put($filename, file_get_contents($file->getRealPath()));
+
+        $user->avatar = $filename;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Foto profil berhasil diperbarui.',
+            'user' => $this->userPayload($user->load('opd')),
+        ]);
+    }
+
     private function userPayload(User $user): array
     {
         return [
@@ -94,6 +134,7 @@ class AuthController extends Controller
             'opd_id' => $user->opd_id,
             'opd_nama' => $user->opd?->nama_opd,
             'bidang' => $user->bidang,
+            'avatar_url' => $user->avatar ? asset('storage/'.$user->avatar) : null,
         ];
     }
 }

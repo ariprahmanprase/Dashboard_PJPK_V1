@@ -1,9 +1,13 @@
-import { useState, type FormEvent } from 'react';
-import { CheckCircle2, Eye, EyeOff, Loader2, Lock, UserRound } from 'lucide-react';
+import { useRef, useState, type FormEvent } from 'react';
+import { Camera, CheckCircle2, Eye, EyeOff, Loader2, Lock, UserRound } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
-import { updateProfile, type AdminUser, type ProfilePayload } from '@/services/admin';
+import AvatarCropModal from '@/components/admin/AvatarCropModal';
+import { updateProfile, uploadAvatar, type AdminUser, type ProfilePayload } from '@/services/admin';
 import { opdInduk } from '@/lib/opd';
+
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_MAX_BYTES = 4 * 1024 * 1024; // 4 MB
 
 interface Props {
   user: AdminUser;
@@ -35,6 +39,44 @@ export default function AdminProfilePage({ user, onLogout, onNavigate, onUserUpd
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Foto profil
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [fotoError, setFotoError] = useState<string | null>(null);
+  const [fotoSaving, setFotoSaving] = useState(false);
+
+  const handleFilePicked = (file: File | null) => {
+    setFotoError(null);
+    if (!file) return;
+    if (!AVATAR_TYPES.includes(file.type)) {
+      setFotoError('Format foto harus JPG, JPEG, PNG, atau WEBP.');
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setFotoError('Ukuran foto tidak boleh lebih dari 4 MB.');
+      return;
+    }
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  const handleCropped = async (blob: Blob) => {
+    setFotoSaving(true);
+    setFotoError(null);
+    try {
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      const updated = await uploadAvatar(file);
+      onUserUpdated(updated);
+      setCropSrc(null);
+      setSuccess('Foto profil berhasil diperbarui.');
+    } catch (err) {
+      setFotoError(err instanceof Error ? err.message : 'Gagal mengunggah foto.');
+      setCropSrc(null);
+    } finally {
+      setFotoSaving(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -77,6 +119,53 @@ export default function AdminProfilePage({ user, onLogout, onNavigate, onUserUpd
       subtitle="Kelola biodata dan password akun Anda"
     >
       <form onSubmit={handleSubmit} className="mx-auto max-w-2xl flex flex-col gap-6">
+        {/* Foto profil */}
+        <div
+          className="rounded-xl border p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5"
+          style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+        >
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.name}
+              className="w-20 h-20 rounded-full object-cover shrink-0 border"
+              style={{ borderColor: 'var(--color-border)' }}
+            />
+          ) : (
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 border"
+              style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+            >
+              <UserRound size={34} />
+            </div>
+          )}
+          <div className="flex flex-col gap-2 items-center sm:items-start text-center sm:text-left">
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Foto Profil</h2>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              JPG, JPEG, PNG, atau WEBP · maks 4 MB · akan dipotong menjadi persegi (1:1).
+            </p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => handleFilePicked(e.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={fotoSaving}
+              className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+            >
+              <Camera size={15} /> {user.avatar_url ? 'Ganti Foto' : 'Unggah Foto'}
+            </button>
+            {fotoError && (
+              <p className="text-xs" style={{ color: '#b91c1c' }}>{fotoError}</p>
+            )}
+          </div>
+        </div>
+
         {/* Info akun (read-only) */}
         <div
           className="rounded-xl border p-5 sm:p-6 flex flex-col gap-4"
@@ -183,6 +272,17 @@ export default function AdminProfilePage({ user, onLogout, onNavigate, onUserUpd
           </button>
         </div>
       </form>
+
+      {cropSrc && (
+        <AvatarCropModal
+          imageSrc={cropSrc}
+          onCancel={() => {
+            setCropSrc(null);
+            if (fileRef.current) fileRef.current.value = '';
+          }}
+          onDone={handleCropped}
+        />
+      )}
     </AdminLayout>
   );
 }

@@ -127,7 +127,7 @@ export default function AdminExecutiveBriefPage({ user, onLogout, onNavigate }: 
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Executive Brief"
-      subtitle="P10 — Ringkasan keputusan untuk Bupati/Sekda (AI)"
+      subtitle="AI merangkum analisis menjadi brief singkat (maks 250 kata) siap dibaca Bupati/Sekda."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun + sumber */}

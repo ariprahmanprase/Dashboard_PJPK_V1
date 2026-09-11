@@ -110,7 +110,7 @@ export default function AdminCrossOpdPage({ user, onLogout, onNavigate }: Props)
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Kolaborasi Lintas OPD"
-      subtitle="P9 — Cross-OPD Coordination (AI)"
+      subtitle="AI mencari masalah yang melibatkan lebih dari satu dinas dan menyarankan bentuk kerja samanya."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun */}

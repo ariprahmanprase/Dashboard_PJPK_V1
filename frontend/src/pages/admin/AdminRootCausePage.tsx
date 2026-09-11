@@ -110,7 +110,7 @@ export default function AdminRootCausePage({ user, onLogout, onNavigate }: Props
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Root Cause Analysis"
-      subtitle="P3 — Menemukan akar masalah (AI)"
+      subtitle="AI mencari akar penyebab kenapa suatu indikator tidak tercapai, bukan sekadar gejalanya."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun */}

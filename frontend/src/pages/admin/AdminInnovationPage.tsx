@@ -122,7 +122,7 @@ export default function AdminInnovationPage({ user, onLogout, onNavigate }: Prop
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Innovation Miner"
-      subtitle="P13 — Identifikasi inovasi layak replikasi (AI)"
+      subtitle="AI menemukan praktik/inovasi yang berhasil di satu tempat dan layak ditiru oleh OPD lain."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih tahun + renaksi */}

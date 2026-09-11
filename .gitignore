@@ -19,6 +19,9 @@ Thumbs.db
 # Sensitive files
 backend/.env
 
+# Local DB backups (berisi data asli & hash password — jangan di-push)
+backups/dashboard_pjpk_sebelum_samakan_*.sql
+
 # Dependencies
 backend/vendor/
 frontend/node_modules/

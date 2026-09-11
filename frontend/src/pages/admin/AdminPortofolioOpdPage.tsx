@@ -112,7 +112,7 @@ export default function AdminPortofolioOpdPage({ user, onLogout, onNavigate }: P
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Analisis Portofolio OPD"
-      subtitle="P2 — OPD Portfolio Review (AI)"
+      subtitle="AI menilai kinerja satu dinas/OPD secara keseluruhan dari semua indikator yang menjadi tanggung jawabnya."
     >
       <div className="flex flex-col gap-8">
         {/* Wizard: pilih OPD + tahun */}

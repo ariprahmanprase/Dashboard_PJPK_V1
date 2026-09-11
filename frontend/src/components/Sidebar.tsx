@@ -104,7 +104,7 @@ function SidebarContent({
         {isExpanded ? (
           <>
             <div className="flex items-center shrink-0 gap-3">
-              <img src="/sidoarjoo.png" alt="Logo" style={{ width: 32, height: 32 }} className="object-contain rounded shrink-0" />
+              <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 34, height: 34 }} className="object-contain shrink-0" />
               <div className="min-w-0">
                 <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Dashboard PJPK</h2>
                 <p className="text-xs mt-0.5 leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>Kabupaten Sidoarjo</p>
@@ -129,7 +129,7 @@ function SidebarContent({
           </>
         ) : (
           <>
-            <img src="/sidoarjoo.png" alt="Logo" style={{ width: 28, height: 28 }} className="object-contain rounded shrink-0" />
+            <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 30, height: 30 }} className="object-contain shrink-0" />
             <span className="hidden lg:block" style={{ color: 'var(--color-sidebar-muted)' }}>
               <PanelLeftOpen size={14} />
             </span>

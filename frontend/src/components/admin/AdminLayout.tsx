@@ -73,10 +73,7 @@ const AI_MENUS_LINTAS: AdminMenuItem[] = [
   { key: 'cross-pillar', label: 'Sintesis Pilar', icon: Layers },
 ];
 
-// Menu untuk semua role — edit biodata & password sendiri
-const PROFILE_MENUS: AdminMenuItem[] = [
-  { key: 'profile', label: 'Profil', icon: UserRound },
-];
+// Menu profil dihapus dari daftar menu — diganti blok user di bawah sidebar yang bisa diklik
 
 // Menu khusus admin analis: report saja (tanpa kelola user)
 const ANALIS_MENUS: AdminMenuItem[] = [
@@ -89,9 +86,22 @@ const SUPER_MENUS: AdminMenuItem[] = [
   { key: 'users', label: 'User', icon: Users },
 ];
 
+/* ── Deteksi layar desktop (≥ lg = 1024px) untuk margin konten ── */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isDesktop;
+}
+
 export default function AdminLayout({ user, activePage, onNavigate, onLogout, title, subtitle, children }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isDesktop = useIsDesktop();
   const sidebarW = collapsed ? 64 : 256;
 
   return (
@@ -151,7 +161,7 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
       {/* Konten */}
       <div
         className="min-h-screen transition-all duration-300 ease-in-out"
-        style={{ marginLeft: `${sidebarW}px` }}
+        style={{ marginLeft: isDesktop ? sidebarW : 0 }}
       >
         <AdminHeader
           title={title}
@@ -159,7 +169,7 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
           user={user}
           onMobileMenu={() => setMobileOpen(true)}
         />
-        <main style={{ padding: '1.5rem' }}>{children}</main>
+        <main className="p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );
@@ -203,7 +213,7 @@ function AdminSidebarContent({
         {isExpanded ? (
           <>
             <div className="flex items-center shrink-0 gap-3">
-              <img src="/sidoarjoo.png" alt="Logo" style={{ width: 32, height: 32 }} className="object-contain rounded shrink-0" />
+              <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 34, height: 34 }} className="object-contain shrink-0" />
               <div className="min-w-0">
                 <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Admin PJPK</h2>
                 <p className="text-xs mt-0.5 leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>Kabupaten Sidoarjo</p>
@@ -226,7 +236,7 @@ function AdminSidebarContent({
           </>
         ) : (
           <>
-            <img src="/sidoarjoo.png" alt="Logo" style={{ width: 28, height: 28 }} className="object-contain rounded shrink-0" />
+            <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 30, height: 30 }} className="object-contain shrink-0" />
             <span className="hidden lg:block" style={{ color: 'var(--color-sidebar-muted)' }}>
               <PanelLeftOpen size={14} />
             </span>
@@ -255,8 +265,8 @@ function AdminSidebarContent({
           onNavigate={onNavigate}
         />
 
-        {/* Menu peran & profil */}
-        {[...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : []), ...PROFILE_MENUS].map((m) => (
+        {/* Menu peran (profil dipindah ke blok user di bawah) */}
+        {[...(user.role === 'super_admin' ? SUPER_MENUS : user.role === 'admin_analis' ? ANALIS_MENUS : [])].map((m) => (
           <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
         ))}
       </nav>
@@ -264,18 +274,40 @@ function AdminSidebarContent({
       {/* User + aksi */}
       <div className="shrink-0 border-t p-4 flex flex-col gap-3" style={{ borderColor: 'var(--color-sidebar-border)' }}>
         {isExpanded && (
-          <div className="min-w-0 px-1">
-            <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-sidebar-brand)' }}>
-              {user.name}
-            </p>
-            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-sidebar-muted)' }}>
-              {user.role === 'admin_opd' && user.opd_nama
-                ? user.opd_nama
-                : user.role === 'admin_analis'
-                  ? 'Admin Analis'
-                  : 'Super Admin'}
-            </p>
-          </div>
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onNavigate('profile'); }}
+            className={`sidebar-link ${activePage === 'profile' ? 'active' : ''}`}
+            style={{ padding: '10px 16px', alignItems: 'center', gap: '0.75rem' }}
+            title="Profil"
+          >
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.name}
+                className="w-9 h-9 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <span
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--color-sidebar-hover)', color: 'var(--color-sidebar-muted)' }}
+              >
+                <UserRound size={18} />
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold truncate" style={{ color: 'inherit' }}>
+                {user.name}
+              </p>
+              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-sidebar-muted)' }}>
+                {user.role === 'admin_opd' && user.opd_nama
+                  ? user.opd_nama
+                  : user.role === 'admin_analis'
+                    ? 'Admin Analis'
+                    : 'Super Admin'}
+              </p>
+            </div>
+          </a>
         )}
         <a
           href="/"
@@ -418,10 +450,8 @@ function AdminHeader({
 
   return (
     <header
-      className="flex items-center justify-between shrink-0 border-b"
+      className="flex items-center justify-between shrink-0 border-b px-4 lg:px-6 min-h-16 py-2 lg:py-0"
       style={{
-        height: 64,
-        padding: '0 1.5rem',
         backgroundColor: 'var(--color-bg-secondary)',
         borderColor: 'var(--color-border)',
       }}
@@ -439,7 +469,7 @@ function AdminHeader({
           <h1 className="text-base font-semibold leading-tight truncate" style={{ color: 'var(--color-text)' }}>
             {title}
           </h1>
-          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-xs mt-0.5 line-clamp-2 lg:truncate leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
             {subtitle ?? (user.role === 'admin_opd' && user.opd_nama ? user.opd_nama : 'Super Admin')}
           </p>
         </div>

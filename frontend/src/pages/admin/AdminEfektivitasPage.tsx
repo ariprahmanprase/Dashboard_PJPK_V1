@@ -110,7 +110,7 @@ export default function AdminEfektivitasPage({ user, onLogout, onNavigate }: Pro
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Efektivitas Kegiatan"
-      subtitle="P4 — Activity-Outcome Effectiveness (AI)"
+      subtitle="AI menilai apakah kegiatan yang dijalankan benar-benar berdampak pada capaian indikator."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun */}

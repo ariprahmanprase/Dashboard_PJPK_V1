@@ -7,6 +7,7 @@ export interface AdminUser {
   opd_id: number | null;
   opd_nama: string | null;
   bidang?: string | null;
+  avatar_url: string | null;
 }
 
 export interface AdminRenaksi {
@@ -137,6 +138,31 @@ export async function updateProfile(payload: ProfilePayload): Promise<AdminUser>
   });
   localStorage.setItem(USER_KEY, JSON.stringify(data.user));
   return data.user;
+}
+
+/** Upload / ganti foto profil (sudah di-crop 1:1 di client). */
+export async function uploadAvatar(file: File): Promise<AdminUser> {
+  const token = getToken();
+  const form = new FormData();
+  form.append('avatar', file);
+  const resp = await fetch('/api/auth/avatar', {
+    method: 'POST',
+    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
+  });
+  if (resp.status === 401) {
+    clearSession();
+    window.location.href = '/admin';
+    throw new Error('Sesi berakhir, silakan masuk kembali.');
+  }
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const firstError = body?.errors ? (Object.values(body.errors).flat()[0] as string) : body?.message;
+    throw new Error(firstError || `Gagal mengunggah foto (${resp.status}).`);
+  }
+  const user = (body as { user: AdminUser }).user;
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  return user;
 }
 
 export async function fetchAdminRenaksi(params: { tahun?: string; search?: string; indikator_id?: number; pilar_id?: number; opd_id?: number; status?: string } = {}): Promise<AdminRenaksi[]> {

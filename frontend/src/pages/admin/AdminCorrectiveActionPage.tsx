@@ -128,7 +128,7 @@ export default function AdminCorrectiveActionPage({ user, onLogout, onNavigate }
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Corrective Action Plan"
-      subtitle="P5 — Corrective Action Generator (AI)"
+      subtitle="AI menyusun rencana tindakan perbaikan (langkah konkret) untuk indikator yang bermasalah."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun + sumber */}

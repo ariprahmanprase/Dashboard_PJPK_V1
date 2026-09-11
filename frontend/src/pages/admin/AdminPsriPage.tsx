@@ -110,7 +110,7 @@ export default function AdminPsriPage({ user, onLogout, onNavigate }: Props) {
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="PSRI Policy Diagnosis"
-      subtitle="P8 — Pressure–State–Response–Impact (AI)"
+      subtitle="AI menganalisis tekanan, kondisi saat ini, respons yang sudah dilakukan, dan dampaknya (kerangka PSRI)."
     >
       <div className="flex flex-col gap-8">
       {/* Wizard: pilih indikator + tahun */}
