@@ -339,3 +339,51 @@ body {
 .alert-badge-renaksi {
   animation: alert-pulse 2s ease-in-out infinite;
 }
+
+/* ── Reveal on load & on scroll ──────────────────────────
+   Halus dan cepat: fade + geser 12px, easing standar Material.
+   Elemen awal di dalam .reveal-scope disembunyikan dulu agar
+   konten bawah fold tidak "kedip" sebelum observer jalan. */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-scope [data-reveal] {
+  opacity: 0;
+}
+
+.reveal-scope [data-reveal].reveal-visible {
+  animation: reveal-up 0.55s cubic-bezier(0.21, 0.61, 0.35, 1) both;
+}
+
+/* Navbar ikut muncul halus saat halaman dibuka */
+@keyframes navbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ds-navbar {
+  animation: navbar-in 0.5s cubic-bezier(0.21, 0.61, 0.35, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-scope [data-reveal],
+  .ds-navbar {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

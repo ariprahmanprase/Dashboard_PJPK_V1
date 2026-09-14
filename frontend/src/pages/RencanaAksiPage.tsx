@@ -8,6 +8,7 @@ import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import { opdInduk } from '@/lib/opd';
 import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
+import { useReveal } from '@/hooks/useReveal';
 
 const FILTER_KEY = 'pjpk-draft-filter-renaksi';
 const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', dinas: '', indikatorId: '', statusRenaksi: '', search: '' };
@@ -157,10 +158,12 @@ export default function RencanaAksiPage() {
     minWidth: 160,
   };
 
+  const revealRef = useReveal<HTMLDivElement>();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div ref={revealRef} className="reveal-scope" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div>
+      <div data-reveal data-reveal-delay="0">
         <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Rencana Aksi</h2>
         <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Monitoring pelaksanaan rencana aksi pembangunan kependudukan
@@ -168,7 +171,7 @@ export default function RencanaAksiPage() {
       </div>
 
       {/* ── Filter Bar ── */}
-      <div className="rounded-xl border" style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1.5rem' }}>
+      <div className="rounded-xl border" style={{ backgroundColor: 'hsl(var(--ds-card))', borderColor: 'hsl(var(--ds-border))', padding: '1.5rem' }} data-reveal data-reveal-delay="70">
         <div className="flex items-center gap-2.5" style={{ marginBottom: '1rem' }}>
           <Filter size={16} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>Filter</p>
@@ -262,7 +265,7 @@ export default function RencanaAksiPage() {
 
       {/* ── Summary Cards (program) — di bawah filter ── */}
       {loading && !programSummary ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }} data-reveal data-reveal-delay="140">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
@@ -278,7 +281,7 @@ export default function RencanaAksiPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }} data-reveal data-reveal-delay="140">
           <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" description="Jumlah OPD pengampu rencana aksi (mengikuti filter)" onClick={() => setScorecardPopup('Total OPD')} />
           <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" description="Jumlah program rencana aksi yang terpantau (mengikuti filter)" onClick={() => setScorecardPopup('Total Program')} />
           <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" description="Program dengan realisasi sesuai/melampaui target" onClick={() => setScorecardPopup('Tercapai')} />
@@ -289,14 +292,16 @@ export default function RencanaAksiPage() {
       )}
 
       {/* ── Stacked bar persentase status — mengikuti filter aktif ── */}
-      <RenaksiStatusBar
-        data={statusBarData}
-        loading={loading && !programData.length}
-        onSegmentClick={(status) => setScorecardPopup(status)}
-      />
+      <div data-reveal data-reveal-delay="200">
+        <RenaksiStatusBar
+          data={statusBarData}
+          loading={loading && !programData.length}
+          onSegmentClick={(status) => setScorecardPopup(status)}
+        />
+      </div>
 
       {/* ── Tabel Program ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} data-reveal>
         <div className="flex items-center gap-2.5">
           <Table2 size={16} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>

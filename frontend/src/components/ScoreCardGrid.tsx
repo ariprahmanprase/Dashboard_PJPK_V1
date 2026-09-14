@@ -19,7 +19,7 @@ const DEFAULT_LABELS: Record<string, string> = {
   on_track: 'On Track',
   warning: 'Warning',
   alert: 'Alert',
-  capaian_belum: 'Capaian Belum Diinput',
+  capaian_belum: 'Realisasi Belum Diinput',
 };
 
 const DEFAULT_DESCRIPTIONS: Record<string, string> = {

@@ -14,13 +14,32 @@ import { Loader2, BarChart3 } from 'lucide-react';
 interface Props {
   data: ChartDataPoint[];
   loading: boolean;
+  /** true bila user belum memilih indikator spesifik — tampilkan ajakan memilih */
+  perluPilihIndikator?: boolean;
 }
 
-export default function ChartCombo({ data, loading }: Props) {
+export default function ChartCombo({ data, loading, perluPilihIndikator = false }: Props) {
   if (loading) {
     return (
       <div className="ds-card flex items-center justify-center py-16">
         <Loader2 className="animate-spin" size={28} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
+      </div>
+    );
+  }
+
+  // Chart tren hanya bermakna untuk SATU indikator — bila belum dipilih,
+  // tampilkan ajakan memilih (dengan bahasa awam) alih-alih rata-rata semua indikator
+  if (perluPilihIndikator) {
+    return (
+      <div className="ds-card flex flex-col items-center justify-center text-center py-16 px-8 gap-3">
+        <BarChart3 size={36} style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.4 }} />
+        <p className="text-sm font-medium" style={{ color: 'hsl(var(--ds-foreground))' }}>
+          Grafik tren belum ditampilkan
+        </p>
+        <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--ds-muted-foreground))', maxWidth: 340 }}>
+          Pilih salah satu <strong>indikator</strong> pada menu <strong>Filter Data</strong> di atas
+          untuk melihat perbandingan target dan capaiannya dari tahun ke tahun.
+        </p>
       </div>
     );
   }

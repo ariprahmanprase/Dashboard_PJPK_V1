@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { X, Loader2, FileX } from 'lucide-react';
-import type { RenaksiItem } from '@/types';
+import type { RenaksiItem, RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
+import RenaksiProgramModal from './RenaksiProgramModal';
 
 interface Props {
   open: boolean;
@@ -12,7 +14,13 @@ interface Props {
   mode?: 'indikator' | 'all';
 }
 
+/** Bentuk baris popup (endpoint renaksi-program-list) — RenaksiItem + field detail */
+type PopupRow = RenaksiItem & Partial<RenaksiProgramRow>;
+
 export default function RenaksiModal({ open, onClose, kode, namaIndikator, data, loading, mode = 'indikator' }: Props) {
+  // Baris yang diklik → buka popup detail (sama seperti detail di heatmap)
+  const [selectedRow, setSelectedRow] = useState<RenaksiProgramRow | null>(null);
+
   if (!open) return null;
 
   const isAll = mode === 'all';
@@ -124,7 +132,28 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
                 {data.map(item => (
                   <tr
                     key={item.no}
-                    style={{ borderBottom: '1px solid hsl(var(--ds-border))' }}
+                    title="Klik untuk lihat detail"
+                    onClick={() => {
+                      const p = item as PopupRow;
+                      setSelectedRow({
+                        no: p.no,
+                        tahun: p.tahun,
+                        dinas: p.opd ?? '-',
+                        kode_program: p.kode_program ?? '-',
+                        program: p.program ?? '-',
+                        rencana_aksi: p.rencana_aksi,
+                        jenis_target: p.jenis_target ?? 'kualitatif',
+                        target: p.target ?? '-',
+                        realisasi: p.realisasi ?? '-',
+                        kendala: p.kendala ?? null,
+                        catatan: p.catatan ?? null,
+                        dokumentasi: p.dokumentasi ?? null,
+                        indikator: Array.isArray(p.indikator) ? p.indikator : (p.indikator ? [String(p.indikator)] : []),
+                        pilar: p.pilar ?? [],
+                        status: p.status,
+                      });
+                    }}
+                    style={{ borderBottom: '1px solid hsl(var(--ds-border))', cursor: 'pointer' }}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td
@@ -209,6 +238,14 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
           )}
         </div>
       </div>
+
+      {/* Popup detail renaksi di atas popup ini (sama seperti di heatmap) */}
+      <RenaksiProgramModal
+        open={selectedRow !== null}
+        onClose={() => setSelectedRow(null)}
+        data={selectedRow}
+        zIndex={70}
+      />
     </div>
   );
 }

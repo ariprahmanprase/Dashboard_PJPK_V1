@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle, UserRound, Clock, FileUp } from 'lucide-react';
+import { CheckCircle2, Loader2, Pencil, Plus, Search, Sparkles, Trash2, X, XCircle, UserRound, Clock, FileUp, FileDown } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import ImportRenaksiModal from '@/components/admin/ImportRenaksiModal';
@@ -14,6 +14,7 @@ import {
   createRenaksi,
   deleteAiRecommendation,
   deleteRenaksi,
+  downloadRenaksiPdf,
   fetchAdminIndikatorOptions,
   fetchAdminRenaksi,
   fetchIndikatorOptions,
@@ -261,6 +262,26 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [deleting, setDeleting] = useState<AdminRenaksi | null>(null);
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Ekspor PDF sesuai filter yang sedang aktif (filter dinas ikut dikirim ke backend)
+  async function handleExportPdf() {
+    setExporting(true);
+    try {
+      await downloadRenaksiPdf({
+        tahun: tahun || undefined,
+        search: search || undefined,
+        indikator_id: indikatorId ? Number(indikatorId) : undefined,
+        pilar_id: pilarId ? Number(pilarId) : undefined,
+        status: status || undefined,
+        dinas: dinas || undefined,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal membuat PDF.');
+    } finally {
+      setExporting(false);
+    }
+  }
   const [opdOptions, setOpdOptions] = useState<OpdOption[]>([]);
   const [allIndikatorOptions, setAllIndikatorOptions] = useState<IndikatorOption[]>([]);
 
@@ -469,6 +490,17 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           >
             {loading ? 'Memuat…' : `${visibleItems.length} renaksi`}
           </span>
+
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting || loading || visibleItems.length === 0}
+            title="Unduh laporan renaksi (PDF) sesuai filter aktif"
+            className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ border: '1px solid var(--color-border)', color: 'var(--color-text)', backgroundColor: 'transparent' }}
+          >
+            {exporting ? <Loader2 className="animate-spin" size={15} /> : <FileDown size={15} />}
+            {exporting ? 'Membuat PDF…' : 'Export PDF'}
+          </button>
 
           {canCreate && (
             <button

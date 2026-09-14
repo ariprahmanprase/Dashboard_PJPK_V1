@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\RenaksiProgram;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -97,6 +98,92 @@ class AdminRenaksiProgramController extends Controller
         ]);
 
         return response()->json(['data' => $items]);
+    }
+
+    /**
+     * Ekspor laporan renaksi ke PDF — mengikuti filter aktif & scope OPD user.
+     * Kolom inti saja (tanpa kendala/catatan/dokumentasi) agar muat di A4 landscape.
+     */
+    public function exportPdf(Request $request)
+    {
+        $user = $request->user();
+
+        $query = RenaksiProgram::with([
+            'opd',
+            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+        ])->orderBy('no');
+
+        if ($user->isAdminOpd()) {
+            $query->where('opd_id', $user->opd_id);
+        } elseif ($request->filled('opd_id')) {
+            $query->where('opd_id', $request->integer('opd_id'));
+        }
+
+        $filters = [];
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->input('tahun'));
+            $filters['Tahun'] = $request->input('tahun');
+        }
+        if ($request->filled('indikator_id')) {
+            $indikatorId = $request->integer('indikator_id');
+            $query->where(function ($q) use ($indikatorId) {
+                $q->where('indikator_1_id', $indikatorId)
+                  ->orWhere('indikator_2_id', $indikatorId)
+                  ->orWhere('indikator_3_id', $indikatorId)
+                  ->orWhere('indikator_4_id', $indikatorId);
+            });
+        }
+        if ($request->filled('pilar_id')) {
+            $pilarId = $request->integer('pilar_id');
+            $query->where(function ($q) use ($pilarId) {
+                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
+                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
+                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
+                    });
+                }
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+            $filters['Status'] = $request->input('status');
+        }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('rencana_aksi', 'like', "%{$search}%")
+                  ->orWhere('kode_program', 'like', "%{$search}%")
+                  ->orWhere('program', 'like', "%{$search}%");
+            });
+            $filters['Pencarian'] = $search;
+        }
+        // Filter teks dinas (dari dropdown client-side di halaman admin)
+        if (!$user->isAdminOpd() && $request->filled('dinas')) {
+            $dinas = $request->input('dinas');
+            $query->whereHas('opd', fn($q) => $q->where('nama_opd', $dinas));
+            $filters['Dinas'] = $dinas;
+        }
+
+        $rows = $query->get();
+
+        // Ringkasan status untuk kop laporan
+        $summary = [
+            'total' => $rows->count(),
+            'tercapai' => $rows->where('status', 'Tercapai')->count(),
+            'hampir_tercapai' => $rows->where('status', 'Hampir Tercapai')->count(),
+            'tidak_tercapai' => $rows->where('status', 'Tidak Tercapai')->count(),
+            'belum_diisi' => $rows->where('status', 'Belum diisi')->count(),
+        ];
+
+        $pdf = Pdf::loadView('exports.renaksi', [
+            'rows' => $rows,
+            'summary' => $summary,
+            'filters' => $filters,
+            'printedBy' => $user->name,
+            'printedAt' => now()->translatedFormat('d F Y, H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        $tahun = $request->input('tahun', 'semua');
+        return $pdf->download("laporan-renaksi-{$tahun}.pdf");
     }
 
     /**

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Medal, Award, Loader2, ListOrdered } from 'lucide-react';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
+import { useReveal } from '@/hooks/useReveal';
 import type { RenaksiProgramRow } from '@/types';
 
 interface RankRow {
@@ -58,10 +59,12 @@ export default function RankPage() {
   const podium = data.slice(0, 3);
   const maxSkor = data.length ? Math.max(...data.map(d => d.skor), 1) : 1;
 
+  const revealRef = useReveal<HTMLDivElement>();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+    <div ref={revealRef} className="reveal-scope" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       {/* Header + filter tahun */}
-      <div className="flex items-end justify-between flex-wrap gap-3">
+      <div className="flex items-end justify-between flex-wrap gap-3" data-reveal data-reveal-delay="0">
         <div>
           <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Peringkat OPD</h2>
           <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
@@ -85,7 +88,7 @@ export default function RankPage() {
       ) : (
         <>
           {/* ── Podium Juara 1-3 ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+          <div data-reveal data-reveal-delay="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'end' }}>
             {/* Urutan tampilan: 2, 1, 3 (juara 1 di tengah lebih menonjol) */}
             {[podium[1], podium[0], podium[2]].map((row, idx) => {
               if (!row) return <div key={idx} />;
@@ -123,7 +126,7 @@ export default function RankPage() {
           </div>
 
           {/* ── Leaderboard lengkap ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          <div data-reveal data-reveal-delay="140" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <p className="ds-section-label">
               <ListOrdered size={15} /> Papan Peringkat <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6 }}>— {data.length} OPD</span>
             </p>

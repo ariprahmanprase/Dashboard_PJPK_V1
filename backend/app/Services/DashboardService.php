@@ -72,17 +72,25 @@ class DashboardService
     {
         $tahun = $tahun ?? '2025';
         $arahMap = (clone $indikatorQuery)->pluck('arah_target', 'id');
-        $ids = $arahMap->keys();
 
-        $tcs = TargetCapaian::whereIn('indikator_id', $ids)
+        $tcs = TargetCapaian::whereIn('indikator_id', $arahMap->keys())
             ->where('tahun', $tahun)
             ->select('indikator_id', 'target', 'capaian')
-            ->get();
+            ->get()
+            ->keyBy('indikator_id');
 
-        return $tcs->filter(function ($tc) use ($statusTl, $arahMap) {
-            $s = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
-            return $s['status_tl'] === $statusTl;
-        })->pluck('indikator_id')->unique()->values()->toArray();
+        // Iterasi per indikator: yang tanpa baris TC tahun ini dihitung
+        // dengan target/capaian null → sama dengan definisi getTableData().
+        $matching = [];
+        foreach ($arahMap as $indikatorId => $arah) {
+            $tc = $tcs->get($indikatorId);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah);
+            if ($s['status_tl'] === $statusTl) {
+                $matching[] = $indikatorId;
+            }
+        }
+
+        return $matching;
     }
 
     /**
@@ -125,7 +133,8 @@ class DashboardService
         $rows = TargetCapaian::whereIn('indikator_id', $arahMap->keys())
             ->where('tahun', $tahun)
             ->select('indikator_id', 'target', 'capaian')
-            ->get();
+            ->get()
+            ->keyBy('indikator_id');
 
         $onTrack = 0;
         $warning = 0;
@@ -133,11 +142,17 @@ class DashboardService
         $belumDiisi = 0;
         $capaianBelum = 0;
 
-        foreach ($rows as $tc) {
-            if ($tc->capaian === null) {
+        // Iterasi per INDIKATOR (bukan per baris TC) agar indikator tanpa
+        // baris target_capaian tahun ini tetap terhitung.
+        // "Capaian belum diinput" = status Belum Diisi (target ATAU capaian
+        // kosong) — selaras dengan getTableData() dan popup status.
+        foreach ($arahMap as $indikatorId => $arah) {
+            $tc = $rows->get($indikatorId);
+
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah);
+            if ($s['status_tl'] === 'Belum Diisi') {
                 $capaianBelum++;
             }
-            $s = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
             match ($s['status_tl']) {
                 'On Track' => $onTrack++,
                 'Warning' => $warning++,

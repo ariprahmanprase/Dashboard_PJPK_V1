@@ -15,6 +15,7 @@ import BarPerOpd from '@/components/BarPerOpd';
 import SmallMultipleIndikator from '@/components/SmallMultipleIndikator';
 import HeatmapGrid from '@/components/HeatmapGrid';
 import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
+import { useReveal } from '@/hooks/useReveal';
 import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartIndikatorEntry } from '@/types';
 
 const FILTER_KEY = 'pjpk-draft-filter-indikator';
@@ -128,6 +129,16 @@ export default function ReportPage() {
       return;
     }
 
+    // Scorecard "Capaian Belum Diinput": filter tabel di client (capaian null)
+    // + buka popup daftar indikator yang belum diinput
+    if (key === 'capaian_belum') {
+      setScorecardKey(key);
+      setFilter(DEFAULT_FILTER);
+      fetchDataFor(DEFAULT_FILTER);
+      openStatusModal('Belum Diisi');
+      return;
+    }
+
     let newStatus = '';
     if (key === 'on_track') newStatus = 'On Track';
     else if (key === 'warning') newStatus = 'Warning';
@@ -137,6 +148,28 @@ export default function ReportPage() {
     setScorecardKey(key);
     setFilter(next);
     fetchDataFor(next);
+  }
+
+  // ── Ambil daftar indikator per status lalu buka popup ──
+  async function openStatusModal(status: string) {
+    setStatusModalTitle(status);
+    setStatusModalOpen(true);
+    setStatusDetailLoading(true);
+    setStatusDetailData([]);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('tahun', tahun || '2025');
+      params.set('status_tl', status);
+      const resp = await fetch(`/api/dashboard/table?${params}`);
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
+      const json: TableRow[] = await resp.json();
+      setStatusDetailData(json);
+    } catch (err) {
+      console.error('[PJPK] status detail fetch error:', err);
+    } finally {
+      setStatusDetailLoading(false);
+    }
   }
 
   // ── Filter dropdown change ─────────────────────────
@@ -172,25 +205,8 @@ export default function ReportPage() {
   }
 
   // ── PieStatus click (popup modal) ──────────────
-  async function handlePieStatusClick(status: string) {
-    setStatusModalTitle(status);
-    setStatusModalOpen(true);
-    setStatusDetailLoading(true);
-    setStatusDetailData([]);
-
-    try {
-      const params = new URLSearchParams();
-      params.set('tahun', '2025');
-      params.set('status_tl', status);
-      const resp = await fetch(`/api/dashboard/table?${params}`);
-      if (!resp.ok) throw new Error(`API ${resp.status}`);
-      const json: TableRow[] = await resp.json();
-      setStatusDetailData(json);
-    } catch (err) {
-      console.error('[PJPK] status detail fetch error:', err);
-    } finally {
-      setStatusDetailLoading(false);
-    }
+  function handlePieStatusClick(status: string) {
+    openStatusModal(status);
   }
 
   // ── Indikator Detail modal (klik baris tabel) ─────
@@ -224,6 +240,15 @@ export default function ReportPage() {
         tahun: String(r.tahun ?? '-'),
         status: String(r.status ?? '-'),
         catatan: (r.catatan as string | null) ?? null,
+        // Field detail untuk popup renaksi (klik baris → detail seperti di heatmap)
+        program: String(r.program ?? '-'),
+        kode_program: String(r.kode_program ?? '-'),
+        jenis_target: (r.jenis_target as 'kuantitatif' | 'kualitatif') ?? 'kualitatif',
+        target: String(r.target ?? '-'),
+        realisasi: String(r.realisasi ?? '-'),
+        kendala: (r.kendala as string | null) ?? null,
+        dokumentasi: (r.dokumentasi as string | null) ?? null,
+        pilar: Array.isArray(r.pilar) ? (r.pilar as string[]) : [],
       })));
     } catch (err) {
       console.error('[PJPK] renaksi list fetch error:', err);
@@ -233,23 +258,27 @@ export default function ReportPage() {
   }
 
   // ── Client-side filter ────────────────────────────
+  // Scorecard "Capaian Belum Diinput" selaras dengan status Belum Diisi backend
+  // (termasuk indikator tanpa baris target_capaian), bukan hanya capaian null.
   const filteredTableData = useMemo(() => {
-    if (scorecardKey === 'capaian_belum') return tableData.filter(r => r.capaian === null);
+    if (scorecardKey === 'capaian_belum') return tableData.filter(r => r.status_tl === 'Belum Diisi');
     return tableData;
   }, [tableData, scorecardKey]);
 
   const filtersObj = { tahun, opd_id: opdId, pilar_id: pilarId, indikator_id: indikatorId, status_tl: statusTl };
 
+  const revealRef = useReveal<HTMLDivElement>();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
+    <div ref={revealRef} className="reveal-scope" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div data-reveal data-reveal-delay="0">
         <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>Indikator</h2>
         <p className="text-sm mt-1.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
           Monitoring 30 indikator pembangunan kependudukan Kabupaten Sidoarjo
         </p>
       </div>
 
-      <div className="ds-card" style={{ padding: '1.5rem' }}>
+      <div className="ds-card" style={{ padding: '1.5rem' }} data-reveal data-reveal-delay="70">
         <div className="flex items-center gap-2.5" style={{ marginBottom: '1.25rem' }}>
           <Filter size={15} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
           <p className="ds-section-label">Filter Data</p>
@@ -257,11 +286,13 @@ export default function ReportPage() {
         <FilterBar options={filterOptions} filters={filtersObj} onFilterChange={handleFilterChange} onReset={handleResetFilter} />
       </div>
 
-      <ScoreCardGrid data={scorecards} loading={loading} activeKey={scorecardKey} onCardClick={handleScorecardClick} />
+      <div data-reveal data-reveal-delay="140">
+        <ScoreCardGrid data={scorecards} loading={loading} activeKey={scorecardKey} onCardClick={handleScorecardClick} />
+      </div>
 
-      <div className="responsive-row">
+      <div className="responsive-row" data-reveal data-reveal-delay="200">
         <div style={{ flex: '0 0 50%' }}>
-          <ChartCombo data={chartData} loading={loading} />
+          <ChartCombo data={chartData} loading={loading} perluPilihIndikator={!indikatorId} />
         </div>
         <div style={{ flex: '0 0 25%' }}>
           <PieRenaksi data={renaksiPie} loading={loading} onSliceClick={handlePieClick} />
@@ -279,7 +310,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── Lapis 1: Strategic Overview ── */}
-      <div className="responsive-row">
+      <div className="responsive-row" data-reveal>
         <div style={{ flex: '1 1 50%', minWidth: 0 }}>
           <BarPerPilar data={perPilar} loading={loading} />
         </div>
@@ -289,7 +320,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── Lapis 2: Diagnostic ── */}
-      <div className="responsive-row">
+      <div className="responsive-row" data-reveal>
         <div style={{ flex: '1 1 40%', minWidth: 0 }}>
           <HeatmapGrid data={heatmapData} loading={loading} />
         </div>
@@ -300,7 +331,7 @@ export default function ReportPage() {
 
 
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} data-reveal>
         <div className="flex items-center gap-2.5">
           <Table2 size={15} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
           <p className="ds-section-label">
@@ -329,7 +360,7 @@ export default function ReportPage() {
         open={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
         title={statusModalTitle}
-        subtitle={`Indikator dengan status ${statusModalTitle} (Tahun 2025)`}
+        subtitle={`Indikator dengan status ${statusModalTitle} (Tahun ${tahun || '2025'})`}
         data={statusDetailData}
         loading={statusDetailLoading}
       />

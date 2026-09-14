@@ -65,7 +65,17 @@ export interface RenaksiItem {
   status: string;
   catatan: string | null;
   opd: string;
-  indikator?: string;
+  /** Mode 'all' (pie renaksi): nama indikator per baris; bisa array dari renaksi-program-list */
+  indikator?: string | string[];
+  /** Field detail (ada saat endpoint renaksi-program-list) — dipakai popup detail */
+  program?: string;
+  kode_program?: string;
+  jenis_target?: 'kuantitatif' | 'kualitatif';
+  target?: string;
+  realisasi?: string;
+  kendala?: string | null;
+  dokumentasi?: string | null;
+  pilar?: string[];
 }
 
 export interface RenaksiResponse {

@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/renaksi-programs/opd-options', [AdminRenaksiProgramController::class, 'opdOptions']);
     Route::get('/admin/renaksi-programs/indikator-options', [AdminRenaksiProgramController::class, 'indikatorOptions']);
     Route::get('/admin/renaksi-programs/import-template', [AdminRenaksiProgramController::class, 'importTemplate']);
+    Route::get('/admin/renaksi-programs/export-pdf', [AdminRenaksiProgramController::class, 'exportPdf']);
     Route::post('/admin/renaksi-programs/import-preview', [AdminRenaksiProgramController::class, 'importPreview']);
     Route::post('/admin/renaksi-programs/import-store', [AdminRenaksiProgramController::class, 'importStore']);
     Route::get('/admin/renaksi-programs', [AdminRenaksiProgramController::class, 'index']);
