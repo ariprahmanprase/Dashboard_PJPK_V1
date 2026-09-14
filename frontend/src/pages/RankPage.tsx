@@ -76,6 +76,10 @@ export default function RankPage() {
         </select>
       </div>
 
+      {/* Wrapper reveal HARUS selalu ada di DOM (kontennya kondisional) —
+          kalau data-reveal ditaruh di dalam blok kondisional, elemen itu belum ada
+          saat observer dipasang → tetap opacity 0 (tak terlihat) setelah data dimuat */}
+      <div data-reveal data-reveal-delay="70">
       {loading ? (
         <div className="ds-card flex items-center justify-center" style={{ padding: '4rem' }}>
           <Loader2 className="animate-spin" size={32} style={{ color: 'hsl(var(--ds-muted-foreground))' }} />
@@ -88,7 +92,7 @@ export default function RankPage() {
       ) : (
         <>
           {/* ── Podium Juara 1-3 ── */}
-          <div data-reveal data-reveal-delay="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'end' }}>
             {/* Urutan tampilan: 2, 1, 3 (juara 1 di tengah lebih menonjol) */}
             {[podium[1], podium[0], podium[2]].map((row, idx) => {
               if (!row) return <div key={idx} />;
@@ -126,7 +130,7 @@ export default function RankPage() {
           </div>
 
           {/* ── Leaderboard lengkap ── */}
-          <div data-reveal data-reveal-delay="140" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '1.75rem' }}>
             <p className="ds-section-label">
               <ListOrdered size={15} /> Papan Peringkat <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6 }}>— {data.length} OPD</span>
             </p>
@@ -180,6 +184,7 @@ export default function RankPage() {
           </div>
         </>
       )}
+      </div>
 
       {/* ── Popup detail renaksi per OPD ── */}
       {popupOpd !== null && popupLoading && (
