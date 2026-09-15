@@ -54,7 +54,6 @@ export default function RencanaAksiPage() {
 
   // Data Program (Excel)
   const [programData, setProgramData] = useState<RenaksiProgramRow[]>([]);
-  const [programSummary, setProgramSummary] = useState<RenaksiProgramSummary | null>(null);
 
   // Filter options
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
@@ -118,14 +117,10 @@ export default function RencanaAksiPage() {
       if (statusRenaksi) progParams.set('status_renaksi', statusRenaksi);
       if (search) progParams.set('search', search);
 
-      // Fetch dataset program
-      const [progList, progSum] = await Promise.all([
-        apiFetch<RenaksiProgramRow[]>(`/api/dashboard/renaksi-program-list?${progParams}`),
-        apiFetch<RenaksiProgramSummary>(`/api/dashboard/renaksi-program-summary?dinas=${encodeURIComponent(dinas)}${tahun ? `&tahun=${tahun}` : ''}`),
-      ]);
+      // Fetch dataset program (scorecard dihitung dari data ini supaya mengikuti semua filter)
+      const progList = await apiFetch<RenaksiProgramRow[]>(`/api/dashboard/renaksi-program-list?${progParams}`);
 
       setProgramData(progList);
-      setProgramSummary(progSum);
     } catch (err) {
       console.error('[PJPK] rencana aksi fetch error:', err);
     } finally {
@@ -264,7 +259,7 @@ export default function RencanaAksiPage() {
       </div>
 
       {/* ── Summary Cards (program) — di bawah filter ── */}
-      {loading && !programSummary ? (
+      {loading && !programData.length ? (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }} data-reveal data-reveal-delay="140">
           {[...Array(6)].map((_, i) => (
             <div
@@ -282,12 +277,12 @@ export default function RencanaAksiPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6" style={{ gap: '0.75rem' }} data-reveal data-reveal-delay="140">
-          <ScoreCard label="Total OPD" value={programSummary?.total_dinas ?? 0} variant="info" description="Jumlah OPD pengampu rencana aksi (mengikuti filter)" onClick={() => setScorecardPopup('Total OPD')} />
-          <ScoreCard label="Total Program" value={programSummary?.total ?? 0} variant="info" description="Jumlah program rencana aksi yang terpantau (mengikuti filter)" onClick={() => setScorecardPopup('Total Program')} />
-          <ScoreCard label="Tercapai" value={programSummary?.tercapai ?? 0} variant="success" description="Program dengan realisasi sesuai/melampaui target" onClick={() => setScorecardPopup('Tercapai')} />
-          <ScoreCard label="Hampir Tercapai" value={programSummary?.hampir_tercapai ?? 0} variant="warning" description="Program dengan realisasi mendekati target" onClick={() => setScorecardPopup('Hampir Tercapai')} />
-          <ScoreCard label="Tidak Tercapai" value={programSummary?.tidak_tercapai ?? 0} variant="danger" description="Program dengan realisasi jauh di bawah target" onClick={() => setScorecardPopup('Tidak Tercapai')} />
-          <ScoreCard label="Belum Diisi" value={programSummary?.belum_diisi ?? 0} variant="default" description="Program yang belum menginput realisasi" onClick={() => setScorecardPopup('Belum diisi')} />
+          <ScoreCard label="Total OPD" value={statusBarData.total_dinas} variant="info" description="Jumlah OPD pengampu rencana aksi (mengikuti filter)" onClick={() => setScorecardPopup('Total OPD')} />
+          <ScoreCard label="Total Program" value={statusBarData.total} variant="info" description="Jumlah program rencana aksi yang terpantau (mengikuti filter)" onClick={() => setScorecardPopup('Total Program')} />
+          <ScoreCard label="Tercapai" value={statusBarData.tercapai} variant="success" description="Program dengan realisasi sesuai/melampaui target" onClick={() => setScorecardPopup('Tercapai')} />
+          <ScoreCard label="Hampir Tercapai" value={statusBarData.hampir_tercapai} variant="warning" description="Program dengan realisasi mendekati target" onClick={() => setScorecardPopup('Hampir Tercapai')} />
+          <ScoreCard label="Tidak Tercapai" value={statusBarData.tidak_tercapai} variant="danger" description="Program dengan realisasi jauh di bawah target" onClick={() => setScorecardPopup('Tidak Tercapai')} />
+          <ScoreCard label="Belum Diisi" value={statusBarData.belum_diisi} variant="default" description="Program yang belum menginput realisasi" onClick={() => setScorecardPopup('Belum diisi')} />
         </div>
       )}
 

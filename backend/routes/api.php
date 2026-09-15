@@ -131,13 +131,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Pilar options — super admin & admin analis (untuk form edit di Admin Report)
     Route::get('/admin/indikators/pilar-options', [AdminIndikatorController::class, 'pilarOptions']);
 
-    // Kelola user & indikator — khusus super admin
+    // Edit indikator (nama, pilar, OPD, target & capaian) — super admin & admin analis
+    Route::put('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'update'])
+        ->where('indikator', '[A-Za-z0-9\-]+')
+        ->middleware('role:super_admin,admin_analis');
+
+    // Kelola user & hapus indikator — khusus super admin
     Route::middleware('super_admin')->group(function () {
         Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
         Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
 
-        Route::put('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'update'])
-            ->where('indikator', '[A-Za-z0-9\-]+');
         Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])
             ->where('indikator', '[A-Za-z0-9\-]+');
     });

@@ -53,6 +53,11 @@ const MENUS: AdminMenuItem[] = [
   { key: 'renaksi', label: 'Admin Renaksi', icon: ClipboardList },
 ];
 
+// Admin Indikator — super admin & admin analis (di atas Admin Renaksi)
+const INDIKATOR_MENU: AdminMenuItem[] = [
+  { key: 'report', label: 'Admin Indikator', icon: FileText },
+];
+
 // Menu analisis AI — semua role (hak akses indikator/OPD dibatasi di backend)
 const AI_MENUS: AdminMenuItem[] = [
   { key: 'analisis-indikator', label: 'Analisis Indikator', icon: Sparkles },
@@ -75,14 +80,11 @@ const AI_MENUS_LINTAS: AdminMenuItem[] = [
 
 // Menu profil dihapus dari daftar menu — diganti blok user di bawah sidebar yang bisa diklik
 
-// Menu khusus admin analis: report saja (tanpa kelola user)
-const ANALIS_MENUS: AdminMenuItem[] = [
-  { key: 'report', label: 'Admin Report', icon: FileText },
-];
+// Menu khusus admin analis: (kosong — Admin Indikator pindah ke atas via INDIKATOR_MENU)
+const ANALIS_MENUS: AdminMenuItem[] = [];
 
 // Menu khusus super admin
 const SUPER_MENUS: AdminMenuItem[] = [
-  { key: 'report', label: 'Admin Report', icon: FileText },
   { key: 'users', label: 'User', icon: Users },
 ];
 
@@ -251,6 +253,12 @@ function AdminSidebarContent({
             Menu
           </p>
         )}
+
+        {/* Admin Indikator — super admin & admin analis, paling atas */}
+        {user.role !== 'admin_opd' &&
+          INDIKATOR_MENU.map((m) => (
+            <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
+          ))}
 
         {/* Menu utama */}
         {MENUS.map((m) => (

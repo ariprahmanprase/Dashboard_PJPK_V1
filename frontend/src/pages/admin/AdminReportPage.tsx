@@ -109,7 +109,7 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
       activePage="report"
       onNavigate={onNavigate}
       onLogout={onLogout}
-      title="Admin Report"
+      title="Admin Indikator"
     >
       <div className="mx-auto max-w-[1600px] flex flex-col items-stretch gap-6">
         {/* Filter — sama persis dengan dashboard Report */}
@@ -296,7 +296,7 @@ function EditIndikatorModal({
   const [dokrenda, setDokrenda] = useState(row.dokrenda ?? '');
   const [kendala, setKendala] = useState(row.kendala ?? '');
   const [inovasi, setInovasi] = useState(row.inovasi ?? '');
-  const [target] = useState(row.target != null ? String(row.target) : '');
+  const [target, setTarget] = useState(row.target != null ? String(row.target) : '');
   const [capaian, setCapaian] = useState(row.capaian != null ? String(row.capaian) : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -382,15 +382,14 @@ function EditIndikatorModal({
                 ))}
               </select>
             </Field>
-            <Field label={`Target ${row.tahun ?? '2025'} (ditetapkan pusat)`}>
+            <Field label={`Target ${row.tahun ?? '2025'}`}>
               <input
                 type="number"
                 step="any"
                 value={target}
-                disabled
-                readOnly
+                onChange={(e) => setTarget(e.target.value)}
                 className={inputClass}
-                style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }}
+                style={inputStyle}
               />
             </Field>
             <Field label={`Capaian ${row.tahun ?? '2025'}`}>
