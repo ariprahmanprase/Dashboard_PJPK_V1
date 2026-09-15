@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, CheckCircle2, XCircle, Clock, ExternalLink } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
@@ -18,7 +19,9 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
   const st = renaksiStatusStyle(data.status);
   const tercapai = data.status === 'Tercapai' || data.status === 'Hampir Tercapai';
 
-  return (
+  // Portal ke body: animasi reveal memberi transform pada ancestor halaman publik,
+  // yang membuat position:fixed menempel ke ancestor (overlay tidak full layar).
+  return createPortal(
     <div
       className="fixed inset-0 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', zIndex }}
@@ -258,6 +261,7 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

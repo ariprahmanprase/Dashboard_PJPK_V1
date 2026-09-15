@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, FileX, ListChecks } from 'lucide-react';
 import type { IndikatorDetail, IndikatorRenaksiProgram } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
@@ -65,7 +66,9 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
     return n.toLocaleString('id-ID');
   };
 
-  return (
+  // Portal ke body: animasi reveal memberi transform pada ancestor halaman publik,
+  // yang membuat position:fixed menempel ke ancestor (overlay tidak full layar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
@@ -268,6 +271,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

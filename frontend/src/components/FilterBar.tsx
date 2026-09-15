@@ -33,20 +33,24 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem' }}>
-      <select value={filters.opd_id || ''} onChange={e => onFilterChange('opd_id', e.target.value)} style={baseSelect}>
-        <option value="">Semua OPD</option>
-        {groupOpdOptions(options?.opd ?? [], true).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      <select value={filters.tahun || '2025'} onChange={e => onFilterChange('tahun', e.target.value)} style={{ ...baseSelect, minWidth: 110 }}>
+        {options?.tahun.map(t => <option key={t} value={t}>{t}</option>)}
       </select>
       <select value={filters.pilar_id || ''} onChange={e => onFilterChange('pilar_id', e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
         <option value="">Semua Pilar</option>
-        {options?.pilar.map(p => <option key={p.id} value={p.id}>Pilar {p.no_pilar} — {p.nama_pilar}</option>)}
+        {options?.pilar.map(p => <option key={p.id} value={p.id}>{p.nama_pilar}</option>)}
       </select>
       <select value={filters.indikator_id || ''} onChange={e => onFilterChange('indikator_id', e.target.value)} style={{ ...baseSelect, minWidth: 280 }}>
         <option value="">Semua Indikator</option>
-        {indikatorOptions?.map(i => <option key={i.id} value={i.id}>{i.kode} — {i.nama_indikator}</option>)}
+        {indikatorOptions?.map(i => (
+          <option key={i.id} value={i.id} title={i.nama_indikator}>
+            {i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}
+          </option>
+        ))}
       </select>
-      <select value={filters.tahun || '2025'} onChange={e => onFilterChange('tahun', e.target.value)} style={{ ...baseSelect, minWidth: 110 }}>
-        {options?.tahun.map(t => <option key={t} value={t}>{t}</option>)}
+      <select value={filters.opd_id || ''} onChange={e => onFilterChange('opd_id', e.target.value)} style={baseSelect}>
+        <option value="">Semua OPD yang mengampu</option>
+        {groupOpdOptions(options?.opd ?? [], true).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <select value={filters.status_tl || ''} onChange={e => onFilterChange('status_tl', e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
         <option value="">Semua Status</option>

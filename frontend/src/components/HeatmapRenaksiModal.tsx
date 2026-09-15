@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, FileX, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import type { IndikatorDetail, IndikatorRenaksiProgram, RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
@@ -48,6 +49,10 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
 
   if (!open) return null;
 
+  // Portal ke body: animasi reveal memberi transform pada ancestor, yang membuat
+  // position:fixed menempel ke ancestor (overlay tidak full layar & popup tidak
+  // di tengah). Portal melepas overlay dari konteks itu.
+
   const renaksis: IndikatorRenaksiProgram[] = detail?.renaksi_programs ?? [];
   // Tampilkan HANYA renaksi tahun yang diklik — tahun tanpa data tidak menampilkan apa-apa
   const sorted = renaksis.filter(r => r.tahun === tahun);
@@ -58,7 +63,7 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
     return { ...s, count, pct: total > 0 ? (count / total) * 100 : 0 };
   });
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
@@ -271,6 +276,7 @@ export default function HeatmapRenaksiModal({ open, onClose, kode, tahun }: Prop
         data={selectedRow}
         zIndex={70}
       />
-    </div>
+    </div>,
+    document.body,
   );
 }

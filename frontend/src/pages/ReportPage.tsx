@@ -309,14 +309,12 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* ── Lapis 1: Strategic Overview ── */}
-      <div className="responsive-row" data-reveal>
-        <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-          <BarPerPilar data={perPilar} loading={loading} />
-        </div>
-        <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-          <BarPerOpd data={perOpd} loading={loading} />
-        </div>
+      {/* ── Lapis 1: Strategic Overview — bertumpuk full width ── */}
+      <div data-reveal>
+        <BarPerPilar data={perPilar} loading={loading} />
+      </div>
+      <div data-reveal>
+        <BarPerOpd data={perOpd} loading={loading} />
       </div>
 
       {/* ── Lapis 2: Diagnostic ── */}

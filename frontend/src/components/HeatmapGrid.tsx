@@ -1,6 +1,7 @@
 import type { HeatmapRow } from '@/types';
 import { Loader2, Grid3X3 } from 'lucide-react';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import HeatmapRenaksiModal from './HeatmapRenaksiModal';
 
 interface Props {
@@ -133,7 +134,9 @@ export default function HeatmapGrid({ data, loading }: Props) {
         ))}
       </div>
 
-      {tooltip && !selected && (
+      {/* Tooltip di-portal ke body — animasi reveal memberi transform pada ancestor,
+          yang merusak position:fixed (tooltip bergeser dari kursor) */}
+      {tooltip && !selected && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -151,7 +154,8 @@ export default function HeatmapGrid({ data, loading }: Props) {
           }}
         >
           {tooltip.text}
-        </div>
+        </div>,
+        document.body,
       )}
 
       <HeatmapRenaksiModal

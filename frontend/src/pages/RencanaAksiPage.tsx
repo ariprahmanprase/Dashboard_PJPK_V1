@@ -190,7 +190,7 @@ export default function RencanaAksiPage() {
             {programIndikatorList
               .filter(i => !pilarId || String(i.pilar_id) === pilarId)
               .map(i => (
-                <option key={i.id} value={i.id}>{i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}</option>
+                <option key={i.id} value={i.id} title={i.nama_indikator}>{i.nama_indikator.length > 50 ? i.nama_indikator.slice(0, 50) + '…' : i.nama_indikator}</option>
               ))}
           </select>
 

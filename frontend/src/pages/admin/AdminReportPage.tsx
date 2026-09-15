@@ -378,7 +378,7 @@ function EditIndikatorModal({
               <select value={pilarId} onChange={(e) => setPilarId(e.target.value)} required className={inputClass} style={inputStyle}>
                 <option value="">— Pilih pilar —</option>
                 {pilarOptions.map((p) => (
-                  <option key={p.id} value={p.id}>{p.no_pilar}. {p.nama_pilar}</option>
+                  <option key={p.id} value={p.id}>{p.nama_pilar}</option>
                 ))}
               </select>
             </Field>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle2, XCircle } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
@@ -21,7 +22,9 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
     onClose();
   };
 
-  return (
+  // Portal ke body: animasi reveal memberi transform pada ancestor halaman publik,
+  // yang membuat position:fixed menempel ke ancestor (overlay tidak full layar).
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-[60] flex items-center justify-center"
@@ -141,6 +144,7 @@ export default function ScorecardPopupModal({ open, title, rows, onClose }: Prop
         data={selectedRow}
         zIndex={70}
       />
-    </>
+    </>,
+    document.body,
   );
 }

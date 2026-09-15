@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, FileX } from 'lucide-react';
 import type { RenaksiItem, RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
@@ -25,7 +26,9 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
 
   const isAll = mode === 'all';
 
-  return (
+  // Portal ke body: animasi reveal memberi transform pada ancestor halaman publik,
+  // yang membuat position:fixed menempel ke ancestor (overlay tidak full layar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
@@ -246,6 +249,7 @@ export default function RenaksiModal({ open, onClose, kode, namaIndikator, data,
         data={selectedRow}
         zIndex={70}
       />
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, Loader2, FileX } from 'lucide-react';
 import type { TableRow } from '@/types';
 import { opdInduk } from '@/lib/opd';
@@ -21,7 +22,9 @@ const COLOR_MAP: Record<string, string> = {
 export default function StatusDetailModal({ open, onClose, title, subtitle, data, loading }: Props) {
   if (!open) return null;
 
-  return (
+  // Portal ke body: animasi reveal memberi transform pada ancestor halaman publik,
+  // yang membuat position:fixed menempel ke ancestor (overlay tidak full layar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
@@ -160,6 +163,7 @@ export default function StatusDetailModal({ open, onClose, title, subtitle, data
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
