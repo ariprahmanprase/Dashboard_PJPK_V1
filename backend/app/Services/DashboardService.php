@@ -31,14 +31,32 @@ class DashboardService
      * - Maintain / Stable & Proportional:
      *             HIJAU capaian = target persis, selain itu MERAH (tanpa KUNING)
      * - arah_target null (data lama): fallback ke logika Higher Better
+     * - In Between (target rentang, mis. I-16 TPT 6,43–6,48; batas EKSKLUSIF):
+     *             HIJAU di dalam rentang, KUNING tepat di batas, MERAH di luar rentang.
+     *             Batas atas diambil dari $targetMax (kolom target_max); bila kosong,
+     *             target diperlakukan sebagai target tunggal biasa (logika Maintain).
      */
-    public function calcStatusTL($target, $capaian, ?string $arahTarget = null): array
+    public function calcStatusTL($target, $capaian, ?string $arahTarget = null, $targetMax = null): array
     {
         if ($capaian === null || $target === null || $target == 0) {
             return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
         }
 
-        if (in_array($arahTarget, ['Maintain / Stable', 'Proportional'], true)) {
+        if ($arahTarget === 'In Between' && $targetMax !== null) {
+            $lo = min((float) $target, (float) $targetMax);
+            $hi = max((float) $target, (float) $targetMax);
+            $c = (float) $capaian;
+
+            if (abs($c - $lo) < 1e-9 || abs($c - $hi) < 1e-9) {
+                return ['status_tl' => 'Warning', 'warna_tl' => 'Kuning'];
+            }
+            if ($c > $lo && $c < $hi) {
+                return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
+            }
+            return ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
+        }
+
+        if (in_array($arahTarget, ['Maintain / Stable', 'Proportional', 'In Between'], true)) {
             return abs($capaian - $target) < 1e-9
                 ? ['status_tl' => 'On Track', 'warna_tl' => 'Hijau']
                 : ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
@@ -75,7 +93,7 @@ class DashboardService
 
         $tcs = TargetCapaian::whereIn('indikator_id', $arahMap->keys())
             ->where('tahun', $tahun)
-            ->select('indikator_id', 'target', 'capaian')
+            ->select('indikator_id', 'target', 'target_max', 'capaian')
             ->get()
             ->keyBy('indikator_id');
 
@@ -84,7 +102,7 @@ class DashboardService
         $matching = [];
         foreach ($arahMap as $indikatorId => $arah) {
             $tc = $tcs->get($indikatorId);
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah, $tc->target_max ?? null);
             if ($s['status_tl'] === $statusTl) {
                 $matching[] = $indikatorId;
             }
@@ -103,7 +121,7 @@ class DashboardService
         $arahMap = Indikator::pluck('arah_target', 'id');
 
         foreach ($rows as $tc) {
-            $new = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null);
+            $new = $this->calcStatusTL($tc->target, $tc->capaian, $arahMap[$tc->indikator_id] ?? null, $tc->target_max);
             if ($tc->status_tl !== $new['status_tl'] || $tc->warna_tl !== $new['warna_tl']) {
                 $tc->status_tl = $new['status_tl'];
                 $tc->warna_tl = $new['warna_tl'];
@@ -132,7 +150,7 @@ class DashboardService
         $arahMap = (clone $indikatorQuery)->pluck('arah_target', 'id');
         $rows = TargetCapaian::whereIn('indikator_id', $arahMap->keys())
             ->where('tahun', $tahun)
-            ->select('indikator_id', 'target', 'capaian')
+            ->select('indikator_id', 'target', 'target_max', 'capaian')
             ->get()
             ->keyBy('indikator_id');
 
@@ -149,7 +167,7 @@ class DashboardService
         foreach ($arahMap as $indikatorId => $arah) {
             $tc = $rows->get($indikatorId);
 
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $arah, $tc->target_max ?? null);
             if ($s['status_tl'] === 'Belum Diisi') {
                 $capaianBelum++;
             }
@@ -189,7 +207,7 @@ class DashboardService
 
             $target = $tc->target ?? null;
             $capaian = $tc->capaian ?? null;
-            $status = $this->calcStatusTL($target, $capaian, $indikator->arah_target);
+            $status = $this->calcStatusTL($target, $capaian, $indikator->arah_target, $tc->target_max ?? null);
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
             return [
@@ -204,6 +222,7 @@ class DashboardService
                 'status_tl'       => $status['status_tl'],
                 'warna_tl'        => $status['warna_tl'],
                 'target'          => $target,
+                'target_max'      => $tc->target_max ?? null,
                 'capaian'         => $capaian,
                 'gap'             => $gap,
                 'pct_gap'         => ($gap !== null && $target != 0) ? round($gap / $target, 6) : null,
@@ -318,7 +337,7 @@ class DashboardService
 
         $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
             ->where('tahun', $tahun)
-            ->select('indikator_id', 'target', 'capaian')
+            ->select('indikator_id', 'target', 'target_max', 'capaian')
             ->get()
             ->keyBy('indikator_id');
 
@@ -328,7 +347,7 @@ class DashboardService
             $noPilar = $ind->pilar->no_pilar ?? 0;
             $tc = $tcs->get($ind->id);
 
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target, $tc->target_max ?? null);
 
             if (!isset($grouped[$pilar])) {
                 $grouped[$pilar] = ['pilar' => $pilar, 'no_pilar' => $noPilar, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
@@ -358,14 +377,14 @@ class DashboardService
 
         $tcs = TargetCapaian::whereIn('indikator_id', $indikators->pluck('id'))
             ->where('tahun', $tahun)
-            ->select('indikator_id', 'target', 'capaian')
+            ->select('indikator_id', 'target', 'target_max', 'capaian')
             ->get()
             ->keyBy('indikator_id');
 
         $grouped = [];
         foreach ($indikators as $ind) {
             $tc = $tcs->get($ind->id);
-            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target);
+            $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target, $tc->target_max ?? null);
 
             foreach ($ind->opds as $opd) {
                 $opdName = $opd->nama_opd;
@@ -396,7 +415,7 @@ class DashboardService
 
         $allData = \Illuminate\Support\Facades\DB::table('target_capaians')
             ->whereIn('indikator_id', $indikators->pluck('id'))
-            ->select('indikator_id', 'tahun', 'target', 'capaian')
+            ->select('indikator_id', 'tahun', 'target', 'target_max', 'capaian')
             ->get()
             ->groupBy('indikator_id');
 
@@ -412,10 +431,11 @@ class DashboardService
                 $match = $tc->firstWhere('tahun', $thn);
                 $target = $match->target ?? null;
                 $capaian = $match->capaian ?? null;
-                $s = $this->calcStatusTL($target, $capaian, $ind->arah_target);
+                $s = $this->calcStatusTL($target, $capaian, $ind->arah_target, $match->target_max ?? null);
                 $row['status_' . $thn] = $s['status_tl'];
                 $row['warna_' . $thn] = $s['warna_tl'];
                 $row['target_' . $thn] = $target;
+                $row['target_max_' . $thn] = isset($match->target_max) ? $match->target_max : null;
                 $row['capaian_' . $thn] = $capaian;
                 $row['gap_' . $thn] = ($capaian !== null && $target !== null) ? round($capaian - $target, 4) : null;
             }
@@ -569,13 +589,14 @@ class DashboardService
             $tc = $tcs->get($thn);
             $t = $tc->target ?? null;
             $c = $tc->capaian ?? null;
-            $s = $this->calcStatusTL($t, $c, $indikator->arah_target);
+            $s = $this->calcStatusTL($t, $c, $indikator->arah_target, $tc->target_max ?? null);
             $gap = ($c !== null && $t !== null) ? round($c - $t, 6) : null;
             $pctGap = ($gap !== null && $t != 0) ? round($gap / $t, 6) : null;
 
             $targetCapaians[] = [
                 'tahun'     => $thn,
                 'target'    => $t,
+                'target_max' => $tc->target_max ?? null,
                 'capaian'   => $c,
                 'gap'       => $gap,
                 'pct_gap'   => $pctGap,

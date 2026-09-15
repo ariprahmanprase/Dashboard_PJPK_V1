@@ -197,7 +197,11 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
                         {row.tahun ?? '-'}
                       </td>
                       <td className="font-mono align-middle text-right" style={{ color: 'var(--color-text)', padding: '0.875rem 1.25rem', fontSize: '0.75rem' }}>
-                        {row.target != null ? row.target.toLocaleString('id-ID') : '-'}
+                        {row.target != null
+                          ? row.arah_target === 'In Between' && row.target_max != null
+                            ? `${row.target.toLocaleString('id-ID')} – ${row.target_max.toLocaleString('id-ID')}`
+                            : row.target.toLocaleString('id-ID')
+                          : '-'}
                       </td>
                       <td className="font-mono align-middle text-right" style={{ color: 'var(--color-text)', padding: '0.875rem 1.25rem', fontSize: '0.75rem' }}>
                         {row.capaian != null ? row.capaian.toLocaleString('id-ID') : '-'}
@@ -297,7 +301,10 @@ function EditIndikatorModal({
   const [kendala, setKendala] = useState(row.kendala ?? '');
   const [inovasi, setInovasi] = useState(row.inovasi ?? '');
   const [target, setTarget] = useState(row.target != null ? String(row.target) : '');
+  const [targetMax, setTargetMax] = useState(row.target_max != null ? String(row.target_max) : '');
   const [capaian, setCapaian] = useState(row.capaian != null ? String(row.capaian) : '');
+  const [arahTarget, setArahTarget] = useState(row.arah_target ?? 'Higher Better');
+  const isInBetween = arahTarget === 'In Between';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -325,7 +332,9 @@ function EditIndikatorModal({
       inovasi: inovasi || null,
       tahun: row.tahun ?? '2025',
       target: target === '' ? null : Number(target),
+      target_max: isInBetween && targetMax !== '' ? Number(targetMax) : null,
       capaian: capaian === '' ? null : Number(capaian),
+      arah_target: arahTarget || null,
     };
 
     try {
@@ -382,7 +391,16 @@ function EditIndikatorModal({
                 ))}
               </select>
             </Field>
-            <Field label={`Target ${row.tahun ?? '2025'}`}>
+            <Field label="Arah Target">
+              <select value={arahTarget} onChange={(e) => setArahTarget(e.target.value)} className={inputClass} style={inputStyle}>
+                <option value="Higher Better">Higher Better — makin tinggi makin baik</option>
+                <option value="Lower Better">Lower Better — makin rendah makin baik</option>
+                <option value="Maintain / Stable">Maintain / Stable — harus tepat di target</option>
+                <option value="Proportional">Proportional — harus tepat di target</option>
+                <option value="In Between">In Between — capaian harus dalam rentang</option>
+              </select>
+            </Field>
+            <Field label={isInBetween ? `Batas Bawah Target ${row.tahun ?? '2025'}` : `Target ${row.tahun ?? '2025'}`}>
               <input
                 type="number"
                 step="any"
@@ -392,6 +410,22 @@ function EditIndikatorModal({
                 style={inputStyle}
               />
             </Field>
+            {isInBetween && (
+              <Field label={`Batas Atas Target ${row.tahun ?? '2025'}`}>
+                <input
+                  type="number"
+                  step="any"
+                  value={targetMax}
+                  onChange={(e) => setTargetMax(e.target.value)}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="mis. 6.48"
+                />
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  Capaian di dalam rentang (tidak termasuk batas) = On Track · tepat di batas = Warning · di luar rentang = Alert
+                </p>
+              </Field>
+            )}
             <Field label={`Capaian ${row.tahun ?? '2025'}`}>
               <input type="number" step="any" value={capaian} onChange={(e) => setCapaian(e.target.value)} className={inputClass} style={inputStyle} />
             </Field>

@@ -757,7 +757,9 @@ export interface IndikatorUpdatePayload {
   inovasi?: string | null;
   tahun: string;
   target?: number | null;
+  target_max?: number | null;
   capaian?: number | null;
+  arah_target?: string | null;
 }
 
 export async function fetchPilarOptions(): Promise<PilarOption[]> {

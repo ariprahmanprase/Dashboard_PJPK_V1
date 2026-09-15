@@ -45,6 +45,7 @@ export interface TableRow {
   status_tl: string;
   warna_tl: string;
   target: number | null;
+  target_max?: number | null;
   capaian: number | null;
   gap: number | null;
   pct_gap: number | null;

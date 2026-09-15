@@ -134,7 +134,11 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                   fontSize: '0.75rem',
                 }}
               >
-                {row.target != null ? row.target.toLocaleString('id-ID') : '-'}
+                {row.target != null
+                  ? row.arah_target === 'In Between' && row.target_max != null
+                    ? `${row.target.toLocaleString('id-ID')} – ${row.target_max.toLocaleString('id-ID')}`
+                    : row.target.toLocaleString('id-ID')
+                  : '-'}
               </td>
               <td
                 className="font-mono align-middle text-right"

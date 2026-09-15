@@ -30,10 +30,13 @@ class AdminIndikatorController extends Controller
             // target/capaian tahun berjalan (baris yang dipilih di tabel)
             'tahun'          => ['required', 'string', 'max:10'],
             'target'         => ['nullable', 'numeric'],
+            'target_max'     => ['nullable', 'numeric'],
             'capaian'        => ['nullable', 'numeric'],
+            // arah target — wajib salah satu nilai yang dikenali
+            'arah_target'    => ['nullable', Rule::in(['Higher Better', 'Lower Better', 'Maintain / Stable', 'Proportional', 'In Between'])],
         ]);
 
-        $indikator->update(collect($validated)->except(['tahun', 'target', 'capaian', 'opd_ids'])->toArray());
+        $indikator->update(collect($validated)->except(['tahun', 'target', 'target_max', 'capaian', 'opd_ids'])->toArray());
 
         // Sinkronkan OPD terkait jika dikirim
         if ($request->has('opd_ids')) {
@@ -42,14 +45,16 @@ class AdminIndikatorController extends Controller
 
         // Simpan target/capaian untuk tahun terkait; hitung ulang gap & status
         $target = $validated['target'] ?? null;
+        $targetMax = $validated['target_max'] ?? null;
         $capaian = $validated['capaian'] ?? null;
         $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
-        $status = app(\App\Services\DashboardService::class)->calcStatusTL($target, $capaian, $indikator->arah_target);
+        $status = app(\App\Services\DashboardService::class)->calcStatusTL($target, $capaian, $indikator->arah_target, $targetMax);
 
         TargetCapaian::updateOrCreate(
             ['indikator_id' => $indikator->id, 'tahun' => $validated['tahun']],
             [
                 'target'    => $target,
+                'target_max' => $targetMax,
                 'capaian'   => $capaian,
                 'gap'       => $gap,
                 'pct_gap'   => ($gap !== null && $target != 0) ? round($gap / $target, 6) : null,

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TargetCapaian extends Model
 {
     protected $fillable = [
-        'indikator_id', 'tahun', 'target', 'capaian',
+        'indikator_id', 'tahun', 'target', 'target_max', 'capaian',
         'gap', 'pct_gap', 'status_tl', 'warna_tl', 'keterangan',
     ];
 
