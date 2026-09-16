@@ -11,7 +11,7 @@ import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState'
 import { useReveal } from '@/hooks/useReveal';
 
 const FILTER_KEY = 'pjpk-draft-filter-renaksi';
-const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', dinas: '', indikatorId: '', statusRenaksi: '', search: '' };
+const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', dinas: '', dinasInduk: '', indikatorId: '', statusRenaksi: '', search: '' };
 
 // ── Helpers ──────────────────────────────────────────
 async function apiFetch<T>(url: string): Promise<T> {
@@ -24,10 +24,10 @@ async function apiFetch<T>(url: string): Promise<T> {
 export default function RencanaAksiPage() {
   // Filters — disimpan sebagai satu objek persisten (bertahan saat pindah halaman)
   const [filter, setFilter] = usePersistentState(FILTER_KEY, DEFAULT_FILTER);
-  const { tahun, pilarId, opdId, dinas, indikatorId, statusRenaksi, search } = filter;
+  const { tahun, pilarId, opdId, dinas, dinasInduk, indikatorId, statusRenaksi, search } = filter;
   const patchFilter = (patch: Partial<typeof DEFAULT_FILTER>) => setFilter(f => ({ ...f, ...patch }));
   const setTahun = (v: string) => patchFilter({ tahun: v });
-  const setDinas = (v: string) => patchFilter({ dinas: v });
+  const setDinas = (v: string) => patchFilter({ dinas: v, dinasInduk: v });
   const setIndikatorId = (v: string) => patchFilter({ indikatorId: v });
   const setStatusRenaksi = (v: string) => patchFilter({ statusRenaksi: v });
   const setSearch = (v: string) => patchFilter({ search: v });
@@ -38,7 +38,7 @@ export default function RencanaAksiPage() {
     setFilter(DEFAULT_FILTER);
   }
 
-  const hasActiveFilter = Boolean(tahun || pilarId || opdId || dinas || indikatorId || statusRenaksi || search);
+  const hasActiveFilter = Boolean(tahun || pilarId || opdId || dinasInduk || indikatorId || statusRenaksi || search);
 
   // ── Cascading: ganti pilar → reset indikator bila tidak cocok ──
   function handlePilarChange(value: string) {
@@ -111,7 +111,10 @@ export default function RencanaAksiPage() {
       // Build params for program (Excel) - use Dinas filter
       const progParams = new URLSearchParams();
       if (tahun) progParams.set('tahun', tahun);
-      if (dinas) progParams.set('dinas', dinas);
+      // Filter OPD pakai dinas_induk (pencocokan prefix di backend, mis. "Dinkes"
+      // mencakup "Dinkes (Dinas Kesehatan)"). Filter `dinas` lama dicocokkan persis
+      // sehingga singkatan tak pernah ketemu — pakai dinas_induk agar konsisten.
+      if (dinasInduk) progParams.set('dinas_induk', dinasInduk);
       if (pilarId) progParams.set('pilar_id', pilarId);
       if (indikatorId) progParams.set('indikator_id', indikatorId);
       if (statusRenaksi) progParams.set('status_renaksi', statusRenaksi);
@@ -137,7 +140,7 @@ export default function RencanaAksiPage() {
 
   useEffect(() => {
     fetchData();
-  }, [tahun, pilarId, dinas, indikatorId, statusRenaksi, search]);
+  }, [tahun, pilarId, dinasInduk, indikatorId, statusRenaksi, search]);
 
   // ── Styles ────────────────────────────────────────
   const baseSelect: React.CSSProperties = {
