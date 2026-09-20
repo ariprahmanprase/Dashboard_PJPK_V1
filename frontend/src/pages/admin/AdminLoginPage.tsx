@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Loader2, Lock, LogIn } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import CaptchaBox, { makeCaptchaQuestion } from '@/components/admin/CaptchaBox';
 import { login } from '@/services/admin';
 
@@ -60,12 +60,11 @@ export default function AdminLoginPage({ onSuccess }: Props) {
           style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
         >
           <div className="flex flex-col items-center gap-4 mb-12">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
-            >
-              <Lock size={26} />
-            </div>
+            <img
+              src="/logo-sidoarjo.webp"
+              alt="Logo Kabupaten Sidoarjo"
+              style={{ width: 72, height: 72, objectFit: 'contain' }}
+            />
             <h1 className="text-xl sm:text-2xl font-semibold text-center mt-2" style={{ color: 'var(--color-text)' }}>
               Dashboard PJPK
             </h1>
