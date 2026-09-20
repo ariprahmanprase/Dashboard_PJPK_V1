@@ -87,6 +87,10 @@ const ANALIS_MENUS: AdminMenuItem[] = [];
 // Menu khusus super admin
 const SUPER_MENUS: AdminMenuItem[] = [
   { key: 'users', label: 'User', icon: Users },
+];
+
+// Kelola OPD — khusus super admin, diletakkan tepat di bawah Admin Renaksi
+const OPD_MENU: AdminMenuItem[] = [
   { key: 'opds', label: 'OPD', icon: Building2 },
 ];
 
@@ -264,6 +268,11 @@ function AdminSidebarContent({
 
         {/* Menu utama */}
         {MENUS.map((m) => (
+          <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
+        ))}
+
+        {/* Kelola OPD (super admin) — tepat di bawah Admin Renaksi */}
+        {user.role === 'super_admin' && OPD_MENU.map((m) => (
           <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
         ))}
 
