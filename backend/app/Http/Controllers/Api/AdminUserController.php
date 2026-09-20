@@ -40,15 +40,12 @@ class AdminUserController extends Controller
 
     /**
      * Daftar OPD untuk dropdown form/filter user.
-     * Hanya OPD yang punya renaksi + OPD yang sudah dipakai user (hindari 40 OPD tidak relevan).
+     * SEMUA OPD dari tabel opds — OPD baru (belum punya renaksi/user) harus
+     * langsung bisa dipilih saat super admin membuatkan akun adminnya.
      */
     public function opdOptions()
     {
-        $opdIds = \App\Models\RenaksiProgram::whereNotNull('opd_id')->distinct()->pluck('opd_id')
-            ->merge(User::whereNotNull('opd_id')->distinct()->pluck('opd_id'))
-            ->unique();
-
-        $opds = Opd::whereIn('id', $opdIds)->orderBy('nama_opd')->get(['id', 'nama_opd']);
+        $opds = Opd::orderBy('nama_opd')->get(['id', 'nama_opd']);
 
         return response()->json(['data' => $opds]);
     }

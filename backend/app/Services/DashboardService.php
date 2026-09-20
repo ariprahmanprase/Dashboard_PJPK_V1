@@ -751,12 +751,14 @@ class DashboardService
         if (!empty($filters['dinas'])) {
             $query->where('dinas_text', $filters['dinas']);
         }
-        // Filter by dinas INDUK (nama dinormalisasi — untuk popup dari halaman Rank):
-        // cocokkan dinas_text yang persis sama ATAU yang merupakan turunan (induk + ':' / '(')
+        // Filter by dinas INDUK. Label yang dikirim frontend adalah nama lengkap
+        // dari tabel opds (mis. "Dinas Kesehatan"), sedangkan dinas_text berbentuk
+        // "Dinkes (Dinas Kesehatan)" — cocokkan pada bagian dalam kurungnya.
         if (!empty($filters['dinas_induk'])) {
             $induk = $filters['dinas_induk'];
             $query->where(function ($q) use ($induk) {
                 $q->where('dinas_text', $induk)
+                  ->orWhere('dinas_text', 'like', '%(' . $induk . ')')
                   ->orWhere('dinas_text', 'like', $induk . ':%')
                   ->orWhere('dinas_text', 'like', $induk . ' (%');
             });
@@ -921,16 +923,23 @@ class DashboardService
 
     public function getRenaksiProgramDinas(): array
     {
-        $dinas = RenaksiProgram::select('dinas_text')
+        // Label filter = NAMA LENGKAP dari kolom dalam kurung dinas_text
+        // ("Dinkes (Dinas Kesehatan)" -> "Dinas Kesehatan") agar cocok dengan
+        // nama di tabel opds. OPD baru tetap muncul di sini begitu ada renaksinya,
+        // dan Kelola User kini juga menampilkan SEMUA OPD dari tabel opds.
+        return RenaksiProgram::select('dinas_text')
             ->whereNotNull('dinas_text')
             ->where('dinas_text', '!=', '')
             ->where('dinas_text', '!=', '-')
             ->distinct()
-            ->orderBy('dinas_text')
             ->pluck('dinas_text')
+            ->map(function ($d) {
+                return preg_match('/\((.+)\)/', $d, $m) ? trim($m[1]) : trim($d);
+            })
+            ->unique()
+            ->sort()
+            ->values()
             ->toArray();
-
-        return $dinas;
     }
 
     /**
