@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function AdminLoginPage({ onSuccess }: Props) {
-  const [email, setEmail] = useState('');
+  const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export default function AdminLoginPage({ onSuccess }: Props) {
 
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(loginInput.trim(), password);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal masuk, coba lagi.');
@@ -78,17 +78,17 @@ export default function AdminLoginPage({ onSuccess }: Props) {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-7">
             <div className="flex flex-col gap-2.5">
-              <label htmlFor="email" className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-                Email
+              <label htmlFor="login" className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                Username atau Email
               </label>
               <input
-                id="email"
-                type="email"
+                id="login"
+                type="text"
                 required
                 autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@pjpk.sidoarjokab.go.id"
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
+                placeholder="username atau nama@pjpk.sidoarjokab.go.id"
                 className="rounded-lg border px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-blue-200"
                 style={{
                   backgroundColor: 'var(--color-bg)',

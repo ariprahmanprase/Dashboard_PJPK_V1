@@ -1,6 +1,7 @@
 export interface AdminUser {
   id: number;
   name: string;
+  username: string | null;
   email: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
   jabatan: string | null;
@@ -100,10 +101,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
-export async function login(email: string, password: string): Promise<AdminUser> {
+export async function login(login: string, password: string): Promise<AdminUser> {
   const data = await request<{ token: string; user: AdminUser }>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ login, password }),
   });
   storeSession(data.token, data.user);
   return data.user;
@@ -687,6 +688,7 @@ export async function fetchAdminIndikatorOptions(): Promise<IndikatorOption[]> {
 export interface AdminUserRow {
   id: number;
   name: string;
+  username: string | null;
   email: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';
   jabatan: string | null;
@@ -703,6 +705,7 @@ export interface OpdOption {
 
 export interface UserPayload {
   name: string;
+  username: string;
   email: string;
   password?: string;
   role: 'super_admin' | 'admin_opd' | 'admin_analis';

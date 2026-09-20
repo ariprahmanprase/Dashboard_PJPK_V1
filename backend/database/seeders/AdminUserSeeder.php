@@ -35,6 +35,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@pjpk.sidoarjokab.go.id'],
             [
                 'name' => 'Super Admin',
+                'username' => 'admin',
                 'password' => Hash::make(self::PASSWORD_AWAL),
                 'role' => User::ROLE_SUPER_ADMIN,
                 'opd_id' => null,
@@ -68,6 +69,7 @@ class AdminUserSeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => 'Admin ' . $dinas,
+                    'username' => $slug,
                     'password' => Hash::make(self::PASSWORD_AWAL),
                     'role' => User::ROLE_ADMIN_OPD,
                     'opd_id' => $opdId,
@@ -83,7 +85,7 @@ class AdminUserSeeder extends Seeder
     {
         $text = strtolower(trim($text));
         $text = preg_replace('/[^a-z0-9]+/', '', $text);
-        return $text ?: 'opd';
+        return substr($text ?: 'opd', 0, 60);
     }
 
     private function matchOpd(string $dinas, $opdByName): ?int

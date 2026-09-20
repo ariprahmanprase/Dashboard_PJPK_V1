@@ -124,7 +124,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama / email…"
+              placeholder="Cari nama / username / email…"
               className="rounded-lg border pl-11 pr-4 py-3 text-sm w-full"
               style={selectStyle}
             />
@@ -193,7 +193,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                 <table className="w-full text-sm" style={{ minWidth: 900 }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['Nama', 'Email', 'Jabatan', 'Role', 'OPD / Dinas', 'Bidang', 'Aksi'].map((h) => (
+                      {['Nama', 'Username', 'Email', 'Jabatan', 'Role', 'OPD / Dinas', 'Bidang', 'Aksi'].map((h) => (
                         <th
                           key={h}
                           className="text-left font-medium uppercase tracking-wider"
@@ -218,6 +218,9 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                               (Anda)
                             </span>
                           )}
+                        </td>
+                        <td className="align-middle font-mono" style={{ color: 'var(--color-text)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem' }}>
+                          {u.username ?? '—'}
                         </td>
                         <td className="align-middle" style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', padding: '0.75rem 1.25rem' }}>
                           {u.email}
@@ -336,7 +339,10 @@ function UserCard({
           <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text)' }}>
             {item.name} {isSelf && <span className="text-[10px] uppercase" style={{ color: 'var(--color-text-secondary)' }}>(Anda)</span>}
           </p>
-          <p className="text-xs mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>{item.email}</p>
+          <p className="text-xs mt-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+            {item.username ? <span className="font-mono" style={{ color: 'var(--color-text)' }}>{item.username}</span> : null}
+            {item.username ? ' · ' : ''}{item.email}
+          </p>
           {item.jabatan && (
             <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>{item.jabatan}</p>
           )}
@@ -379,6 +385,7 @@ interface UserFormModalProps {
 function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormModalProps) {
   const isEdit = !!item;
   const [name, setName] = useState(item?.name ?? '');
+  const [username, setUsername] = useState(item?.username ?? '');
   const [email, setEmail] = useState(item?.email ?? '');
   const [password, setPassword] = useState('');
   const [jabatan, setJabatan] = useState(item?.jabatan ?? '');
@@ -448,6 +455,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
 
     const payload: UserPayload = {
       name,
+      username: username.trim().toLowerCase(),
       email,
       role,
       jabatan: jabatan || null,
@@ -507,6 +515,25 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
         <form onSubmit={handleSubmit} className="overflow-y-auto px-6 sm:px-8 py-7 flex flex-col gap-7">
           <Field label="Nama">
             <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} style={inputStyle} />
+          </Field>
+
+          <Field label="Username">
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              minLength={3}
+              maxLength={60}
+              pattern="[a-z0-9_.\-]+"
+              title="Huruf kecil, angka, titik, strip, atau garis bawah — tanpa spasi"
+              placeholder="Mis. dinaspu"
+              autoComplete="off"
+              className={inputClass}
+              style={inputStyle}
+            />
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+              Dipakai untuk login. Huruf kecil, tanpa spasi (a-z 0-9 . _ -)
+            </p>
           </Field>
 
           <Field label="Email">

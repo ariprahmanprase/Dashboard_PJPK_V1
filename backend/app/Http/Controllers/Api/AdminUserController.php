@@ -27,6 +27,7 @@ class AdminUserController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('jabatan', 'like', "%{$search}%");
             });
@@ -122,6 +123,11 @@ class AdminUserController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'username' => [
+                'required', 'string', 'min:3', 'max:60',
+                'regex:/^[a-z0-9_.-]+$/',
+                Rule::unique('users', 'username')->ignore($user?->id),
+            ],
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($user?->id),
@@ -142,6 +148,7 @@ class AdminUserController extends Controller
         return [
             'id' => $u->id,
             'name' => $u->name,
+            'username' => $u->username,
             'email' => $u->email,
             'role' => $u->role,
             'jabatan' => $u->jabatan,
