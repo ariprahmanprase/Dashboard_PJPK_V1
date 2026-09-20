@@ -8,14 +8,20 @@ interface Props {
   loading: boolean;
 }
 
-// Label kustom sumbu Y: singkatan OPD + tooltip native berisi nama lengkap
-function OpdTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+// Label kustom sumbu Y: singkatan OPD + tooltip native berisi nama lengkap.
+// Singkatan diambil dari lookup (kolom `singkatan` di DB) dengan fallback peta lama.
+function OpdTick({ x, y, payload, lookup }: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+  lookup?: Map<string, string | null | undefined>;
+}) {
   const nama = payload?.value ?? '';
   return (
     <g transform={`translate(${x},${y})`}>
       <title>{nama}</title>
       <text x={-6} y={0} dy={4} textAnchor="end" fill="hsl(var(--ds-muted-foreground))" fontSize={10}>
-        {opdSingkat(nama)}
+        {opdSingkat(nama, lookup?.get(nama))}
       </text>
     </g>
   );
@@ -39,6 +45,9 @@ export default function BarPerOpd({ data, loading }: Props) {
     );
   }
 
+  // Lookup nama OPD -> singkatan dari DB (kolom `singkatan` di tabel opds)
+  const singkatanLookup = new Map<string, string | null | undefined>(data.map((d) => [d.opd, d.singkatan]));
+
   return (
     <div className="ds-card" style={{ padding: '1rem 0.75rem 0 0' }}>
       <p className="text-xs font-semibold uppercase tracking-wider text-center" style={{ color: 'hsl(var(--ds-muted-foreground))', marginBottom: '0.25rem' }}>
@@ -50,7 +59,7 @@ export default function BarPerOpd({ data, loading }: Props) {
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }} barCategoryGap={14}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--ds-border))" strokeOpacity={0.5} horizontal={false} />
           <XAxis type="number" tick={{ fill: 'hsl(var(--ds-muted-foreground))', fontSize: 11 }} axisLine={{ stroke: 'hsl(var(--ds-border))' }} />
-          <YAxis dataKey="opd" type="category" tick={<OpdTick />} axisLine={{ stroke: 'hsl(var(--ds-border))' }} width={86} interval={0} />
+          <YAxis dataKey="opd" type="category" tick={<OpdTick lookup={singkatanLookup} />} axisLine={{ stroke: 'hsl(var(--ds-border))' }} width={86} interval={0} />
           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--ds-card))', border: '1px solid hsl(var(--ds-border))', borderRadius: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--ds-foreground))' }} />
           <Legend wrapperStyle={{ fontSize: '0.6875rem', color: 'hsl(var(--ds-muted-foreground))' }} />
           <Bar dataKey="on_track" name="On Track" stackId="a" fill="#00a651" barSize={18} />

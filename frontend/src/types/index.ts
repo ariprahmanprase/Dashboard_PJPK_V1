@@ -121,6 +121,7 @@ export interface PerPilarItem {
 
 export interface PerOpdItem {
   opd: string;
+  singkatan?: string | null;
   on_track: number;
   warning: number;
   alert: number;

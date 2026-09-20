@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Opd extends Model
 {
-    protected $fillable = ['kode_opd', 'nama_opd'];
+    protected $fillable = ['kode_opd', 'nama_opd', 'singkatan'];
 
     public function indikators()
     {

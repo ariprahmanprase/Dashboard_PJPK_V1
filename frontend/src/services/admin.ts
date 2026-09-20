@@ -741,6 +741,42 @@ export async function deleteUser(id: number): Promise<void> {
   await request(`/admin/users/${id}`, { method: 'DELETE' });
 }
 
+// ── Kelola OPD (khusus super admin) ───────────────
+
+export interface AdminOpdRow {
+  id: number;
+  kode_opd: string | null;
+  nama_opd: string;
+  singkatan: string | null;
+  indikator_count: number;
+  renaksi_count: number;
+  user_count: number;
+}
+
+export interface OpdPayload {
+  nama_opd: string;
+  kode_opd?: string | null;
+  singkatan?: string | null;
+}
+
+export async function fetchAdminOpds(search?: string): Promise<AdminOpdRow[]> {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+  const data = await request<{ data: AdminOpdRow[] }>(`/admin/opds${qs}`);
+  return data.data;
+}
+
+export async function createOpd(payload: OpdPayload): Promise<void> {
+  await request('/admin/opds', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateOpd(id: number, payload: OpdPayload): Promise<void> {
+  await request(`/admin/opds/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function deleteOpd(id: number): Promise<void> {
+  await request(`/admin/opds/${id}`, { method: 'DELETE' });
+}
+
 // ── Admin Report (indikator + target/capaian) ─────
 
 export interface PilarOption {

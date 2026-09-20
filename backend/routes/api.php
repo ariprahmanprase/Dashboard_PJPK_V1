@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\AdminAiPsriController;
 use App\Http\Controllers\Api\AdminAiRedAlertController;
 use App\Http\Controllers\Api\AdminAiRootCauseController;
 use App\Http\Controllers\Api\AdminIndikatorController;
+use App\Http\Controllers\Api\AdminOpdController;
 use App\Http\Controllers\Api\AdminRenaksiProgramController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
@@ -140,6 +141,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('super_admin')->group(function () {
         Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
         Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
+        Route::apiResource('/admin/opds', AdminOpdController::class)->except(['show']);
 
         Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])
             ->where('indikator', '[A-Za-z0-9\-]+');

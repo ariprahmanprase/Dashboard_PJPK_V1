@@ -389,7 +389,7 @@ class DashboardService
             foreach ($ind->opds as $opd) {
                 $opdName = $opd->nama_opd;
                 if (!isset($grouped[$opdName])) {
-                    $grouped[$opdName] = ['opd' => $opdName, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+                    $grouped[$opdName] = ['opd' => $opdName, 'singkatan' => $opd->singkatan, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
                 }
                 $key = match ($s['status_tl']) {
                     'On Track' => 'on_track',

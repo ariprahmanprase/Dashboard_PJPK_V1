@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Briefcase,
+  Building2,
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
@@ -29,7 +30,7 @@ import {
 import { useTheme } from 'next-themes';
 import type { AdminUser } from '@/services/admin';
 
-export type AdminPageName = 'report' | 'renaksi' | 'users' | 'profile' | 'analisis-indikator' | 'portofolio-opd' | 'root-cause' | 'efektivitas' | 'corrective-action' | 'red-alert' | 'data-gap' | 'psri' | 'cross-opd' | 'executive-brief' | 'cross-pillar' | 'innovation';
+export type AdminPageName = 'report' | 'renaksi' | 'users' | 'opds' | 'profile' | 'analisis-indikator' | 'portofolio-opd' | 'root-cause' | 'efektivitas' | 'corrective-action' | 'red-alert' | 'data-gap' | 'psri' | 'cross-opd' | 'executive-brief' | 'cross-pillar' | 'innovation';
 
 interface AdminMenuItem {
   key: AdminPageName;
@@ -86,6 +87,7 @@ const ANALIS_MENUS: AdminMenuItem[] = [];
 // Menu khusus super admin
 const SUPER_MENUS: AdminMenuItem[] = [
   { key: 'users', label: 'User', icon: Users },
+  { key: 'opds', label: 'OPD', icon: Building2 },
 ];
 
 /* ── Deteksi layar desktop (≥ lg = 1024px) untuk margin konten ── */

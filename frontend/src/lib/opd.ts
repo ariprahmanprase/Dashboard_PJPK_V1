@@ -57,10 +57,11 @@ const OPD_SINGKATAN: Record<string, string> = {
 };
 
 /**
- * Singkatan nama OPD untuk label chart. Urutan: peta resmi -> opdInduk() ->
- * inisial huruf kapital (fallback nama baru yang belum terdaftar).
+ * Singkatan nama OPD untuk label chart. Urutan: singkatan dari DB -> peta resmi
+ * -> opdInduk() -> inisial huruf kapital (fallback nama baru yang belum diisi).
  */
-export function opdSingkat(nama: string | null | undefined): string {
+export function opdSingkat(nama: string | null | undefined, singkatanDb?: string | null): string {
+  if (singkatanDb && singkatanDb.trim() !== '') return singkatanDb.trim();
   const induk = opdInduk(nama);
   const dariPeta = OPD_SINGKATAN[induk.toLowerCase()];
   if (dariPeta) return dariPeta;
