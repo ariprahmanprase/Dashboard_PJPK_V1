@@ -67,12 +67,12 @@ export default function AdminLoginPage({ onSuccess }: Props) {
               <Lock size={26} />
             </div>
             <h1 className="text-xl sm:text-2xl font-semibold text-center mt-2" style={{ color: 'var(--color-text)' }}>
-              Admin Dashboard PJPK
+              Dashboard PJPK
             </h1>
             <p className="text-sm text-center leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Masuk untuk mengisi &amp; mengelola
+              Masuk untuk melihat dashboard
               <br />
-              realisasi rencana aksi
+              Kabupaten Sidoarjo
             </p>
           </div>
 
@@ -88,7 +88,7 @@ export default function AdminLoginPage({ onSuccess }: Props) {
                 autoComplete="username"
                 value={loginInput}
                 onChange={(e) => setLoginInput(e.target.value)}
-                placeholder="username atau nama@pjpk.sidoarjokab.go.id"
+                placeholder="Masukkan username atau email"
                 className="rounded-lg border px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-blue-200"
                 style={{
                   backgroundColor: 'var(--color-bg)',
@@ -146,12 +146,6 @@ export default function AdminLoginPage({ onSuccess }: Props) {
             </button>
           </form>
         </div>
-
-        <p className="mt-8 text-center text-sm">
-          <a href="/" className="hover:underline" style={{ color: 'var(--color-text-secondary)' }}>
-            ← Kembali ke dashboard publik
-          </a>
-        </p>
       </div>
     </div>
   );

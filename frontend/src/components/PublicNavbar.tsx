@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Moon, Sun, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { getToken, getStoredUser } from '@/services/admin';
 import type { PageName } from './Sidebar';
 
 interface Props {
@@ -17,7 +16,7 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const loggedIn = Boolean(getToken() && getStoredUser());
+  // Semua halaman private — yang melihat navbar ini pasti sudah login
 
   useEffect(() => setMounted(true), []);
 
@@ -88,7 +87,7 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
               boxShadow: '0 1px 2px rgb(0 0 0 / 0.08)',
             }}
           >
-            {loggedIn ? 'Dashboard' : 'Login'}
+            Dashboard
           </a>
           {/* Hamburger (mobile) */}
           <button

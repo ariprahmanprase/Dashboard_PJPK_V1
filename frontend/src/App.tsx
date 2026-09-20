@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import Layout from '@/components/Layout';
 import type { PageName } from '@/components/Sidebar';
@@ -40,6 +40,15 @@ function publicPathFromPage(page: PageName): string {
 }
 
 export default function App() {
+  // Semua halaman (termasuk dashboard) bersifat private — wajib login dulu.
+  // Guard: kalau tidak ada sesi, alihkan ke /admin (halaman login) dan
+  // kembalikan ke halaman tujuan setelah berhasil masuk.
+  const loggedIn = Boolean(getToken() && getStoredUser());
+  if (!window.location.pathname.startsWith('/admin') && !loggedIn) {
+    window.location.replace('/admin');
+    return null;
+  }
+
   // State di-inisialisasi dari URL — / langsung dashboard, /rencana-aksi halaman rencana aksi
   const [page, setPageState] = useState<PageName>(publicPageFromPath);
 
@@ -76,6 +85,10 @@ export default function App() {
 
 function AdminArea() {
   const [user, setUser] = useState<AdminUser | null>(() => (getToken() ? getStoredUser() : null));
+  // Halaman yang dituju sebelum diarahkan ke login (default: dashboard publik)
+  const intendedPath = useRef<string>(
+    window.location.pathname.startsWith('/admin') ? '/' : window.location.pathname,
+  );
   const [checking, setChecking] = useState(() => getToken() !== null);
   const [page, setPage] = useState<AdminPageName>('report');
 
@@ -103,7 +116,14 @@ function AdminArea() {
   }
 
   if (!user) {
-    return <AdminLoginPage onSuccess={() => setUser(getStoredUser())} />;
+    return (
+      <AdminLoginPage
+        onSuccess={() => {
+          // Masuk via halaman login — kembali ke halaman yang dituju (dashboard publik)
+          window.location.href = intendedPath.current;
+        }}
+      />
+    );
   }
 
   // Logout harus membersihkan token di localStorage (bukan hanya state) —
