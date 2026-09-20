@@ -8,6 +8,7 @@ import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import type { RenaksiProgramRow, RenaksiProgramSummary } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
+import MiniMarkdown from '@/lib/miniMarkdown';
 import { opdInduk } from '@/lib/opd';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import {
@@ -185,9 +186,9 @@ function AiRecommendationSection({
           className="rounded-xl p-4 flex flex-col gap-3"
           style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
         >
-          <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            {row.ai_recommendation}
-          </p>
+          <div className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            <MiniMarkdown text={row.ai_recommendation} />
+          </div>
           <p className="text-[10px] italic" style={{ color: 'var(--color-text-secondary)', opacity: 0.75 }}>
             Catatan: analisis dilakukan oleh model AI ({aiModel ?? 'gemini/gemini-3.1-flash-lite'}) — hasil bersifat saran, bukan keputusan final.
           </p>
