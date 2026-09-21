@@ -6,12 +6,12 @@ import RenaksiProgramTable from '@/components/RenaksiProgramTable';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import RenaksiStatusBar from '@/components/RenaksiStatusBar';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
-import { opdInduk } from '@/lib/opd';
+import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
 import { useReveal } from '@/hooks/useReveal';
 
-const FILTER_KEY = 'pjpk-draft-filter-renaksi';
-const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', dinas: '', dinasInduk: '', indikatorId: '', statusRenaksi: '', search: '' };
+const FILTER_KEY = 'pjpk-draft-filter-renaksi-v2';
+const DEFAULT_FILTER = { tahun: '', pilarId: '', opdId: '', indikatorId: '', statusRenaksi: '', search: '' };
 
 // ── Helpers ──────────────────────────────────────────
 async function apiFetch<T>(url: string): Promise<T> {
@@ -24,10 +24,10 @@ async function apiFetch<T>(url: string): Promise<T> {
 export default function RencanaAksiPage() {
   // Filters — disimpan sebagai satu objek persisten (bertahan saat pindah halaman)
   const [filter, setFilter] = usePersistentState(FILTER_KEY, DEFAULT_FILTER);
-  const { tahun, pilarId, opdId, dinas, dinasInduk, indikatorId, statusRenaksi, search } = filter;
+  const { tahun, pilarId, opdId, indikatorId, statusRenaksi, search } = filter;
   const patchFilter = (patch: Partial<typeof DEFAULT_FILTER>) => setFilter(f => ({ ...f, ...patch }));
   const setTahun = (v: string) => patchFilter({ tahun: v });
-  const setDinas = (v: string) => patchFilter({ dinas: v, dinasInduk: v });
+  const setOpdId = (v: string) => patchFilter({ opdId: v });
   const setIndikatorId = (v: string) => patchFilter({ indikatorId: v });
   const setStatusRenaksi = (v: string) => patchFilter({ statusRenaksi: v });
   const setSearch = (v: string) => patchFilter({ search: v });
@@ -38,7 +38,7 @@ export default function RencanaAksiPage() {
     setFilter(DEFAULT_FILTER);
   }
 
-  const hasActiveFilter = Boolean(tahun || pilarId || opdId || dinasInduk || indikatorId || statusRenaksi || search);
+  const hasActiveFilter = Boolean(tahun || pilarId || opdId || indikatorId || statusRenaksi || search);
 
   // ── Cascading: ganti pilar → reset indikator bila tidak cocok ──
   function handlePilarChange(value: string) {
@@ -57,7 +57,6 @@ export default function RencanaAksiPage() {
 
   // Filter options
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [dinasList, setDinasList] = useState<string[]>([]);
   const [programIndikatorList, setProgramIndikatorList] = useState<IndikatorOption[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,22 +98,15 @@ export default function RencanaAksiPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch filter options and dinas list in parallel
-      const [opts, dinasOpts] = await Promise.all([
-        filterOptions ? Promise.resolve(filterOptions) : apiFetch<FilterOptions>('/api/filters'),
-        dinasList.length > 0 ? Promise.resolve(dinasList) : apiFetch<string[]>('/api/dashboard/renaksi-program-dinas'),
-      ]);
-
+      // Fetch filter options sekali (berisi daftar OPD untuk dropdown)
+      const opts = filterOptions ?? await apiFetch<FilterOptions>('/api/filters');
       if (!filterOptions) setFilterOptions(opts);
-      if (dinasList.length === 0 && dinasOpts) setDinasList(dinasOpts);
 
-      // Build params for program (Excel) - use Dinas filter
+      // Build params for program (Excel) — filter OPD pakai opd_id (nama bisa
+      // mengandung koma sehingga tidak aman dikirim sebagai teks)
       const progParams = new URLSearchParams();
       if (tahun) progParams.set('tahun', tahun);
-      // Filter OPD pakai dinas_induk (pencocokan prefix di backend, mis. "Dinkes"
-      // mencakup "Dinkes (Dinas Kesehatan)"). Filter `dinas` lama dicocokkan persis
-      // sehingga singkatan tak pernah ketemu — pakai dinas_induk agar konsisten.
-      if (dinasInduk) progParams.set('dinas_induk', dinasInduk);
+      if (opdId) progParams.set('opd_id', opdId);
       if (pilarId) progParams.set('pilar_id', pilarId);
       if (indikatorId) progParams.set('indikator_id', indikatorId);
       if (statusRenaksi) progParams.set('status_renaksi', statusRenaksi);
@@ -133,14 +125,13 @@ export default function RencanaAksiPage() {
 
   useEffect(() => {
     apiFetch<FilterOptions>('/api/filters').then(setFilterOptions);
-    apiFetch<string[]>('/api/dashboard/renaksi-program-dinas').then(setDinasList);
     apiFetch<IndikatorOption[]>('/api/dashboard/renaksi-program-indikators').then(setProgramIndikatorList);
     fetchData();
   }, []);
 
   useEffect(() => {
     fetchData();
-  }, [tahun, pilarId, dinasInduk, indikatorId, statusRenaksi, search]);
+  }, [tahun, pilarId, opdId, indikatorId, statusRenaksi, search]);
 
   // ── Styles ────────────────────────────────────────
   const baseSelect: React.CSSProperties = {
@@ -197,11 +188,18 @@ export default function RencanaAksiPage() {
               ))}
           </select>
 
-          {/* OPD yang mengampu — dari dinas data renaksi */}
-          <select value={dinas} onChange={e => setDinas(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
-            <option value="">Semua OPD yang mengampu</option>
-            {[...new Set(dinasList.map(d => opdInduk(d)))].map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+          {/* OPD yang mengampu — nama lengkap dari tabel opds, filter by opd_id, bisa dicari */}
+          <OpdSearchSelect
+            options={filterOptions?.opd ?? []}
+            value={opdId}
+            onChange={setOpdId}
+            emptyLabel="Semua OPD yang mengampu"
+            placeholder="Semua OPD yang mengampu"
+            theme="ds"
+            minPanelWidth={320}
+            style={{ minWidth: 240, maxWidth: 340 }}
+            buttonStyle={baseSelect}
+          />
 
           {/* Status - show for both */}
           <select value={statusRenaksi} onChange={e => setStatusRenaksi(e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>

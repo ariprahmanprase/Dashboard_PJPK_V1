@@ -19,6 +19,11 @@ import { opdInduk } from '@/lib/opd';
 /** Sentinel untuk opsi "+ Bidang baru" di dropdown bidang */
 const BIDANG_BARU = '__bidang_baru__';
 
+/** Normalisasi nama OPD ke dinas induknya — untuk mengelompokkan bidang per dinas */
+function indukDari(namaOpd: string): string {
+  return opdInduk(namaOpd);
+}
+
 /** Ambil nama bidang dari nama OPD turunan: "Dinkopum (Bidang HI)" -> "Bidang HI" */
 function bidangDari(namaOpd: string): string | null {
   const induk = opdInduk(namaOpd);
@@ -391,9 +396,9 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [jabatan, setJabatan] = useState(item?.jabatan ?? '');
   const [role, setRole] = useState<'super_admin' | 'admin_opd' | 'admin_analis'>(item?.role ?? 'admin_opd');
 
-  // Dinas yang dipilih = NAMA INDUK (bukan id) supaya tidak redundan per bidang
-  const [dinasInduk, setDinasInduk] = useState<string>(() =>
-    item?.opd_nama ? opdInduk(item.opd_nama) : '',
+  // OPD yang dipilih = id OPD (nama lengkap bisa mengandung koma — tidak aman sebagai value)
+  const [opdId, setOpdId] = useState<string>(() =>
+    item?.opd_id ? String(item.opd_id) : '',
   );
   // Bidang: label bidang yang ada, atau BIDANG_BARU utk input teks baru
   const [bidangChoice, setBidangChoice] = useState<string>(() => {
@@ -415,18 +420,21 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
     color: 'var(--color-text)',
   };
 
-  // Daftar dinas induk (dedupe) + entri OPD per induk
-  const dinasList = useMemo(
-    () => [...new Set(opdOptions.map(o => opdInduk(o.nama_opd)))].sort((a, b) => a.localeCompare(b)),
+  // Opsi OPD diurutkan alfabetis, label nama lengkap
+  const opdSorted = useMemo(
+    () => [...opdOptions].sort((a, b) => a.nama_opd.localeCompare(b.nama_opd, 'id')),
     [opdOptions],
   );
+  // OPD terpilih & dinas induknya (untuk mengelompokkan opsi bidang)
+  const opdTerpilih = useMemo(
+    () => opdOptions.find(o => String(o.id) === opdId) ?? null,
+    [opdOptions, opdId],
+  );
+  const dinasInduk = opdTerpilih ? indukDari(opdTerpilih.nama_opd) : '';
   const entriInduk = useMemo(
-    () => opdOptions.filter(o => opdInduk(o.nama_opd) === dinasInduk),
+    () => opdOptions.filter(o => indukDari(o.nama_opd) === dinasInduk),
     [opdOptions, dinasInduk],
   );
-  // Entri induk murni (nama persis = induk) sebagai pemilik opd_id
-  const entriRoot = entriInduk.find(o => o.nama_opd.trim() === dinasInduk);
-  const opdIdTerpilih = entriRoot?.id ?? entriInduk[0]?.id ?? null;
 
   // Opsi bidang yang sudah ada untuk dinas ini
   const bidangOptions = useMemo(
@@ -459,7 +467,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
       email,
       role,
       jabatan: jabatan || null,
-      opd_id: role === 'admin_opd' ? opdIdTerpilih : null,
+      opd_id: role === 'admin_opd' ? (opdId ? Number(opdId) : null) : null,
       bidang: role === 'admin_opd' ? bidangFinal : null,
     };
     if (password) payload.password = password;
@@ -579,27 +587,22 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
             </Field>
             {role === 'admin_opd' && (
               <Field label="OPD / Dinas">
-                <select
-                  value={dinasInduk}
-                  onChange={(e) => {
-                    setDinasInduk(e.target.value);
+                <OpdSearchSelect
+                  options={opdSorted}
+                  value={opdId}
+                  onChange={(v) => {
+                    setOpdId(v);
                     setBidangChoice('');
                     setBidangBaru('');
                   }}
+                  placeholder="— Pilih dinas —"
                   required
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">— Pilih dinas —</option>
-                  {dinasList.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+                />
               </Field>
             )}
           </div>
 
-          {role === 'admin_opd' && dinasInduk && (
+          {role === 'admin_opd' && opdId && (
             <Field label="Bidang (opsional)">
               <select
                 value={bidangAktif}

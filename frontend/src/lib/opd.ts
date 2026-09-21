@@ -76,19 +76,18 @@ export function opdSingkat(nama: string | null | undefined, singkatanDb?: string
 }
 
 /**
- * Kelompokkan daftar OPD per dinas induk untuk dropdown filter —
- * menghilangkan duplikat label (mis. 3 bidang Dinkopum -> 1 opsi "Dinkopum").
- * Value opsi = id semua bidang digabung koma ("105,116,117"), didukung backend.
+ * Opsi dropdown filter OPD — satu opsi per entri, label nama asli lengkap
+ * (tidak dinormalisasi/disingkat), value = id OPD. Diurutkan alfabetis.
  */
 export function groupOpdOptions<T extends { id: number | string; nama_opd?: string; kode_opd?: string }>(
   list: T[],
   useKode = false,
 ): Array<{ label: string; value: string }> {
-  const map = new Map<string, string[]>();
-  for (const o of list) {
-    const label = opdInduk(useKode ? (o.kode_opd ?? o.nama_opd) : (o.nama_opd ?? o.kode_opd));
-    if (!map.has(label)) map.set(label, []);
-    map.get(label)!.push(String(o.id));
-  }
-  return [...map.entries()].map(([label, ids]) => ({ label, value: ids.join(',') }));
+  return list
+    .map(o => ({
+      label: (useKode ? (o.nama_opd ?? o.kode_opd) : (o.nama_opd ?? o.kode_opd)) ?? '',
+      value: String(o.id),
+    }))
+    .filter(o => o.label !== '')
+    .sort((a, b) => a.label.localeCompare(b.label, 'id'));
 }

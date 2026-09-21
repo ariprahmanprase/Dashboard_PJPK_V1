@@ -9,7 +9,6 @@ import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import type { RenaksiProgramRow, RenaksiProgramSummary } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import MiniMarkdown from '@/lib/miniMarkdown';
-import { opdInduk } from '@/lib/opd';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import {
   createRenaksi,
@@ -256,7 +255,8 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [pilarId, setPilarId] = useState('');
   const [pilarOptions, setPilarOptions] = useState<{ id: number; nama_pilar: string }[]>([]);
   const [indikatorId, setIndikatorId] = useState('');
-  const [dinas, setDinas] = useState('');
+  // Filter OPD: value = opd_id (string) — nama bisa mengandung koma, jadi jangan pakai teks
+  const [opdFilter, setOpdFilter] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<AdminRenaksi | null>(null);
@@ -275,7 +275,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
         indikator_id: indikatorId ? Number(indikatorId) : undefined,
         pilar_id: pilarId ? Number(pilarId) : undefined,
         status: status || undefined,
-        dinas: dinas || undefined,
+        opd_id: opdFilter ? Number(opdFilter) : undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat PDF.');
@@ -306,19 +306,6 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
       .catch(() => setAllIndikatorOptions([]));
   }, []);
 
-  // Opsi dinas: renaksi tanpa filter dinas (super admin & admin analis; admin OPD otomatis terscope backend)
-  const [dinasOptions, setDinasOptions] = useState<string[]>([]);
-  useEffect(() => {
-    if (!isSuperAdmin && !isAnalis) return;
-    fetchAdminRenaksi({ tahun })
-      .then((list) => {
-        const names = Array.from(new Set(list.map((r) => r.dinas).filter((d) => d && d !== '-')));
-        names.sort((a, b) => a.localeCompare(b, 'id'));
-        setDinasOptions(names);
-      })
-      .catch(() => setDinasOptions([]));
-  }, [isSuperAdmin, isAnalis, tahun]);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -330,6 +317,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           indikator_id: indikatorId ? Number(indikatorId) : undefined,
           pilar_id: pilarId ? Number(pilarId) : undefined,
           status: status || undefined,
+          opd_id: opdFilter ? Number(opdFilter) : undefined,
         }),
       );
     } catch (err) {
@@ -337,7 +325,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     } finally {
       setLoading(false);
     }
-  }, [tahun, search, indikatorId, pilarId, status]);
+  }, [tahun, search, indikatorId, pilarId, status, opdFilter]);
 
   // Cascading: ganti pilar → reset indikator bila tidak cocok
   const handlePilarChange = (value: string) => {
@@ -350,8 +338,8 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
     }
   };
 
-  // Filter dinas di client (super admin) — backend hanya menerima opd_id, dinas_options bertipe teks
-  const visibleItems = dinas ? items.filter((r) => r.dinas === dinas) : items;
+  // Filter OPD dilakukan backend via opd_id (nama dinas mengandung koma → tidak aman difilter sebagai teks)
+  const visibleItems = items;
 
   // Popup status: daftar renaksi per status (klik dari stacked bar)
   const [statusPopup, setStatusPopup] = useState<string | null>(null);
@@ -444,17 +432,21 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </select>
 
           {(isSuperAdmin || isAnalis) && (
-            <select
-              value={dinas}
-              onChange={(e) => setDinas(e.target.value)}
-              className="rounded-lg border px-4 py-3 text-sm w-full sm:w-auto sm:min-w-48"
-              style={selectStyle}
-            >
-              <option value="">Semua Dinas</option>
-              {[...new Set(dinasOptions.map((d) => opdInduk(d)))].map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+            <OpdSearchSelect
+              options={opdOptions}
+              value={opdFilter}
+              onChange={setOpdFilter}
+              emptyLabel="Semua Dinas"
+              placeholder="Semua Dinas"
+              minPanelWidth={320}
+              className="w-full sm:w-auto sm:min-w-64 sm:max-w-96"
+              buttonStyle={{
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                padding: '0.75rem 1rem',
+                fontSize: '0.875rem',
+              }}
+            />
           )}
 
           <select

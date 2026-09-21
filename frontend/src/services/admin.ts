@@ -188,7 +188,7 @@ export async function fetchIndikatorOptions(): Promise<IndikatorOption[]> {
  * Unduh laporan renaksi sebagai PDF (mengikuti filter aktif).
  * Tidak pakai helper request() karena responsnya blob, bukan JSON.
  */
-export async function downloadRenaksiPdf(params: { tahun?: string; search?: string; indikator_id?: number; pilar_id?: number; status?: string; dinas?: string } = {}): Promise<void> {
+export async function downloadRenaksiPdf(params: { tahun?: string; search?: string; indikator_id?: number; pilar_id?: number; status?: string; opd_id?: number } = {}): Promise<void> {
   const token = getToken();
   const qs = new URLSearchParams();
   if (params.tahun) qs.set('tahun', params.tahun);
@@ -196,7 +196,7 @@ export async function downloadRenaksiPdf(params: { tahun?: string; search?: stri
   if (params.indikator_id) qs.set('indikator_id', String(params.indikator_id));
   if (params.pilar_id) qs.set('pilar_id', String(params.pilar_id));
   if (params.status) qs.set('status', params.status);
-  if (params.dinas) qs.set('dinas', params.dinas);
+  if (params.opd_id) qs.set('opd_id', String(params.opd_id));
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
 
   const resp = await fetch(`/api/admin/renaksi-programs/export-pdf${suffix}`, {
@@ -701,6 +701,7 @@ export interface AdminUserRow {
 export interface OpdOption {
   id: number;
   nama_opd: string;
+  singkatan?: string | null;
 }
 
 export interface UserPayload {

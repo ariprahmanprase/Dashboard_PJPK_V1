@@ -156,11 +156,10 @@ class AdminRenaksiProgramController extends Controller
             });
             $filters['Pencarian'] = $search;
         }
-        // Filter teks dinas (dari dropdown client-side di halaman admin)
-        if (!$user->isAdminOpd() && $request->filled('dinas')) {
-            $dinas = $request->input('dinas');
-            $query->whereHas('opd', fn($q) => $q->where('nama_opd', $dinas));
-            $filters['Dinas'] = $dinas;
+        // Catat filter OPD di kop laporan (query opd_id sudah difilter di atas)
+        if (!$user->isAdminOpd() && $request->filled('opd_id')) {
+            $opd = \App\Models\Opd::find($request->integer('opd_id'));
+            if ($opd) $filters['Dinas'] = $opd->nama_opd;
         }
 
         $rows = $query->get();
@@ -209,7 +208,7 @@ class AdminRenaksiProgramController extends Controller
     {
         $user = $request->user();
 
-        $query = \App\Models\Opd::select('id', 'nama_opd')->orderBy('nama_opd');
+        $query = \App\Models\Opd::select('id', 'nama_opd', 'singkatan')->orderBy('nama_opd');
         if ($user->isAdminOpd()) {
             $query->where('id', $user->opd_id);
         }

@@ -1,6 +1,6 @@
 import type { FilterOptions, DashboardFilters } from '@/types';
 import { RotateCcw } from 'lucide-react';
-import { groupOpdOptions } from '@/lib/opd';
+import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 
 interface Props {
   options: FilterOptions | null;
@@ -48,10 +48,17 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
           </option>
         ))}
       </select>
-      <select value={filters.opd_id || ''} onChange={e => onFilterChange('opd_id', e.target.value)} style={baseSelect}>
-        <option value="">Semua OPD yang mengampu</option>
-        {groupOpdOptions(options?.opd ?? [], true).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <OpdSearchSelect
+        options={options?.opd ?? []}
+        value={filters.opd_id || ''}
+        onChange={v => onFilterChange('opd_id', v)}
+        emptyLabel="Semua OPD yang mengampu"
+        placeholder="Semua OPD yang mengampu"
+        theme="ds"
+        minPanelWidth={320}
+        style={{ minWidth: 240, maxWidth: 340 }}
+        buttonStyle={baseSelect}
+      />
       <select value={filters.status_tl || ''} onChange={e => onFilterChange('status_tl', e.target.value)} style={{ ...baseSelect, minWidth: 180 }}>
         <option value="">Semua Status</option>
         {options?.status_tl.map(s => <option key={s} value={s}>{s}</option>)}
