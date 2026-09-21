@@ -48,15 +48,20 @@ export default function OpdSearchSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   // Posisi panel (fixed) — panel dirender via portal ke body agar tidak
   // terpotong/tertutup stacking context animasi reveal halaman publik
   const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
 
-  // Tutup dropdown saat klik di luar
+  // Tutup dropdown saat klik di luar — panel ada di portal (bukan anak ref),
+  // jadi klik di dalam panel harus dikecualikan agar tidak langsung menutup
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
     }
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -103,6 +108,8 @@ export default function OpdSearchSelect({
         bgDisabled: 'hsl(var(--ds-muted))',
         text: 'hsl(var(--ds-foreground))',
         textSecondary: 'hsl(var(--ds-muted-foreground))',
+        hover: 'hsl(var(--ds-muted))',
+        active: 'hsl(var(--ds-primary) / 0.12)',
       }
     : {
         border: 'var(--color-border)',
@@ -110,6 +117,8 @@ export default function OpdSearchSelect({
         bgDisabled: 'var(--color-bg-tertiary)',
         text: 'var(--color-text)',
         textSecondary: 'var(--color-text-secondary)',
+        hover: 'var(--color-bg-tertiary)',
+        active: 'rgba(59,130,246,0.12)',
       };
 
   return (
@@ -164,6 +173,7 @@ export default function OpdSearchSelect({
 
       {open && createPortal(
         <div
+          ref={panelRef}
           className="rounded-xl border shadow-xl"
           style={{
             position: 'fixed',
@@ -202,8 +212,10 @@ export default function OpdSearchSelect({
               <button
                 type="button"
                 onClick={() => { onChange(''); setOpen(false); }}
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                style={{ color: c.textSecondary, fontStyle: 'italic' }}
+                className="w-full text-left px-4 py-2.5 text-sm transition-colors"
+                style={{ color: c.textSecondary, fontStyle: 'italic', backgroundColor: 'transparent' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = c.hover)}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 {emptyLabel}
               </button>
@@ -218,11 +230,17 @@ export default function OpdSearchSelect({
                   key={i.id}
                   type="button"
                   onClick={() => { onChange(i.id); setOpen(false); }}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors"
                   style={{
                     color: c.text,
-                    backgroundColor: i.id === value ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    backgroundColor: i.id === value ? c.active : 'transparent',
                     fontWeight: i.id === value ? 600 : 400,
+                  }}
+                  onMouseEnter={e => {
+                    if (i.id !== value) e.currentTarget.style.backgroundColor = c.hover;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = i.id === value ? c.active : 'transparent';
                   }}
                 >
                   {i.label}
