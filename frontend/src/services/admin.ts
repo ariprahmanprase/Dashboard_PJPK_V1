@@ -231,6 +231,7 @@ export async function fetchSatuanOptions(): Promise<string[]> {
 
 export interface RenaksiUpdatePayload {
   status?: string;
+  jenis_target?: 'kuantitatif' | 'kualitatif';
   realisasi?: string | null;
   realisasi_nilai?: number | null;
   target?: string | null;

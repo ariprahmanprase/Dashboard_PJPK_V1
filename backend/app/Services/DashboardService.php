@@ -31,8 +31,9 @@ class DashboardService
      * - Maintain / Stable & Proportional:
      *             HIJAU capaian = target persis, selain itu MERAH (tanpa KUNING)
      * - arah_target null (data lama): fallback ke logika Higher Better
-     * - In Between (target rentang, mis. I-16 TPT 6,43–6,48; batas EKSKLUSIF):
-     *             HIJAU di dalam rentang, KUNING tepat di batas, MERAH di luar rentang.
+     * - Range (target rentang, mis. I-16 TPT 6,43–6,48; batas INKLUSIF):
+     *             HIJAU capaian ≤ batas atas (di bawah batas bawah pun On Track),
+     *             MERAH hanya bila di atas batas atas. Tanpa KUNING.
      *             Batas atas diambil dari $targetMax (kolom target_max); bila kosong,
      *             target diperlakukan sebagai target tunggal biasa (logika Maintain).
      */
@@ -42,21 +43,19 @@ class DashboardService
             return ['status_tl' => 'Belum Diisi', 'warna_tl' => 'Abu'];
         }
 
-        if ($arahTarget === 'In Between' && $targetMax !== null) {
-            $lo = min((float) $target, (float) $targetMax);
+        if ($arahTarget === 'Range' && $targetMax !== null) {
             $hi = max((float) $target, (float) $targetMax);
             $c = (float) $capaian;
 
-            if (abs($c - $lo) < 1e-9 || abs($c - $hi) < 1e-9) {
-                return ['status_tl' => 'Warning', 'warna_tl' => 'Kuning'];
-            }
-            if ($c > $lo && $c < $hi) {
+            // On Track untuk semua capaian sampai batas atas (inklusif);
+            // Alert hanya bila melampaui batas atas
+            if ($c <= $hi) {
                 return ['status_tl' => 'On Track', 'warna_tl' => 'Hijau'];
             }
             return ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];
         }
 
-        if (in_array($arahTarget, ['Maintain / Stable', 'Proportional', 'In Between'], true)) {
+        if (in_array($arahTarget, ['Maintain / Stable', 'Proportional', 'Range'], true)) {
             return abs($capaian - $target) < 1e-9
                 ? ['status_tl' => 'On Track', 'warna_tl' => 'Hijau']
                 : ['status_tl' => 'Alert', 'warna_tl' => 'Merah'];

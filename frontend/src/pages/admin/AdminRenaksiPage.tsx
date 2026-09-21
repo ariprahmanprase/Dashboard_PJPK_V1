@@ -647,7 +647,10 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   const canEditFields = !isAnalis;
   // Tautan indikator bisa diubah semua role (admin OPD menautkan sendiri, super admin merevisi bila kurang tepat)
   const canEditIndikator = true;
-  const isKuantitatif = item.jenis_target === 'kuantitatif';
+  // Jenis target bisa diubah semua role (super admin & admin OPD) — field
+  // target/realisasi di bawah mengikuti jenis yang dipilih
+  const [jenisTarget, setJenisTarget] = useState<'kuantitatif' | 'kualitatif'>(item.jenis_target);
+  const isKuantitatif = jenisTarget === 'kuantitatif';
   const [status, setStatus] = useState(item.status);
   const [realisasiNilai, setRealisasiNilai] = useState(item.realisasi_nilai ?? '');
   const [realisasiTeks, setRealisasiTeks] = useState(item.realisasi ?? '');
@@ -680,6 +683,11 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
       catatan: catatan || null,
       dokumentasi: dokumentasi.trim() || null,
     };
+    // Jenis target hanya dikirim bila berubah — backend membersihkan field
+    // jenis lama dan menghitung ulang status
+    if (jenisTarget !== item.jenis_target) {
+      payload.jenis_target = jenisTarget;
+    }
     // Status manual hanya dikirim untuk renaksi kualitatif (kuantitatif dihitung backend)
     if (!isKuantitatif) {
       payload.status = status;
@@ -755,6 +763,27 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
 
         {/* Body modal (scrollable) */}
         <form onSubmit={handleSubmit} className="overflow-y-auto px-6 sm:px-8 py-7 flex flex-col gap-7">
+          {/* Jenis target — bisa diubah semua role; field target/realisasi mengikuti */}
+          <Field label="Jenis Target">
+            <select
+              value={jenisTarget}
+              onChange={(e) => setJenisTarget(e.target.value as 'kuantitatif' | 'kualitatif')}
+              className={inputClass}
+              style={inputStyle}
+            >
+              <option value="kuantitatif">Kuantitatif (angka)</option>
+              <option value="kualitatif">Kualitatif (uraian)</option>
+            </select>
+            {jenisTarget !== item.jenis_target && (
+              <p
+                className="text-[11px] leading-relaxed rounded-lg px-3 py-2"
+                style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.35)', color: 'var(--color-text-secondary)' }}
+              >
+                ⚠️ Mengubah jenis target akan mengosongkan kolom target/realisasi dari jenis sebelumnya.
+              </p>
+            )}
+          </Field>
+
           {/* Target (read-only untuk admin OPD) */}
           {isKuantitatif ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

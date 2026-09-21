@@ -87,7 +87,7 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
               boxShadow: '0 1px 2px rgb(0 0 0 / 0.08)',
             }}
           >
-            Dashboard
+            Admin
           </a>
           {/* Hamburger (mobile) */}
           <button

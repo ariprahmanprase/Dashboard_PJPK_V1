@@ -33,7 +33,7 @@ class AdminIndikatorController extends Controller
             'target_max'     => ['nullable', 'numeric'],
             'capaian'        => ['nullable', 'numeric'],
             // arah target — wajib salah satu nilai yang dikenali
-            'arah_target'    => ['nullable', Rule::in(['Higher Better', 'Lower Better', 'Maintain / Stable', 'Proportional', 'In Between'])],
+            'arah_target'    => ['nullable', Rule::in(['Higher Better', 'Lower Better', 'Maintain / Stable', 'Proportional', 'Range'])],
         ]);
 
         $indikator->update(collect($validated)->except(['tahun', 'target', 'target_max', 'capaian', 'opd_ids'])->toArray());

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Loader2, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
 import CaptchaBox, { makeCaptchaQuestion } from '@/components/admin/CaptchaBox';
 import { login } from '@/services/admin';
 
@@ -10,6 +10,7 @@ interface Props {
 export default function AdminLoginPage({ onSuccess }: Props) {
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -158,21 +159,33 @@ export default function AdminLoginPage({ onSuccess }: Props) {
                 <label htmlFor="password" className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.92)' }}>
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="rounded-lg px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-white/40"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.12)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    color: '#ffffff',
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg pl-4 pr-11 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-white/40"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      color: '#ffffff',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 transition-opacity hover:opacity-100"
+                    style={{ color: 'rgba(255,255,255,0.65)', opacity: 0.85, background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
               </div>
 
               <CaptchaBox

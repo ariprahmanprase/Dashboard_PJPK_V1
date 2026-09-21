@@ -135,7 +135,7 @@ export default function DataTable({ data, loading, onRowClick }: Props) {
                 }}
               >
                 {row.target != null
-                  ? row.arah_target === 'In Between' && row.target_max != null
+                  ? row.arah_target === 'Range' && row.target_max != null
                     ? `${row.target.toLocaleString('id-ID')} – ${row.target_max.toLocaleString('id-ID')}`
                     : row.target.toLocaleString('id-ID')
                   : '-'}

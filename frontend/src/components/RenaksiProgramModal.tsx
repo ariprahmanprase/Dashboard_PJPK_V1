@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { X, CheckCircle2, XCircle, Clock, ExternalLink } from 'lucide-react';
+import { X, CheckCircle2, XCircle, Clock, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import type { RenaksiProgramRow } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 
@@ -11,9 +11,14 @@ interface Props {
   extra?: React.ReactNode;
   /** z-index overlay (default 50) — naikkan bila modal dibuka di atas modal lain */
   zIndex?: number;
+  /** Mode admin: tombol Edit/Hapus di header modal. Tidak dirender bila tidak diisi (dashboard publik). */
+  actions?: {
+    onEdit: (row: RenaksiProgramRow) => void;
+    onDelete?: (row: RenaksiProgramRow) => void;
+  };
 }
 
-export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex = 50 }: Props) {
+export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex = 50, actions }: Props) {
   if (!open || !data) return null;
 
   const st = renaksiStatusStyle(data.status);
@@ -75,13 +80,37 @@ export default function RenaksiProgramModal({ open, onClose, data, extra, zIndex
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            style={{ color: 'hsl(var(--ds-muted-foreground))' }}
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {actions && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => actions.onEdit(data)}
+                  className="flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                  style={{ borderColor: 'hsl(var(--ds-border))', color: 'hsl(var(--ds-foreground))', padding: '0.45rem 0.75rem' }}
+                >
+                  <Pencil size={13} /> Edit
+                </button>
+                {actions.onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => actions.onDelete!(data)}
+                    className="flex items-center gap-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
+                    style={{ borderColor: '#fca5a5', color: '#dc2626', padding: '0.45rem 0.75rem' }}
+                  >
+                    <Trash2 size={13} /> Hapus
+                  </button>
+                )}
+              </>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+              style={{ color: 'hsl(var(--ds-muted-foreground))' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}

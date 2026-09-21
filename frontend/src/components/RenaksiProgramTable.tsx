@@ -208,12 +208,16 @@ export default function RenaksiProgramTable({ data, loading, onRowClick, actions
         </div>
       </div>
 
-      {/* Popup Modal */}
+      {/* Popup Modal — tombol Edit/Hapus di header hanya saat mode admin (actions ada) */}
       <RenaksiProgramModal
         open={selectedRow !== null}
         onClose={closeModal}
         data={selectedRow}
         extra={renderModalExtra && selectedRow ? renderModalExtra(selectedRow, setSelectedRow) : undefined}
+        actions={actions ? {
+          onEdit: (row) => { actions.onEdit(row); closeModal(); },
+          ...(actions.onDelete ? { onDelete: (row: RenaksiProgramRow) => { actions.onDelete!(row); closeModal(); } } : {}),
+        } : undefined}
       />
     </>
   );

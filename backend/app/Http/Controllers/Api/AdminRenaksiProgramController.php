@@ -360,8 +360,12 @@ class AdminRenaksiProgramController extends Controller
             'status'      => ['nullable', Rule::in(self::STATUSES)],
         ];
 
-        // Field realisasi mengikuti jenis_target yang sudah ditetapkan
-        if ($renaksiProgram->jenis_target === 'kuantitatif') {
+        // Super admin & admin OPD boleh mengubah jenis target saat edit.
+        // Field target/realisasi divalidasi mengikuti jenis target BARU (bila dikirim).
+        $rules['jenis_target'] = ['nullable', Rule::in(['kuantitatif', 'kualitatif'])];
+        $jenisBaru = $request->input('jenis_target', $renaksiProgram->jenis_target);
+
+        if ($jenisBaru === 'kuantitatif') {
             $rules['realisasi_nilai'] = ['nullable', 'numeric', 'min:0'];
         } else {
             $rules['realisasi'] = ['nullable', 'string'];
@@ -369,7 +373,7 @@ class AdminRenaksiProgramController extends Controller
 
         // Super admin boleh mengubah target juga
         if ($user->isSuperAdmin()) {
-            if ($renaksiProgram->jenis_target === 'kuantitatif') {
+            if ($jenisBaru === 'kuantitatif') {
                 $rules['target_nilai'] = ['nullable', 'numeric', 'min:0'];
                 $rules['target_satuan'] = ['nullable', 'string', 'max:50'];
             } else {
@@ -380,13 +384,31 @@ class AdminRenaksiProgramController extends Controller
         $validated = $request->validate($rules);
         unset($validated['status']); // status tidak pernah diubah manual lewat jalur ini
 
+        // Bila jenis target berubah, bersihkan field yang tidak relevan agar
+        // sisa data jenis lama tidak tercampur (mis. target angka tertinggal
+        // saat beralih ke kualitatif).
+        if (isset($validated['jenis_target']) && $validated['jenis_target'] !== $renaksiProgram->jenis_target) {
+            if ($validated['jenis_target'] === 'kuantitatif') {
+                $validated['target'] = null;
+                $validated['realisasi'] = null;
+            } else {
+                $validated['target_nilai'] = null;
+                $validated['target_satuan'] = null;
+                $validated['realisasi_nilai'] = null;
+            }
+        }
+
         $renaksiProgram->update($validated);
 
-        // Status kuantitatif selalu dihitung ulang dari target vs realisasi terkini
+        // Status kuantitatif selalu dihitung ulang dari target vs realisasi terkini;
+        // renaksi kualitatif kembali 'Belum diisi' saat jenisnya baru diubah
+        // (menunggu penilaian admin analis).
         if ($renaksiProgram->jenis_target === 'kuantitatif') {
             $renaksiProgram->update([
                 'status' => $this->calcStatus('kuantitatif', $renaksiProgram->target_nilai, $renaksiProgram->realisasi_nilai),
             ]);
+        } elseif (isset($validated['jenis_target'])) {
+            $renaksiProgram->update(['status' => 'Belum diisi']);
         }
 
         // Tautan indikator (1-4) boleh diubah super admin & admin OPD (pemilik renaksi)
@@ -399,6 +421,10 @@ class AdminRenaksiProgramController extends Controller
             'data' => [
                 'id'              => $renaksiProgram->id,
                 'status'          => $renaksiProgram->status,
+                'jenis_target'    => $renaksiProgram->jenis_target,
+                'target'          => $renaksiProgram->target,
+                'target_nilai'    => $renaksiProgram->target_nilai,
+                'target_satuan'   => $renaksiProgram->target_satuan,
                 'realisasi'       => $renaksiProgram->realisasi,
                 'realisasi_nilai' => $renaksiProgram->realisasi_nilai,
                 'kendala'         => $renaksiProgram->kendala,
