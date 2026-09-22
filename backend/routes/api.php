@@ -22,8 +22,8 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FilterController;
 use Illuminate\Support\Facades\Route;
 
-// Auth (area /admin)
-Route::post('/auth/login', [AuthController::class, 'login']);
+// Auth (area /admin) — throttle: maks 5 percobaan login per menit per IP
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);

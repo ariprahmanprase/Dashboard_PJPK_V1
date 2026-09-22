@@ -101,10 +101,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
-export async function login(login: string, password: string): Promise<AdminUser> {
+export async function login(login: string, password: string, turnstileToken: string | null = null): Promise<AdminUser> {
   const data = await request<{ token: string; user: AdminUser }>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ login, password }),
+    body: JSON.stringify({ login, password, turnstile_token: turnstileToken }),
   });
   storeSession(data.token, data.user);
   return data.user;

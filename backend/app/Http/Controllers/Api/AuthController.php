@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -16,7 +17,13 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'login' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'turnstile_token' => ['nullable', 'string'],
         ]);
+
+        // Verifikasi Cloudflare Turnstile SEBELUM cek password (aktif bila secret key diisi)
+        if (config('services.turnstile.secret_key')) {
+            $this->verifyTurnstile($credentials['turnstile_token'] ?? '', $request->ip());
+        }
 
         // Satu kolom: bisa username maupun email
         $login = trim($credentials['login']);
@@ -123,6 +130,40 @@ class AuthController extends Controller
             'message' => 'Foto profil berhasil diperbarui.',
             'user' => $this->userPayload($user->load('opd')),
         ]);
+    }
+
+    /**
+     * Verifikasi token Turnstile ke Cloudflare siteverify.
+     * Token bersifat sekali pakai dan kedaluwarsa ±5 menit.
+     */
+    private function verifyTurnstile(string $token, ?string $ip): void
+    {
+        if ($token === '') {
+            throw ValidationException::withMessages([
+                'login' => ['Verifikasi keamanan belum selesai, muat ulang halaman dan coba lagi.'],
+            ]);
+        }
+
+        $ok = false;
+        try {
+            $resp = Http::asForm()->timeout(10)->post(
+                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                array_filter([
+                    'secret' => config('services.turnstile.secret_key'),
+                    'response' => $token,
+                    'remoteip' => $ip,
+                ])
+            );
+            $ok = $resp->ok() && ($resp->json('success') === true);
+        } catch (\Throwable) {
+            $ok = false;
+        }
+
+        if (!$ok) {
+            throw ValidationException::withMessages([
+                'login' => ['Verifikasi keamanan gagal, silakan coba lagi.'],
+            ]);
+        }
     }
 
     private function userPayload(User $user): array

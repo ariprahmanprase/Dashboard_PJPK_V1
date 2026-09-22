@@ -46,4 +46,8 @@ return [
         'model' => env('SUMOPOD_MODEL', 'gpt-4o-mini'),
     ],
 
+    'turnstile' => [
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];

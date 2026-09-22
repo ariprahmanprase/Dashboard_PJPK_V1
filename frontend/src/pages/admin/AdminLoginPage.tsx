@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
-import CaptchaBox, { makeCaptchaQuestion } from '@/components/admin/CaptchaBox';
+import TurnstileBox, { TURNSTILE_SITE_KEY } from '@/components/admin/TurnstileBox';
 import { login } from '@/services/admin';
 
 interface Props {
@@ -14,37 +14,32 @@ export default function AdminLoginPage({ onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Captcha "Saya bukan robot"
-  const [captcha, setCaptcha] = useState(makeCaptchaQuestion);
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  // Cloudflare Turnstile — token sekali pakai, null = belum/expire/gagal
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const turnstileEnabled = TURNSTILE_SITE_KEY !== '';
 
-  const resetCaptcha = () => {
-    setCaptcha(makeCaptchaQuestion());
-    setCaptchaAnswer('');
+  const resetTurnstile = () => {
+    setTurnstileToken(null);
+    setTurnstileReset((n) => n + 1);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validasi captcha dulu
-    if (captchaAnswer.trim() === '') {
-      setError('Silakan jawab verifikasi "Saya bukan robot" dulu.');
-      return;
-    }
-    if (Number(captchaAnswer) !== captcha.a + captcha.b) {
-      setError('Jawaban verifikasi salah, coba lagi.');
-      resetCaptcha();
+    if (turnstileEnabled && !turnstileToken) {
+      setError('Mohon tunggu verifikasi keamanan selesai.');
       return;
     }
 
     setLoading(true);
     try {
-      await login(loginInput.trim(), password);
+      await login(loginInput.trim(), password, turnstileToken);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal masuk, coba lagi.');
-      resetCaptcha();
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -188,13 +183,9 @@ export default function AdminLoginPage({ onSuccess }: Props) {
                 </div>
               </div>
 
-              <CaptchaBox
-                glass
-                question={captcha}
-                answer={captchaAnswer}
-                onAnswer={setCaptchaAnswer}
-                onRefresh={resetCaptcha}
-              />
+              {turnstileEnabled && (
+                <TurnstileBox onToken={setTurnstileToken} resetSignal={turnstileReset} />
+              )}
 
               {error && (
                 <p
