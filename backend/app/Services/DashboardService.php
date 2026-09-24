@@ -11,6 +11,39 @@ use Illuminate\Database\Eloquent\Builder;
 class DashboardService
 {
     /**
+     * OPD yang terkait dengan satu indikator = GABUNGAN OPD pengampu
+     * (mandat dari pivot indikator_opd) + OPD yang renaksinya tertaut ke
+     * indikator itu pada tahun berjalan (kontribusi nyata). Unik per id.
+     *
+     * @return \Illuminate\Support\Collection<int, array{id:int, nama:string, singkatan:?string}>
+     */
+    private function opdTerkaitIndikator(Indikator $indikator, string $tahun, $opdDariRenaksi)
+    {
+        return collect($indikator->opds->map(fn($o) => ['id' => $o->id, 'nama' => $o->nama_opd, 'singkatan' => $o->singkatan]))
+            ->merge(($opdDariRenaksi->get($indikator->id) ?? collect())->map(fn($r) => ['id' => $r->opd_id, 'nama' => $r->nama_opd, 'singkatan' => $r->singkatan]))
+            ->unique('id')
+            ->sortBy('nama')
+            ->values();
+    }
+
+    /**
+     * Ambil peta indikator_id → daftar OPD yang renaksinya tertaut pada tahun tsb.
+     * Dipakai bersama oleh tabel, scorecard, dan chart per-OPD agar konsisten.
+     */
+    private function petaOpdDariRenaksi(string $tahun)
+    {
+        return \Illuminate\Support\Facades\DB::table('indikator_renaksi_program as irp')
+            ->join('renaksi_programs as rp', 'rp.id', '=', 'irp.renaksi_program_id')
+            ->join('opds', 'opds.id', '=', 'rp.opd_id')
+            ->where('rp.tahun', $tahun)
+            ->whereNotNull('rp.opd_id')
+            ->select('irp.indikator_id', 'opds.id as opd_id', 'opds.nama_opd', 'opds.singkatan')
+            ->distinct()
+            ->get()
+            ->groupBy('indikator_id');
+    }
+
+    /**
      * Parse filter opd_id — mendukung multi-id dipisah koma ("105,116,117")
      * agar filter per dinas induk mencakup semua bidangnya. Selalu array.
      */
@@ -143,7 +176,15 @@ class DashboardService
         $opdQuery = $this->applyFiltersToOpd($filters);
 
         $totalIndikator = $indikatorQuery->count();
-        $totalOpd = $opdQuery->distinct('opds.id')->count();
+
+        // Total OPD = gabungan OPD pengampu (indikator_opd) + OPD yang renaksinya
+        // tertaut pada tahun berjalan — selaras dengan tabel & chart per-OPD.
+        $opdPengampu = (clone $opdQuery)->distinct()->pluck('opds.id');
+        $opdRenaksi = $this->petaOpdDariRenaksi($tahun)
+            ->flatten(1)
+            ->pluck('opd_id')
+            ->unique();
+        $totalOpd = $opdPengampu->merge($opdRenaksi)->unique()->count();
 
         // Fetch all target_capaians & compute status dinamis
         $arahMap = (clone $indikatorQuery)->pluck('arah_target', 'id');
@@ -198,7 +239,10 @@ class DashboardService
 
         $results = $indikatorQuery->orderBy('kode')->get();
 
-        return $results->map(function ($indikator) use ($tahun) {
+        // Peta OPD dari renaksi tertaut (dipakai bersama helper opdTerkaitIndikator)
+        $opdDariRenaksi = $this->petaOpdDariRenaksi($tahun);
+
+        return $results->map(function ($indikator) use ($tahun, $opdDariRenaksi) {
             $tc = $indikator->targetCapaians()
                 ->when($tahun, fn($q) => $q->where('tahun', $tahun))
                 ->orderBy('tahun', 'desc')
@@ -209,15 +253,18 @@ class DashboardService
             $status = $this->calcStatusTL($target, $capaian, $indikator->arah_target, $tc->target_max ?? null);
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
+            // Gabung OPD pengampu (mandat) + OPD dari renaksi tertaut (kontribusi)
+            $gabung = $this->opdTerkaitIndikator($indikator, $tahun, $opdDariRenaksi);
+
             return [
                 'id'              => $indikator->id,
                 'kode'            => $indikator->kode,
                 'nama_indikator'  => $indikator->nama_indikator,
                 'arah_target'     => $indikator->arah_target,
-                'nama_opd'        => $indikator->nama_opd,           // accessor: join dari pivot
-                'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
+                'nama_opd'        => $gabung->pluck('nama')->join(', ') ?: '-',
+                'opd_list'        => $gabung->pluck('nama')->toArray(),
                 'pilar_id'        => $indikator->pilar_id,
-                'opd_ids'         => $indikator->opds->pluck('id')->toArray(),
+                'opd_ids'         => $gabung->pluck('id')->toArray(),
                 'nama_pilar'      => $indikator->pilar->nama_pilar ?? '-',
                 'status_tl'       => $status['status_tl'],
                 'warna_tl'        => $status['warna_tl'],
@@ -371,14 +418,16 @@ class DashboardService
             ->keyBy('indikator_id');
 
         $grouped = [];
+        $opdDariRenaksi = $this->petaOpdDariRenaksi($tahun);
         foreach ($indikators as $ind) {
             $tc = $tcs->get($ind->id);
             $s = $this->calcStatusTL($tc->target ?? null, $tc->capaian ?? null, $ind->arah_target, $tc->target_max ?? null);
 
-            foreach ($ind->opds as $opd) {
-                $opdName = $opd->nama_opd;
+            // Gabung OPD pengampu + OPD dari renaksi tertaut (kontribusi)
+            foreach ($this->opdTerkaitIndikator($ind, $tahun, $opdDariRenaksi) as $opd) {
+                $opdName = $opd['nama'];
                 if (!isset($grouped[$opdName])) {
-                    $grouped[$opdName] = ['opd' => $opdName, 'singkatan' => $opd->singkatan, 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
+                    $grouped[$opdName] = ['opd' => $opdName, 'singkatan' => $opd['singkatan'], 'on_track' => 0, 'warning' => 0, 'alert' => 0, 'belum_diisi' => 0];
                 }
                 $key = match ($s['status_tl']) {
                     'On Track' => 'on_track',
