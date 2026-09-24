@@ -11,6 +11,7 @@ import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import MiniMarkdown from '@/lib/miniMarkdown';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import IndikatorSearchMultiSelect from '@/components/admin/IndikatorSearchMultiSelect';
+import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
 import {
   createRenaksi,
   deleteAiRecommendation,
@@ -252,6 +253,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [satuanOptions, setSatuanOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [tahun, setTahun] = useState('2025');
   const [pilarId, setPilarId] = useState('');
   const [pilarOptions, setPilarOptions] = useState<{ id: number; nama_pilar: string }[]>([]);
@@ -525,6 +527,25 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </p>
         )}
 
+        {/* Pemberitahuan pasca-simpan — data yang baru dibuat/diedit sedang ditampilkan */}
+        {notice && (
+          <div
+            className="flex items-center justify-between gap-4 text-sm rounded-xl px-5 py-4"
+            style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#15803d' }}
+          >
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={15} /> {notice}
+            </span>
+            <button
+              onClick={() => { setNotice(null); setSearch(''); }}
+              className="flex items-center gap-1 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors shrink-0"
+              style={{ border: '1px solid rgba(34,197,94,0.4)', color: '#15803d' }}
+            >
+              <X size={12} /> Tampilkan semua
+            </button>
+          </div>
+        )}
+
         {/* Stacked bar persentase status (mengikuti filter aktif) — klik segmen = popup daftar */}
         <RenaksiStatusBar
           data={statusSummary}
@@ -579,8 +600,13 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           satuanOptions={satuanOptions}
           onClose={() => setEditing(null)}
           onSaved={() => {
+            const namaData = editing.rencana_aksi;
             setEditing(null);
             load();
+            // Setelah edit: tampilkan kembali data yang barusan disimpan
+            // (filter pencarian diisi potongan teksnya agar barisnya langsung terlihat)
+            setSearch(namaData.slice(0, 60));
+            setNotice('Perubahan tersimpan — menampilkan data yang baru saja diedit.');
           }}
         />
       )}
@@ -593,9 +619,12 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           satuanOptions={satuanOptions}
           opdOptions={opdOptions}
           onClose={() => setCreating(false)}
-          onSaved={() => {
+          onSaved={(rencanaAksi) => {
             setCreating(false);
-            load();
+            // Pastikan filter tahun sesuai data baru, lalu arahkan pencarian
+            // ke data yang barusan dibuat agar langsung terlihat tanpa scroll
+            setSearch(rencanaAksi.slice(0, 60));
+            setNotice('Renaksi baru tersimpan — menampilkan data yang baru saja ditambahkan.');
           }}
         />
       )}
@@ -673,6 +702,30 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  // Form dianggap kotor bila ada isian yang berubah dari nilai awal
+  const isDirty =
+    jenisTarget !== item.jenis_target ||
+    status !== item.status ||
+    realisasiNilai !== (item.realisasi_nilai ?? '') ||
+    realisasiTeks !== (item.realisasi ?? '') ||
+    targetNilai !== (item.target_nilai ?? '') ||
+    satuanChoice !== (item.target_satuan && !satuanOptions.includes(item.target_satuan) ? SATUAN_CUSTOM : (item.target_satuan ?? '')) ||
+    satuanCustom !== (item.target_satuan && !satuanOptions.includes(item.target_satuan) ? item.target_satuan : '') ||
+    targetTeks !== (item.target ?? '') ||
+    kendala !== (item.kendala ?? '') ||
+    catatan !== (item.catatan ?? '') ||
+    dokumentasi !== (item.dokumentasi ?? '') ||
+    JSON.stringify(indikatorIds) !==
+      JSON.stringify([item.indikator_ids?.[0] ?? '', item.indikator_ids?.[1] ?? '', item.indikator_ids?.[2] ?? '', item.indikator_ids?.[3] ?? '']);
+
+  // Tutup modal: form kotor → minta konfirmasi dulu
+  const requestClose = () => {
+    if (saving) return;
+    if (isDirty) setConfirmClose(true);
+    else onClose();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -732,7 +785,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-8"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl border max-h-[92vh] flex flex-col"
@@ -753,7 +806,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="p-2 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
             aria-label="Tutup"
@@ -961,7 +1014,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-3 pb-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -979,6 +1032,13 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
           </div>
         </form>
       </div>
+
+      {confirmClose && (
+        <ConfirmCloseModal
+          onLanjutkan={() => setConfirmClose(false)}
+          onKeluar={onClose}
+        />
+      )}
     </div>
   );
 }
@@ -991,13 +1051,15 @@ interface CreateModalProps {
   satuanOptions: string[];
   opdOptions: OpdOption[];
   onClose: () => void;
-  onSaved: () => void;
+  /** Dipanggil setelah simpan sukses — membawa teks rencana aksi yang baru dibuat */
+  onSaved: (rencanaAksi: string) => void;
 }
 
 function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptions, opdOptions, onClose, onSaved }: CreateModalProps) {
   const [tahun, setTahun] = useState(defaultTahun);
   // Admin OPD: dinas otomatis terkunci ke dinasnya (backend juga memaksakan)
-  const [opdId, setOpdId] = useState<number | ''>(isSuperAdmin ? '' : (opdOptions[0]?.id ?? ''));
+  const opdAwal: number | '' = isSuperAdmin ? '' : (opdOptions[0]?.id ?? '');
+  const [opdId, setOpdId] = useState<number | ''>(opdAwal);
   const [kodeProgram, setKodeProgram] = useState('');
   const [program, setProgram] = useState('');
   const [rencanaAksi, setRencanaAksi] = useState('');
@@ -1014,6 +1076,33 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
   const [indikatorIds, setIndikatorIds] = useState<(number | '')[]>(['', '', '', '']);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  // Form dianggap kotor bila ada isian (selain default) yang sudah diisi
+  const isDirty =
+    tahun !== defaultTahun ||
+    opdId !== opdAwal ||
+    kodeProgram !== '' ||
+    program !== '' ||
+    rencanaAksi !== '' ||
+    jenisTarget !== 'kuantitatif' ||
+    targetNilai !== '' ||
+    satuanChoice !== '' ||
+    satuanCustom !== '' ||
+    targetTeks !== '' ||
+    realisasiNilai !== '' ||
+    realisasiTeks !== '' ||
+    kendala !== '' ||
+    catatan !== '' ||
+    dokumentasi !== '' ||
+    indikatorIds.some((v) => v !== '');
+
+  // Tutup modal: form kotor → minta konfirmasi dulu
+  const requestClose = () => {
+    if (saving) return;
+    if (isDirty) setConfirmClose(true);
+    else onClose();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -1048,7 +1137,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
 
     try {
       await createRenaksi(payload);
-      onSaved();
+      onSaved(rencanaAksi.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan.');
       setSaving(false);
@@ -1092,7 +1181,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-8"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl border max-h-[92vh] flex flex-col"
@@ -1113,7 +1202,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="p-2 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
             aria-label="Tutup"
@@ -1347,7 +1436,7 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-3 pb-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -1365,6 +1454,13 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
           </div>
         </form>
       </div>
+
+      {confirmClose && (
+        <ConfirmCloseModal
+          onLanjutkan={() => setConfirmClose(false)}
+          onKeluar={onClose}
+        />
+      )}
     </div>
   );
 }

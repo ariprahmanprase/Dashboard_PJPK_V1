@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { X, Upload, FileSpreadsheet, Loader2, CheckCircle2, XCircle, Download } from 'lucide-react';
+import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
 import {
   downloadImportTemplate,
   previewImportRenaksi,
@@ -25,6 +26,7 @@ export default function ImportRenaksiModal({ open, onClose, onImported }: Props)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedCount, setSavedCount] = useState(0);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   if (!open) return null;
 
@@ -39,9 +41,17 @@ export default function ImportRenaksiModal({ open, onClose, onImported }: Props)
     if (fileInput.current) fileInput.current.value = '';
   };
 
-  const handleClose = () => {
+  const doClose = () => {
     reset();
     onClose();
+  };
+
+  // Tutup modal: langkah preview (file sudah terbaca, belum disimpan) →
+  // minta konfirmasi dulu; langkah pilih/tersimpan langsung tutup.
+  const handleClose = () => {
+    if (loading) return;
+    if (step === 'preview') setConfirmClose(true);
+    else doClose();
   };
 
   const handleDownloadTemplate = async () => {
@@ -318,6 +328,14 @@ export default function ImportRenaksiModal({ open, onClose, onImported }: Props)
           )}
         </div>
       </div>
+
+      {confirmClose && (
+        <ConfirmCloseModal
+          message="Hasil preview file yang belum disimpan akan hilang."
+          onLanjutkan={() => setConfirmClose(false)}
+          onKeluar={doClose}
+        />
+      )}
     </div>
   );
 }

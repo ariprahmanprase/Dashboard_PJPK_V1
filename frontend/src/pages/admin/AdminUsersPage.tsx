@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Loader2, Pencil, Plus, Search, Trash2, UserCheck, Users, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
+import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
 import {
   createUser,
   deleteUser,
@@ -411,6 +412,25 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [bidangBaru, setBidangBaru] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  // Form dianggap kotor bila ada isian yang berubah dari nilai awal
+  const isDirty =
+    name !== (item?.name ?? '') ||
+    username !== (item?.username ?? '') ||
+    email !== (item?.email ?? '') ||
+    password !== '' ||
+    jabatan !== (item?.jabatan ?? '') ||
+    role !== (item?.role ?? 'admin_opd') ||
+    opdId !== (item?.opd_id ? String(item.opd_id) : '') ||
+    bidangBaru !== '';
+
+  // Tutup modal: form kotor → minta konfirmasi dulu
+  const requestClose = () => {
+    if (saving) return;
+    if (isDirty) setConfirmClose(true);
+    else onClose();
+  };
 
   const inputClass =
     'rounded-lg border px-4 py-3 text-sm w-full outline-none transition-shadow focus:ring-2 focus:ring-blue-200 disabled:opacity-60 disabled:cursor-not-allowed';
@@ -489,7 +509,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-8"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl border max-h-[92vh] flex flex-col"
@@ -511,7 +531,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="p-2 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
             aria-label="Tutup"
@@ -640,7 +660,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-3 pb-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -658,6 +678,13 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
           </div>
         </form>
       </div>
+
+      {confirmClose && (
+        <ConfirmCloseModal
+          onLanjutkan={() => setConfirmClose(false)}
+          onKeluar={onClose}
+        />
+      )}
     </div>
   );
 }

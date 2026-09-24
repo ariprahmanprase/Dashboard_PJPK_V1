@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Loader2, FileX, Pencil, Trash2, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
+import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
 import FilterBar from '@/components/FilterBar';
 import StatusBadge from '@/components/StatusBadge';
 import IndikatorDetailModal from '@/components/IndikatorDetailModal';
@@ -307,6 +308,30 @@ function EditIndikatorModal({
   const isRange = arahTarget === 'Range';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  // Form dianggap kotor bila ada isian yang berubah dari nilai awal
+  const isDirty =
+    nama !== row.nama_indikator ||
+    pilarId !== (row.pilar_id ? String(row.pilar_id) : '') ||
+    opdIds.length !== (row.opd_ids ?? []).length ||
+    opdIds.some((id) => !(row.opd_ids ?? []).includes(id)) ||
+    sumberData !== (row.sumber_data ?? '') ||
+    baseline !== (row.baseline_2024 != null ? String(row.baseline_2024) : '') ||
+    dokrenda !== (row.dokrenda ?? '') ||
+    kendala !== (row.kendala ?? '') ||
+    inovasi !== (row.inovasi ?? '') ||
+    target !== (row.target != null ? String(row.target) : '') ||
+    targetMax !== (row.target_max != null ? String(row.target_max) : '') ||
+    capaian !== (row.capaian != null ? String(row.capaian) : '') ||
+    arahTarget !== (row.arah_target ?? 'Higher Better');
+
+  // Tutup modal: form kotor → minta konfirmasi dulu
+  const requestClose = () => {
+    if (saving) return;
+    if (isDirty) setConfirmClose(true);
+    else onClose();
+  };
 
   const inputClass =
     'rounded-lg border px-4 py-3 text-sm w-full outline-none transition-shadow focus:ring-2 focus:ring-blue-200';
@@ -350,7 +375,7 @@ function EditIndikatorModal({
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-8"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl border max-h-[92vh] flex flex-col"
@@ -368,7 +393,7 @@ function EditIndikatorModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="p-2 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             style={{ color: 'var(--color-text-secondary)' }}
             aria-label="Tutup"
@@ -497,7 +522,7 @@ function EditIndikatorModal({
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-3 pb-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="rounded-lg border px-5 py-3 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -515,6 +540,13 @@ function EditIndikatorModal({
           </div>
         </form>
       </div>
+
+      {confirmClose && (
+        <ConfirmCloseModal
+          onLanjutkan={() => setConfirmClose(false)}
+          onKeluar={onClose}
+        />
+      )}
     </div>
   );
 }
