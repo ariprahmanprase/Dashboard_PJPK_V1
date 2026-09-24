@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import type { AdminUser } from '@/services/admin';
+import { getImpersonator, stopImpersonating } from '@/services/admin';
 
 export type AdminPageName = 'report' | 'renaksi' | 'users' | 'opds' | 'profile' | 'analisis-indikator' | 'portofolio-opd' | 'root-cause' | 'efektivitas' | 'corrective-action' | 'red-alert' | 'data-gap' | 'psri' | 'cross-opd' | 'executive-brief' | 'cross-pillar' | 'innovation';
 
@@ -171,6 +172,8 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
         className="min-h-screen transition-all duration-300 ease-in-out"
         style={{ marginLeft: isDesktop ? sidebarW : 0 }}
       >
+        {/* Banner switch account — hanya tampil saat super admin sedang impersonate */}
+        <ImpersonateBanner currentUser={user} />
         <AdminHeader
           title={title}
           subtitle={subtitle}
@@ -179,6 +182,44 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
         />
         <main className="p-4 lg:p-6">{children}</main>
       </div>
+    </div>
+  );
+}
+
+/* ── Banner "Anda sedang melihat sebagai …" saat impersonate ── */
+function ImpersonateBanner({ currentUser }: { currentUser: AdminUser }) {
+  const impersonator = getImpersonator();
+  if (!impersonator) return null;
+
+  const handleKembali = () => {
+    const kembali = stopImpersonating();
+    if (kembali) window.location.href = '/admin';
+  };
+
+  return (
+    <div
+      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-center text-xs sm:text-sm font-medium"
+      style={{
+        backgroundColor: '#facc15',
+        color: '#713f12',
+        borderBottom: '1px solid #eab308',
+      }}
+      role="alert"
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <UserRound size={15} className="shrink-0" />
+        <span className="truncate">
+          Anda sedang melihat sebagai <strong>{currentUser.name}</strong>
+          {currentUser.opd_nama ? ` (${currentUser.opd_nama})` : ''}.
+        </span>
+      </span>
+      <button
+        onClick={handleKembali}
+        className="rounded-lg px-3 py-1 text-xs font-bold transition-opacity hover:opacity-80 shrink-0"
+        style={{ backgroundColor: '#713f12', color: '#fef9c3' }}
+      >
+        Kembali ke akun saya
+      </button>
     </div>
   );
 }

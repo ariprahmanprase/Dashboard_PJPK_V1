@@ -117,8 +117,7 @@ PROMPT;
             . " — {$opd}, tahun {$renaksi->tahun}";
 
         // ── Masalah yang ditangani: indikator tertaut + statusnya ──────────
-        $indikatorIds = collect([$renaksi->indikator_1_id, $renaksi->indikator_2_id, $renaksi->indikator_3_id, $renaksi->indikator_4_id])
-            ->filter()->unique()->values();
+        $indikatorIds = $renaksi->indikators()->pluck('indikators.id');
 
         $masalah = 'Belum tertaut ke indikator mana pun';
         if ($indikatorIds->isNotEmpty()) {

@@ -28,7 +28,7 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Indikator tidak ditemukan'], 404);
         }
 
-        $query = $indikator->renaksis()
+        $query = $indikator->renaksiPrograms()
             ->with('opd');
 
         // Filter by tahun if provided
@@ -37,14 +37,14 @@ class DashboardController extends Controller
         }
 
         $renaksis = $query->orderBy('tahun', 'desc')
-            ->orderBy('id')
+            ->orderBy('no')
             ->get()
             ->map(fn($r, $i) => [
                 'no' => $i + 1,
-                'rencana_aksi' => $r->nama_kegiatan,
+                'rencana_aksi' => $r->rencana_aksi,
                 'tahun' => $r->tahun,
                 'status' => $r->status,
-                'catatan' => $r->keterangan,
+                'catatan' => $r->catatan,
                 'opd' => $r->opd->nama_opd ?? '-',
             ]);
 

@@ -27,7 +27,7 @@ class AdminRenaksiProgramController extends Controller
         $query = RenaksiProgram::with([
             'opd',
             'creator',
-            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+            'indikators.pilar',
         ])->orderBy('no');
 
         if ($user->isAdminOpd()) {
@@ -41,22 +41,11 @@ class AdminRenaksiProgramController extends Controller
         }
         if ($request->filled('indikator_id')) {
             $indikatorId = $request->integer('indikator_id');
-            $query->where(function ($q) use ($indikatorId) {
-                $q->where('indikator_1_id', $indikatorId)
-                  ->orWhere('indikator_2_id', $indikatorId)
-                  ->orWhere('indikator_3_id', $indikatorId)
-                  ->orWhere('indikator_4_id', $indikatorId);
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikatorId));
         }
         if ($request->filled('pilar_id')) {
             $pilarId = $request->integer('pilar_id');
-            $query->where(function ($q) use ($pilarId) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
-                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
-                    });
-                }
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.pilar_id', $pilarId));
         }
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -110,7 +99,7 @@ class AdminRenaksiProgramController extends Controller
 
         $query = RenaksiProgram::with([
             'opd',
-            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+            'indikators.pilar',
         ])->orderBy('no');
 
         if ($user->isAdminOpd()) {
@@ -126,22 +115,11 @@ class AdminRenaksiProgramController extends Controller
         }
         if ($request->filled('indikator_id')) {
             $indikatorId = $request->integer('indikator_id');
-            $query->where(function ($q) use ($indikatorId) {
-                $q->where('indikator_1_id', $indikatorId)
-                  ->orWhere('indikator_2_id', $indikatorId)
-                  ->orWhere('indikator_3_id', $indikatorId)
-                  ->orWhere('indikator_4_id', $indikatorId);
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikatorId));
         }
         if ($request->filled('pilar_id')) {
             $pilarId = $request->integer('pilar_id');
-            $query->where(function ($q) use ($pilarId) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
-                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
-                    });
-                }
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.pilar_id', $pilarId));
         }
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -254,7 +232,7 @@ class AdminRenaksiProgramController extends Controller
             'kendala'        => ['nullable', 'string'],
             'catatan'        => ['nullable', 'string'],
             'dokumentasi'    => ['nullable', 'string', 'max:2048'],
-            'indikator_ids'  => ['nullable', 'array', 'max:4'],
+            'indikator_ids'  => ['nullable', 'array'],
             'indikator_ids.*' => ['integer', 'exists:indikators,id'],
         ];
 
@@ -288,22 +266,18 @@ class AdminRenaksiProgramController extends Controller
         // Audit: catat user yang menambahkan
         $validated['created_by'] = $user->id;
 
-        // Tautan indikator (maks. 4) — super admin & admin OPD boleh memilih;
-        // bila kurang tepat, super admin yang merevisi kemudian
+        // Tautan indikator (tanpa batas jumlah) — super admin & admin OPD boleh
+        // memilih; bila kurang tepat, super admin yang merevisi kemudian
         $ids = collect($request->input('indikator_ids', []))
             ->filter(fn($v) => is_numeric($v))
             ->map(fn($v) => (int) $v)
             ->filter(fn($v) => \App\Models\Indikator::whereKey($v)->exists())
             ->unique()
-            ->take(4)
             ->values();
-        $validated['indikator_1_id'] = $ids[0] ?? null;
-        $validated['indikator_2_id'] = $ids[1] ?? null;
-        $validated['indikator_3_id'] = $ids[2] ?? null;
-        $validated['indikator_4_id'] = $ids[3] ?? null;
         unset($validated['indikator_ids']);
 
         $renaksi = RenaksiProgram::create($validated);
+        $renaksi->indikators()->sync($ids);
 
         return response()->json([
             'message' => 'Renaksi baru berhasil ditambahkan.',
@@ -536,7 +510,7 @@ class AdminRenaksiProgramController extends Controller
     }
 
     /**
-     * Sinkronkan tautan indikator (maks. 4) dari request indikator_ids.
+     * Sinkronkan tautan indikator (tanpa batas jumlah) dari request indikator_ids.
      */
     private function syncIndikator(Request $request, RenaksiProgram $renaksiProgram, bool $allowed): void
     {
@@ -549,15 +523,9 @@ class AdminRenaksiProgramController extends Controller
             ->map(fn($v) => (int) $v)
             ->filter(fn($v) => \App\Models\Indikator::whereKey($v)->exists())
             ->unique()
-            ->take(4)
             ->values();
 
-        $renaksiProgram->update([
-            'indikator_1_id' => $ids[0] ?? null,
-            'indikator_2_id' => $ids[1] ?? null,
-            'indikator_3_id' => $ids[2] ?? null,
-            'indikator_4_id' => $ids[3] ?? null,
-        ]);
+        $renaksiProgram->indikators()->sync($ids);
     }
 
     // ─────────────────────────────────────────────────────

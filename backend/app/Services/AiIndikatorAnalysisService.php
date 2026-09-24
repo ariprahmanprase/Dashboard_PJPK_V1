@@ -201,15 +201,11 @@ PROMPT;
 
         // ── Kegiatan / rencana aksi terkait tahun ini ──────────────────────
         // Sumber: tabel renaksi_programs (data yang diisi admin OPD, tertaut ke
-        // indikator via indikator_1_id..4_id) — lebih hidup daripada tabel
-        // `renaksi` lama. Diambil per indikator + tahun, lintas OPD.
+        // indikator via pivot indikator_renaksi_program) — lebih hidup daripada
+        // tabel `renaksi` lama. Diambil per indikator + tahun, lintas OPD.
         $renaksiProgram = \App\Models\RenaksiProgram::query()
             ->where('tahun', $tahun)
-            ->where(function ($q) use ($indikator) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhere($col, $indikator->id);
-                }
-            })
+            ->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikator->id))
             ->orderBy('no')
             ->get();
 

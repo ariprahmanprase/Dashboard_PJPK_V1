@@ -210,6 +210,7 @@ class DashboardService
             $gap = ($capaian !== null && $target !== null) ? round($capaian - $target, 6) : null;
 
             return [
+                'id'              => $indikator->id,
                 'kode'            => $indikator->kode,
                 'nama_indikator'  => $indikator->nama_indikator,
                 'arah_target'     => $indikator->arah_target,
@@ -267,22 +268,11 @@ class DashboardService
         }
         if (!empty($filters['pilar_id'])) {
             $pilarId = $filters['pilar_id'];
-            $query->where(function ($q) use ($pilarId) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
-                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
-                    });
-                }
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.pilar_id', $pilarId));
         }
         if (!empty($filters['indikator_id'])) {
             $indikatorId = $filters['indikator_id'];
-            $query->where(function ($q) use ($indikatorId) {
-                $q->where('indikator_1_id', $indikatorId)
-                  ->orWhere('indikator_2_id', $indikatorId)
-                  ->orWhere('indikator_3_id', $indikatorId)
-                  ->orWhere('indikator_4_id', $indikatorId);
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikatorId));
         }
 
         $byStatus = $query
@@ -572,7 +562,7 @@ class DashboardService
     public function getIndikatorDetail(string $kode): ?array
     {
         $indikator = Indikator::where('kode', $kode)
-            ->with(['pilar', 'opds', 'renaksis.opd'])
+            ->with(['pilar', 'opds', 'renaksiPrograms.opd'])
             ->first();
 
         if (!$indikator) return null;
@@ -605,10 +595,7 @@ class DashboardService
         }
 
         // Renaksi program terkait (dari Excel renaksi programs — sumber data aktual)
-        $renaksiPrograms = RenaksiProgram::where('indikator_1_id', $indikator->id)
-            ->orWhere('indikator_2_id', $indikator->id)
-            ->orWhere('indikator_3_id', $indikator->id)
-            ->orWhere('indikator_4_id', $indikator->id)
+        $renaksiPrograms = RenaksiProgram::whereHas('indikators', fn($q) => $q->where('indikators.id', $indikator->id))
             ->orderBy('tahun')
             ->orderBy('no')
             ->get()
@@ -628,12 +615,13 @@ class DashboardService
             ])
             ->toArray();
 
-        // Renaksi terkait
-        $renaksi = $indikator->renaksis->map(fn($r) => [
-            'nama_kegiatan' => $r->nama_kegiatan,
+        // Renaksi terkait (dari renaksi_programs via pivot — tabel `renaksis`
+        // lama sudah kosong sejak rebuild data 9 Sep 2026)
+        $renaksi = $indikator->renaksiPrograms->map(fn($r) => [
+            'nama_kegiatan' => $r->rencana_aksi,
             'tahun'         => $r->tahun,
             'status'        => $r->status,
-            'keterangan'    => $r->keterangan,
+            'keterangan'    => $r->catatan,
             'opd'           => $r->opd->nama_opd ?? '-',
         ])->values()->toArray();
 
@@ -739,7 +727,7 @@ class DashboardService
     {
         $query = RenaksiProgram::with([
             'opd',
-            'indikator1.pilar', 'indikator2.pilar', 'indikator3.pilar', 'indikator4.pilar',
+            'indikators.pilar',
         ]);
 
         // Filter by tahun
@@ -768,22 +756,11 @@ class DashboardService
         }
         if (!empty($filters['indikator_id'])) {
             $indikatorId = $filters['indikator_id'];
-            $query->where(function ($q) use ($indikatorId) {
-                $q->where('indikator_1_id', $indikatorId)
-                  ->orWhere('indikator_2_id', $indikatorId)
-                  ->orWhere('indikator_3_id', $indikatorId)
-                  ->orWhere('indikator_4_id', $indikatorId);
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikatorId));
         }
         if (!empty($filters['pilar_id'])) {
             $pilarId = $filters['pilar_id'];
-            $query->where(function ($q) use ($pilarId) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhereIn($col, function ($sub) use ($pilarId) {
-                        $sub->select('id')->from('indikators')->where('pilar_id', $pilarId);
-                    });
-                }
-            });
+            $query->whereHas('indikators', fn($q) => $q->where('indikators.pilar_id', $pilarId));
         }
         if (!empty($filters['status_renaksi'])) {
             $query->where('status', $filters['status_renaksi']);
@@ -943,14 +920,13 @@ class DashboardService
 
     /**
      * Daftar indikator yang benar-benar dipakai di renaksi_programs
-     * (union dari 4 kolom indikator_N_id).
+     * (dari tabel pivot indikator_renaksi_program).
      */
     public function getRenaksiProgramIndikators(): array
     {
-        $ids = collect(['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'])
-            ->flatMap(fn($col) => RenaksiProgram::whereNotNull($col)->distinct()->pluck($col))
-            ->unique()
-            ->values();
+        $ids = \Illuminate\Support\Facades\DB::table('indikator_renaksi_program')
+            ->distinct()
+            ->pluck('indikator_id');
 
         return Indikator::whereIn('id', $ids)
             ->select('id', 'kode', 'nama_indikator', 'pilar_id')

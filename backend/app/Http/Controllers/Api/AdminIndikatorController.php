@@ -72,14 +72,9 @@ class AdminIndikatorController extends Controller
     public function destroy(Request $request, Indikator $indikator)
     {
         // Lepas tautan dari renaksi_programs agar tidak menggantung
-        \App\Models\RenaksiProgram::query()
-            ->where('indikator_1_id', $indikator->id)->update(['indikator_1_id' => null]);
-        \App\Models\RenaksiProgram::query()
-            ->where('indikator_2_id', $indikator->id)->update(['indikator_2_id' => null]);
-        \App\Models\RenaksiProgram::query()
-            ->where('indikator_3_id', $indikator->id)->update(['indikator_3_id' => null]);
-        \App\Models\RenaksiProgram::query()
-            ->where('indikator_4_id', $indikator->id)->update(['indikator_4_id' => null]);
+        \Illuminate\Support\Facades\DB::table('indikator_renaksi_program')
+            ->where('indikator_id', $indikator->id)
+            ->delete();
 
         $indikator->targetCapaians()->delete();
         $indikator->renaksis()->delete();

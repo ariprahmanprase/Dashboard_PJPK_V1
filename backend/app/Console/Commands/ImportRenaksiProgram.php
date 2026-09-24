@@ -61,10 +61,12 @@ class ImportRenaksiProgram extends Command
                 $realisasi = trim((string)$sheet->getCell('F' . $row)->getValue() ?? '');
                 $kendala = trim((string)$sheet->getCell('G' . $row)->getValue() ?? '');
                 $catatan = trim((string)$sheet->getCell('H' . $row)->getValue() ?? '');
-                $indikator1 = trim((string)$sheet->getCell('I' . $row)->getValue() ?? '');
-                $indikator2 = trim((string)$sheet->getCell('J' . $row)->getValue() ?? '');
-                $indikator3 = trim((string)$sheet->getCell('K' . $row)->getValue() ?? '');
-                $indikator4 = trim((string)$sheet->getCell('L' . $row)->getValue() ?? '');
+                $indikatorCells = [
+                    trim((string)$sheet->getCell('I' . $row)->getValue() ?? ''),
+                    trim((string)$sheet->getCell('J' . $row)->getValue() ?? ''),
+                    trim((string)$sheet->getCell('K' . $row)->getValue() ?? ''),
+                    trim((string)$sheet->getCell('L' . $row)->getValue() ?? ''),
+                ];
 
                 // Skip if row is empty
                 if (empty($dinas) && empty($rencanaAksi)) {
@@ -98,10 +100,12 @@ class ImportRenaksiProgram extends Command
                 }
 
                 // Match Indikators
-                $indikator1Id = $this->matchIndikator($indikator1, $indikatorMap);
-                $indikator2Id = $this->matchIndikator($indikator2, $indikatorMap);
-                $indikator3Id = $this->matchIndikator($indikator3, $indikatorMap);
-                $indikator4Id = $this->matchIndikator($indikator4, $indikatorMap);
+                $indikatorIds = collect($indikatorCells)
+                    ->map(fn($cell) => $this->matchIndikator($cell, $indikatorMap))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
 
                 // Determine status from catatan/realisasi
                 $status = 'Terlaksana';
@@ -120,7 +124,7 @@ class ImportRenaksiProgram extends Command
                     $status = 'Tidak Terlaksana';
                 }
 
-                RenaksiProgram::create([
+                $renaksi = RenaksiProgram::create([
                     'no' => $row - 1,
                     'dinas_text' => !empty($dinas) ? $dinas : '-',
                     'opd_id' => $opdId,
@@ -131,12 +135,13 @@ class ImportRenaksiProgram extends Command
                     'realisasi' => !empty($realisasi) ? $realisasi : '-',
                     'kendala' => !empty($kendala) && $kendala !== '-' ? $kendala : null,
                     'catatan' => !empty($catatan) && $catatan !== '-' ? $catatan : null,
-                    'indikator_1_id' => $indikator1Id,
-                    'indikator_2_id' => $indikator2Id,
-                    'indikator_3_id' => $indikator3Id,
-                    'indikator_4_id' => $indikator4Id,
                     'status' => $status,
                 ]);
+
+                // Tautkan indikator via pivot (jumlah tidak dibatasi)
+                if (!empty($indikatorIds)) {
+                    $renaksi->indikators()->sync($indikatorIds);
+                }
 
                 $imported++;
             }

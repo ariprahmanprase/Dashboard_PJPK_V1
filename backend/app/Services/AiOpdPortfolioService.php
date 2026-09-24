@@ -158,11 +158,8 @@ PROMPT;
 
             // Kegiatan/renaksi terkait indikator ini pada tahun tsb (dari renaksi_programs)
             $jmlRenaksi = \App\Models\RenaksiProgram::where('tahun', $tahun)
-                ->where(function ($q) use ($ind) {
-                    foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                        $q->orWhere($col, $ind->id);
-                    }
-                })->count();
+                ->whereHas('indikators', fn($q) => $q->where('indikators.id', $ind->id))
+                ->count();
 
             // Tandai capaian yang berada di luar rentang wajar (0–200%) sebagai
             // kandidat salah skala data, supaya AI tidak menyimpulkan berlebihan.

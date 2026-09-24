@@ -54,6 +54,17 @@ class Indikator extends Model
         return $this->hasMany(Renaksi::class);
     }
 
+    /**
+     * Renaksi program yang tertaut ke indikator ini (many-to-many via
+     * indikator_renaksi_program) — jumlah tidak dibatasi.
+     */
+    public function renaksiPrograms()
+    {
+        return $this->belongsToMany(RenaksiProgram::class, 'indikator_renaksi_program')
+            ->withTimestamps()
+            ->orderBy('renaksi_programs.no');
+    }
+
     public function latestTargetCapaian($tahun = null)
     {
         $query = $this->hasMany(TargetCapaian::class);

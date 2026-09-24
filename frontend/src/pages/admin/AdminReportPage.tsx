@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Loader2, FileX, Pencil, Trash2, X } from 'lucide-react';
+import { Loader2, FileX, Pencil, Trash2, X, CheckCircle2 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
@@ -60,6 +60,48 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
   const [detailKode, setDetailKode] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminTableRow | null>(null);
   const [deleting, setDeleting] = useState<AdminTableRow | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Filter cadangan untuk kembali ke tampilan semua setelah banner pasca-simpan
+  const [filtersSebelumSimpan, setFiltersSebelumSimpan] = useState<DashboardFilters | null>(null);
+
+  // Banner pasca-simpan: otomatis kembali ke tampilan semula setelah 10 detik
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => {
+      setNotice(null);
+      if (filtersSebelumSimpan) {
+        setFilters(filtersSebelumSimpan);
+        load(filtersSebelumSimpan);
+        setFiltersSebelumSimpan(null);
+      }
+    }, 10_000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notice]);
+
+  // Dipanggil setelah edit indikator sukses — filter diarahkan ke indikator
+  // yang barusan disimpan agar langsung terlihat tanpa scroll.
+  function handleSavedIndikator(indikatorId: number | null) {
+    setEditing(null);
+    if (indikatorId) {
+      setFiltersSebelumSimpan(filters);
+      const fokus: DashboardFilters = { tahun: filters.tahun, indikator_id: String(indikatorId) };
+      setFilters(fokus);
+      load(fokus);
+      setNotice('Perubahan tersimpan — menampilkan indikator yang baru saja diedit.');
+    } else {
+      load(filters);
+    }
+  }
+
+  // Kembali ke tampilan semula (tombol banner / otomatis 10 detik)
+  function handleTampilkanSemua() {
+    setNotice(null);
+    const kembali = filtersSebelumSimpan ?? { tahun: filters.tahun };
+    setFilters(kembali);
+    load(kembali);
+    setFiltersSebelumSimpan(null);
+  }
 
   useEffect(() => {
     apiFetch<FilterOptions>('/api/filters').then(setFilterOptions).catch(() => {});
@@ -125,6 +167,32 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
           <p className="text-sm rounded-xl px-5 py-4" style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}>
             {error}
           </p>
+        )}
+
+        {/* Pemberitahuan pasca-simpan — indikator yang baru diedit sedang ditampilkan.
+            Otomatis kembali ke tampilan semula setelah 10 detik. */}
+        {notice && (
+          <div
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm rounded-xl px-5 py-4"
+            style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#15803d' }}
+          >
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="shrink-0" />
+              <span>
+                {notice}
+                <span className="block text-xs mt-0.5" style={{ color: '#15803d', opacity: 0.75 }}>
+                  Kembali ke tampilan semula otomatis dalam 10 detik…
+                </span>
+              </span>
+            </span>
+            <button
+              onClick={handleTampilkanSemua}
+              className="flex items-center justify-center gap-2 text-sm font-semibold rounded-lg px-5 py-2.5 transition-all shrink-0 hover:opacity-90 hover:shadow-md active:scale-95"
+              style={{ backgroundColor: '#16a34a', color: '#ffffff', boxShadow: '0 1px 3px rgba(22,163,74,0.35)' }}
+            >
+              <X size={15} /> Tampilkan semua sekarang
+            </button>
+          </div>
         )}
 
         {/* Tabel — persis DataTable dashboard + kolom Aksi */}
@@ -267,7 +335,7 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
           pilarOptions={pilarOptions}
           opdOptions={opdOptions}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(filters); }}
+          onSaved={() => handleSavedIndikator(editing.id ?? null)}
         />
       )}
 

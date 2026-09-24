@@ -16,6 +16,8 @@ import SmallMultipleIndikator from '@/components/SmallMultipleIndikator';
 import HeatmapGrid from '@/components/HeatmapGrid';
 import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
 import { useReveal } from '@/hooks/useReveal';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import type { Scorecards, TableRow, FilterOptions, RenaksiItem, ChartDataPoint, RenaksiPieData, RenaksiListItem, PerPilarItem, PerOpdItem, HeatmapRow, ChartIndikatorEntry } from '@/types';
 
 const FILTER_KEY = 'pjpk-draft-filter-indikator';
@@ -44,7 +46,6 @@ export default function ReportPage() {
     tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '',
   });
   const { tahun, opdId, pilarId, indikatorId, statusTl } = filter;
-  const [scorecardKey, setScorecardKey] = useState<ScorecardKey | null>(null);
 
   // Data states
   const [scorecards, setScorecards] = useState<Scorecards | null>(null);
@@ -65,6 +66,10 @@ export default function ReportPage() {
   const [statusModalTitle, setStatusModalTitle] = useState('');
   const [statusDetailData, setStatusDetailData] = useState<TableRow[]>([]);
   const [statusDetailLoading, setStatusDetailLoading] = useState(false);
+
+  // Modal daftar OPD (scorecard "Total OPD")
+  const [opdModalOpen, setOpdModalOpen] = useState(false);
+  const [opdModalList, setOpdModalList] = useState<string[]>([]);
 
   // Chart states
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -120,39 +125,35 @@ export default function ReportPage() {
   const DEFAULT_FILTER = { tahun: '2025', opdId: '', pilarId: '', indikatorId: '', statusTl: '' };
 
   // ── Scorecard click ───────────────────────────────
+  // Klik scorecard HANYA membuka popup daftar — filter halaman TIDAK diubah,
+  // isi popup mengikuti filter yang sedang aktif (seperti stacked bar Renaksi).
   function handleScorecardClick(key: ScorecardKey) {
-    if (scorecardKey === key) {
-      // Deselect → kembali ke default
-      setScorecardKey(null);
-      setFilter(DEFAULT_FILTER);
-      fetchDataFor(DEFAULT_FILTER);
+    if (key === 'total_indikator') {
+      // Semua indikator sesuai filter aktif
+      openStatusModal(null);
+      return;
+    }
+    if (key === 'total_opd') {
+      // Daftar OPD pengampu sesuai filter aktif
+      openOpdModal();
       return;
     }
 
-    // Scorecard "Capaian Belum Diinput": filter tabel di client (capaian null)
-    // + buka popup daftar indikator yang belum diinput
-    if (key === 'capaian_belum') {
-      setScorecardKey(key);
-      setFilter(DEFAULT_FILTER);
-      fetchDataFor(DEFAULT_FILTER);
-      openStatusModal('Belum Diisi');
-      return;
-    }
+    let status: string | null = null;
+    if (key === 'on_track') status = 'On Track';
+    else if (key === 'warning') status = 'Warning';
+    else if (key === 'alert') status = 'Alert';
+    else if (key === 'capaian_belum') status = 'Belum Diisi';
 
-    let newStatus = '';
-    if (key === 'on_track') newStatus = 'On Track';
-    else if (key === 'warning') newStatus = 'Warning';
-    else if (key === 'alert') newStatus = 'Alert';
-
-    const next = { ...DEFAULT_FILTER, statusTl: newStatus };
-    setScorecardKey(key);
-    setFilter(next);
-    fetchDataFor(next);
+    if (status) openStatusModal(status);
   }
 
-  // ── Ambil daftar indikator per status lalu buka popup ──
-  async function openStatusModal(status: string) {
-    setStatusModalTitle(status);
+  // ── Ambil daftar indikator lalu buka popup ──
+  // status null = semua indikator (dipakai scorecard "Total Indikator").
+  // Filter aktif (opd/pilar/indikator) ikut dikirim agar isi popup
+  // selaras dengan yang sedang tampil di halaman.
+  async function openStatusModal(status: string | null) {
+    setStatusModalTitle(status ?? 'Semua Indikator');
     setStatusModalOpen(true);
     setStatusDetailLoading(true);
     setStatusDetailData([]);
@@ -160,7 +161,10 @@ export default function ReportPage() {
     try {
       const params = new URLSearchParams();
       params.set('tahun', tahun || '2025');
-      params.set('status_tl', status);
+      if (opdId) params.set('opd_id', opdId);
+      if (pilarId) params.set('pilar_id', pilarId);
+      if (indikatorId) params.set('indikator_id', indikatorId);
+      if (status) params.set('status_tl', status);
       const resp = await fetch(`/api/dashboard/table?${params}`);
       if (!resp.ok) throw new Error(`API ${resp.status}`);
       const json: TableRow[] = await resp.json();
@@ -174,8 +178,6 @@ export default function ReportPage() {
 
   // ── Filter dropdown change ─────────────────────────
   function handleFilterChange(_key: string, value: string) {
-    setScorecardKey(null);
-
     const newState = {
       tahun: _key === 'tahun' ? value : tahun,
       opdId: _key === 'opd_id' ? value : opdId,
@@ -198,7 +200,6 @@ export default function ReportPage() {
 
   // ── Reset semua filter ke default ──────────────
   function handleResetFilter() {
-    setScorecardKey(null);
     clearPersistent(FILTER_KEY);
     setFilter(DEFAULT_FILTER);
     fetchDataFor(DEFAULT_FILTER);
@@ -207,6 +208,18 @@ export default function ReportPage() {
   // ── PieStatus click (popup modal) ──────────────
   function handlePieStatusClick(status: string) {
     openStatusModal(status);
+  }
+
+  // ── Popup daftar OPD pengampu (scorecard "Total OPD") ──
+  // Ambil irisan unik dari opd_list tiap indikator yang sedang tampil
+  // (mengikuti filter aktif) — bukan dari kolom nama_opd baris tabel,
+  // sehingga tidak ada duplikat maupun bidang turunan.
+  function openOpdModal() {
+    const unik = [...new Set(tableData.flatMap((r) => r.opd_list ?? []))]
+      .filter((nama) => nama && nama !== '-')
+      .sort((a, b) => a.localeCompare(b, 'id'));
+    setOpdModalList(unik);
+    setOpdModalOpen(true);
   }
 
   // ── Indikator Detail modal (klik baris tabel) ─────
@@ -257,14 +270,6 @@ export default function ReportPage() {
     }
   }
 
-  // ── Client-side filter ────────────────────────────
-  // Scorecard "Capaian Belum Diinput" selaras dengan status Belum Diisi backend
-  // (termasuk indikator tanpa baris target_capaian), bukan hanya capaian null.
-  const filteredTableData = useMemo(() => {
-    if (scorecardKey === 'capaian_belum') return tableData.filter(r => r.status_tl === 'Belum Diisi');
-    return tableData;
-  }, [tableData, scorecardKey]);
-
   const filtersObj = { tahun, opd_id: opdId, pilar_id: pilarId, indikator_id: indikatorId, status_tl: statusTl };
 
   const revealRef = useReveal<HTMLDivElement>();
@@ -287,7 +292,7 @@ export default function ReportPage() {
       </div>
 
       <div data-reveal data-reveal-delay="140">
-        <ScoreCardGrid data={scorecards} loading={loading} activeKey={scorecardKey} onCardClick={handleScorecardClick} />
+        <ScoreCardGrid data={scorecards} loading={loading} activeKey={null} onCardClick={handleScorecardClick} />
       </div>
 
       <div className="responsive-row" data-reveal data-reveal-delay="200">
@@ -337,11 +342,11 @@ export default function ReportPage() {
           </p>
           {!loading && (
             <span className="text-xs ml-1" style={{ color: 'hsl(var(--ds-muted-foreground))', opacity: 0.6 }}>
-              — {filteredTableData.length} data
+              — {tableData.length} data
             </span>
           )}
         </div>
-        <DataTable data={filteredTableData} loading={loading} onRowClick={handleRowClick} />
+        <DataTable data={tableData} loading={loading} onRowClick={handleRowClick} />
       </div>
 
       <RenaksiModal
@@ -358,10 +363,76 @@ export default function ReportPage() {
         open={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
         title={statusModalTitle}
-        subtitle={`Indikator dengan status ${statusModalTitle} (Tahun ${tahun || '2025'})`}
+        subtitle={
+          statusModalTitle === 'Semua Indikator'
+            ? `Seluruh indikator terpantau (Tahun ${tahun || '2025'})`
+            : `Indikator dengan status ${statusModalTitle} (Tahun ${tahun || '2025'})`
+        }
         data={statusDetailData}
         loading={statusDetailLoading}
       />
+
+      {/* Popup daftar OPD pengampu (scorecard "Total OPD") */}
+      {opdModalOpen && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setOpdModalOpen(false)}
+        >
+          <div
+            className="rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden flex flex-col"
+            style={{
+              backgroundColor: 'hsl(var(--ds-card))',
+              border: '1px solid hsl(var(--ds-border))',
+              maxHeight: '80vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center justify-between"
+              style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--ds-border))' }}
+            >
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: 'hsl(var(--ds-foreground))' }}>
+                  Total OPD
+                </h3>
+                <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
+                  {opdModalList.length} OPD pengampu indikator (mengikuti filter)
+                </p>
+              </div>
+              <button
+                onClick={() => setOpdModalOpen(false)}
+                className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                style={{ color: 'hsl(var(--ds-muted-foreground))' }}
+                aria-label="Tutup"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '0.5rem 0' }}>
+              {opdModalList.length === 0 ? (
+                <p className="text-sm text-center py-12" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
+                  Tidak ada data
+                </p>
+              ) : (
+                opdModalList.map((nama, idx) => (
+                  <div
+                    key={nama}
+                    className="flex items-center gap-3 px-6 py-2.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    style={{ borderBottom: '1px solid hsl(var(--ds-border))', color: 'hsl(var(--ds-foreground))' }}
+                  >
+                    <span className="text-xs w-6 shrink-0" style={{ color: 'hsl(var(--ds-muted-foreground))' }}>
+                      {idx + 1}
+                    </span>
+                    {nama}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       <IndikatorDetailModal
         open={indikatorDetailOpen}

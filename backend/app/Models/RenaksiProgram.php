@@ -29,10 +29,6 @@ class RenaksiProgram extends Model
         'catatan',
         'dokumentasi',
         'created_by',
-        'indikator_1_id',
-        'indikator_2_id',
-        'indikator_3_id',
-        'indikator_4_id',
         'status',
         'ai_recommendation',
     ];
@@ -47,42 +43,28 @@ class RenaksiProgram extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function indikator1()
+    /**
+     * Tautan indikator (many-to-many via indikator_renaksi_program) —
+     * jumlah tidak dibatasi (sebelumnya maks. 4 via kolom indikator_1_id..4_id).
+     */
+    public function indikators()
     {
-        return $this->belongsTo(Indikator::class, 'indikator_1_id');
-    }
-
-    public function indikator2()
-    {
-        return $this->belongsTo(Indikator::class, 'indikator_2_id');
-    }
-
-    public function indikator3()
-    {
-        return $this->belongsTo(Indikator::class, 'indikator_3_id');
-    }
-
-    public function indikator4()
-    {
-        return $this->belongsTo(Indikator::class, 'indikator_4_id');
+        return $this->belongsToMany(Indikator::class, 'indikator_renaksi_program')
+            ->withTimestamps()
+            ->orderBy('indikators.id');
     }
 
     public function getIndikatorListAttribute()
     {
-        $indikators = [];
-        if ($this->indikator1) $indikators[] = $this->indikator1->nama_indikator;
-        if ($this->indikator2) $indikators[] = $this->indikator2->nama_indikator;
-        if ($this->indikator3) $indikators[] = $this->indikator3->nama_indikator;
-        if ($this->indikator4) $indikators[] = $this->indikator4->nama_indikator;
-        return $indikators;
+        return $this->indikators->pluck('nama_indikator')->all();
     }
 
     public function getPilarListAttribute()
     {
+        // Pilar terkait mengikuti pilar dari indikator yang ditautkan (unik)
         $pilars = [];
-        foreach (['indikator1', 'indikator2', 'indikator3', 'indikator4'] as $rel) {
-            $indikator = $this->{$rel};
-            if ($indikator && $indikator->pilar) {
+        foreach ($this->indikators as $indikator) {
+            if ($indikator->pilar) {
                 // nama_pilar sudah berbentuk "Pilar 1: Pengendalian Kuantitas Penduduk"
                 $label = $indikator->pilar->nama_pilar;
                 if (!in_array($label, $pilars, true)) {
@@ -95,11 +77,6 @@ class RenaksiProgram extends Model
 
     public function getIndikatorIdListAttribute()
     {
-        return collect([
-            $this->indikator_1_id,
-            $this->indikator_2_id,
-            $this->indikator_3_id,
-            $this->indikator_4_id,
-        ])->filter()->values()->all();
+        return $this->indikators->pluck('id')->all();
     }
 }

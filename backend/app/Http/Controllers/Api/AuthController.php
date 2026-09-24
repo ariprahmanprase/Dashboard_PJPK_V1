@@ -52,6 +52,40 @@ class AuthController extends Controller
         return response()->json(['message' => 'Berhasil keluar.']);
     }
 
+    /**
+     * Switch account (impersonate) — KHUSUS super admin.
+     * Membuat token atas nama user target agar super admin bisa melihat
+     * aplikasi persis seperti yang dilihat user tersebut, tanpa passwordnya.
+     * Token lama user target TIDAK dihapus (sesi aslinya tidak diganggu).
+     */
+    public function impersonate(Request $request, User $user)
+    {
+        $actor = $request->user();
+
+        if (!$actor->isSuperAdmin()) {
+            return response()->json(['message' => 'Hanya super admin yang dapat beralih akun.'], 403);
+        }
+        if ($user->id === $actor->id) {
+            return response()->json(['message' => 'Anda sudah memakai akun ini.'], 422);
+        }
+
+        $token = $user->createToken('impersonate:' . $actor->id)->plainTextToken;
+
+        // Catat di log aplikasi — siapa beralih ke akun siapa (jejak audit)
+        \Illuminate\Support\Facades\Log::info('impersonate', [
+            'actor_id'    => $actor->id,
+            'actor_email' => $actor->email,
+            'target_id'   => $user->id,
+            'target_email' => $user->email,
+            'ip'          => $request->ip(),
+        ]);
+
+        return response()->json([
+            'token' => $token,
+            'user'  => $this->userPayload($user->load('opd')),
+        ]);
+    }
+
     public function me(Request $request)
     {
         return response()->json(['user' => $this->userPayload($request->user())]);

@@ -35,6 +35,7 @@ export interface Scorecards {
 }
 
 export interface TableRow {
+  id?: number;
   kode: string;
   nama_indikator: string;
   nama_opd: string;

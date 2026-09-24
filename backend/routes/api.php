@@ -143,6 +143,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
         Route::apiResource('/admin/opds', AdminOpdController::class)->except(['show']);
 
+        // Switch account (impersonate) — super admin masuk sebagai user lain
+        Route::post('/admin/users/{user}/impersonate', [AuthController::class, 'impersonate']);
+
         Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])
             ->where('indikator', '[A-Za-z0-9\-]+');
     });

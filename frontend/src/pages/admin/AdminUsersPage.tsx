@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Loader2, Pencil, Plus, Search, Trash2, UserCheck, Users, X } from 'lucide-react';
+import { Loader2, Pencil, Plus, Search, Trash2, UserCheck, UserRoundCheck, Users, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
@@ -8,6 +8,7 @@ import {
   deleteUser,
   fetchAdminUsers,
   fetchUserOpdOptions,
+  impersonate,
   updateUser,
   type AdminUser,
   type AdminUserRow,
@@ -56,6 +57,24 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
   const [editing, setEditing] = useState<AdminUserRow | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AdminUserRow | null>(null);
+  // Switch account (impersonate) — khusus super admin
+  const [switching, setSwitching] = useState<AdminUserRow | null>(null);
+  const [switchLoading, setSwitchLoading] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
+
+  const handleSwitch = async () => {
+    if (!switching) return;
+    setSwitchLoading(true);
+    setSwitchError(null);
+    try {
+      await impersonate(switching.id);
+      // Muat ulang penuh agar seluruh halaman membaca sesi user target
+      window.location.href = '/admin';
+    } catch (err) {
+      setSwitchError(err instanceof Error ? err.message : 'Gagal beralih akun.');
+      setSwitchLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchUserOpdOptions()
@@ -186,6 +205,7 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                   isSelf={u.id === user.id}
                   onEdit={() => setEditing(u)}
                   onDelete={() => setDeleting(u)}
+                  onSwitch={() => { setSwitchError(null); setSwitching(u); }}
                 />
               ))}
             </div>
@@ -252,6 +272,17 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
                             >
                               <Pencil size={13} /> Edit
                             </button>
+                            {/* Switch account — tidak untuk akun sendiri */}
+                            {u.id !== user.id && (
+                              <button
+                                onClick={() => { setSwitchError(null); setSwitching(u); }}
+                                title={`Masuk sebagai ${u.name}`}
+                                className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                style={{ borderColor: 'var(--color-border)', color: 'var(--color-primary)', padding: '0.5rem 0.875rem' }}
+                              >
+                                <UserRoundCheck size={13} /> Switch
+                              </button>
+                            )}
                             <button
                               onClick={() => setDeleting(u)}
                               disabled={u.id === user.id}
@@ -300,6 +331,70 @@ export default function AdminUsersPage({ user, onLogout, onNavigate }: Props) {
           onDeleted={() => { setDeleting(null); load(); }}
         />
       )}
+
+      {/* Modal konfirmasi switch account */}
+      {switching && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center p-6"
+          style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+          onClick={() => !switchLoading && setSwitching(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border p-6 flex flex-col gap-4"
+            style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className="p-2 rounded-lg shrink-0"
+                style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: 'var(--color-primary)' }}
+              >
+                <UserRoundCheck size={18} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                  Beralih akun?
+                </h3>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  Anda akan beralih ke akun{' '}
+                  <strong style={{ color: 'var(--color-text)' }}>{switching.name}</strong>
+                  {' '}({switching.role === 'admin_opd' ? 'Admin OPD' : switching.role === 'admin_analis' ? 'Admin Analis' : 'Super Admin'}
+                  {switching.opd_nama ? ` — ${opdInduk(switching.opd_nama)}` : ''}).
+                  Anda bisa kembali ke akun sendiri lewat banner di atas.
+                </p>
+              </div>
+            </div>
+
+            {switchError && (
+              <p className="text-xs rounded-lg px-3 py-2.5" style={{ backgroundColor: '#fef2f2', color: '#b91c1c' }}>
+                {switchError}
+              </p>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSwitching(null)}
+                disabled={switchLoading}
+                className="rounded-lg border px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSwitch}
+                disabled={switchLoading}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
+                {switchLoading && <Loader2 className="animate-spin" size={14} />}
+                {switchLoading ? 'Beralih…' : 'Lanjut'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
@@ -328,12 +423,13 @@ function RoleBadge({ role }: { role: AdminUserRow['role'] }) {
 }
 
 function UserCard({
-  item, isSelf, onEdit, onDelete,
+  item, isSelf, onEdit, onDelete, onSwitch,
 }: {
   item: AdminUserRow;
   isSelf: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onSwitch: () => void;
 }) {
   return (
     <div
@@ -366,6 +462,15 @@ function UserCard({
         >
           <Pencil size={14} /> Edit
         </button>
+        {!isSelf && (
+          <button
+            onClick={onSwitch}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-primary)' }}
+          >
+            <UserRoundCheck size={14} /> Switch
+          </button>
+        )}
         <button
           onClick={onDelete}
           disabled={isSelf}

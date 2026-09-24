@@ -254,6 +254,16 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Banner pasca-simpan: otomatis kembali ke tampilan semua data setelah 10 detik
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => {
+      setNotice(null);
+      setSearch('');
+    }, 10_000);
+    return () => clearTimeout(t);
+  }, [notice]);
   const [tahun, setTahun] = useState('2025');
   const [pilarId, setPilarId] = useState('');
   const [pilarOptions, setPilarOptions] = useState<{ id: number; nama_pilar: string }[]>([]);
@@ -527,21 +537,28 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
           </p>
         )}
 
-        {/* Pemberitahuan pasca-simpan — data yang baru dibuat/diedit sedang ditampilkan */}
+        {/* Pemberitahuan pasca-simpan — data yang baru dibuat/diedit sedang ditampilkan.
+            Otomatis kembali ke semua data setelah 10 detik. */}
         {notice && (
           <div
-            className="flex items-center justify-between gap-4 text-sm rounded-xl px-5 py-4"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm rounded-xl px-5 py-4"
             style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#15803d' }}
           >
             <span className="flex items-center gap-2">
-              <CheckCircle2 size={15} /> {notice}
+              <CheckCircle2 size={16} className="shrink-0" />
+              <span>
+                {notice}
+                <span className="block text-xs mt-0.5" style={{ color: '#15803d', opacity: 0.75 }}>
+                  Menampilkan semua data otomatis dalam 10 detik…
+                </span>
+              </span>
             </span>
             <button
               onClick={() => { setNotice(null); setSearch(''); }}
-              className="flex items-center gap-1 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors shrink-0"
-              style={{ border: '1px solid rgba(34,197,94,0.4)', color: '#15803d' }}
+              className="flex items-center justify-center gap-2 text-sm font-semibold rounded-lg px-5 py-2.5 transition-all shrink-0 hover:opacity-90 hover:shadow-md active:scale-95"
+              style={{ backgroundColor: '#16a34a', color: '#ffffff', boxShadow: '0 1px 3px rgba(22,163,74,0.35)' }}
             >
-              <X size={12} /> Tampilkan semua
+              <X size={15} /> Tampilkan semua sekarang
             </button>
           </div>
         )}

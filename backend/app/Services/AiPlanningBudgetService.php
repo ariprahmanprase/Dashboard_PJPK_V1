@@ -172,11 +172,7 @@ PROMPT;
         // ── Program & kegiatan dari renaksi_programs tahun terpilih ────────
         $renaksiProgram = \App\Models\RenaksiProgram::query()
             ->where('tahun', $tahun)
-            ->where(function ($q) use ($indikator) {
-                foreach (['indikator_1_id', 'indikator_2_id', 'indikator_3_id', 'indikator_4_id'] as $col) {
-                    $q->orWhere($col, $indikator->id);
-                }
-            })
+            ->whereHas('indikators', fn($q) => $q->where('indikators.id', $indikator->id))
             ->orderBy('no')
             ->get();
 

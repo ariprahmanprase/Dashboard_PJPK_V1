@@ -118,6 +118,52 @@ export async function logout(): Promise<void> {
   }
 }
 
+// ── Switch account (impersonate) — khusus super admin ──────────────
+// Token asli super admin disimpan sementara agar bisa kembali tanpa login ulang.
+const IMPERSONATOR_TOKEN_KEY = 'pjpk_impersonator_token';
+const IMPERSONATOR_USER_KEY = 'pjpk_impersonator_user';
+
+/** Minta token atas nama user lain (hanya bisa dipanggil super admin). */
+export async function impersonate(userId: number): Promise<AdminUser> {
+  const data = await request<{ token: string; user: AdminUser }>(
+    `/admin/users/${userId}/impersonate`,
+    { method: 'POST' },
+  );
+  // Simpan sesi super admin ASLI sebelum ditimpa (hanya bila belum impersonate)
+  if (!getImpersonator()) {
+    const asli = getToken();
+    const userAsli = getStoredUser();
+    if (asli && userAsli) {
+      localStorage.setItem(IMPERSONATOR_TOKEN_KEY, asli);
+      localStorage.setItem(IMPERSONATOR_USER_KEY, JSON.stringify(userAsli));
+    }
+  }
+  storeSession(data.token, data.user);
+  return data.user;
+}
+
+/** Sesi super admin asli yang sedang meng-impersonate (null = tidak sedang). */
+export function getImpersonator(): AdminUser | null {
+  const raw = localStorage.getItem(IMPERSONATOR_USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AdminUser;
+  } catch {
+    return null;
+  }
+}
+
+/** Kembali ke akun super admin asli — tanpa login ulang. */
+export function stopImpersonating(): AdminUser | null {
+  const token = localStorage.getItem(IMPERSONATOR_TOKEN_KEY);
+  const user = getImpersonator();
+  if (!token || !user) return null;
+  storeSession(token, user);
+  localStorage.removeItem(IMPERSONATOR_TOKEN_KEY);
+  localStorage.removeItem(IMPERSONATOR_USER_KEY);
+  return user;
+}
+
 export async function fetchMe(): Promise<AdminUser> {
   const data = await request<{ user: AdminUser }>('/auth/me');
   localStorage.setItem(USER_KEY, JSON.stringify(data.user));
