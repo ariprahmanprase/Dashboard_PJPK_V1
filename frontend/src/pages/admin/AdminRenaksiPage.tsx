@@ -10,6 +10,7 @@ import type { RenaksiProgramRow, RenaksiProgramSummary } from '@/types';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import MiniMarkdown from '@/lib/miniMarkdown';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
+import IndikatorSearchMultiSelect from '@/components/admin/IndikatorSearchMultiSelect';
 import {
   createRenaksi,
   deleteAiRecommendation,
@@ -902,35 +903,12 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
 
           {/* Tautan indikator — super admin & admin analis boleh mengubah */}
           {canEditIndikator && (
-            <Field label="Indikator terkait (maks. 4, kosongkan untuk menghapus)">
-              <div className="flex flex-col gap-3">
-                {indikatorIds.map((val, slot) => (
-                  <select
-                    key={slot}
-                    value={val}
-                    onChange={(e) =>
-                      setIndikatorIds((prev) => {
-                        const next = [...prev];
-                        next[slot] = e.target.value === '' ? '' : Number(e.target.value);
-                        return next;
-                      })
-                    }
-                    className={inputClass}
-                    style={inputStyle}
-                  >
-                    <option value="">— Slot {slot + 1}: kosong —</option>
-                    {indikatorOptions.map((i) => (
-                      <option
-                        key={i.id}
-                        value={i.id}
-                        disabled={indikatorIds.includes(i.id) && val !== i.id}
-                      >
-                        {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
-                      </option>
-                    ))}
-                  </select>
-                ))}
-              </div>
+            <Field label="Indikator terkait">
+              <IndikatorSearchMultiSelect
+                options={indikatorOptions}
+                value={indikatorIds.filter((v): v is number => v !== '')}
+                onChange={(ids) => setIndikatorIds([ids[0] ?? '', ids[1] ?? '', ids[2] ?? '', ids[3] ?? ''])}
+              />
             </Field>
           )}
 
@@ -1310,35 +1288,12 @@ function CreateModal({ defaultTahun, isSuperAdmin, indikatorOptions, satuanOptio
           )}
 
           {/* Indikator: semua role boleh memilih; bila kurang tepat super admin yang merevisi */}
-          <Field label="Indikator terkait (maks. 4)">
-            <div className="flex flex-col gap-3">
-              {indikatorIds.map((val, slot) => (
-                <select
-                  key={slot}
-                  value={val}
-                  onChange={(e) =>
-                    setIndikatorIds((prev) => {
-                      const next = [...prev];
-                      next[slot] = e.target.value === '' ? '' : Number(e.target.value);
-                      return next;
-                    })
-                  }
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">— Slot {slot + 1}: kosong —</option>
-                  {indikatorOptions.map((i) => (
-                    <option
-                      key={i.id}
-                      value={i.id}
-                      disabled={indikatorIds.includes(i.id) && val !== i.id}
-                    >
-                      {i.kode ? `${i.kode} — ` : ''}{i.nama_indikator}
-                    </option>
-                  ))}
-                </select>
-              ))}
-            </div>
+          <Field label="Indikator terkait">
+            <IndikatorSearchMultiSelect
+              options={indikatorOptions}
+              value={indikatorIds.filter((v): v is number => v !== '')}
+              onChange={(ids) => setIndikatorIds([ids[0] ?? '', ids[1] ?? '', ids[2] ?? '', ids[3] ?? ''])}
+            />
             {!isSuperAdmin && (
               <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                 Pilih indikator yang dituju rencana aksi ini. Bila kurang tepat, super admin akan merevisi.

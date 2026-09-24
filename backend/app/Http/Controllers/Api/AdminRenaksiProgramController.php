@@ -382,7 +382,12 @@ class AdminRenaksiProgramController extends Controller
         }
 
         $validated = $request->validate($rules);
-        unset($validated['status']); // status tidak pernah diubah manual lewat jalur ini
+
+        // Status kualitatif boleh diubah manual oleh semua role (super admin,
+        // admin OPD, analis); status kuantitatif selalu dihitung backend
+        // (input status diabaikan untuk jenis kuantitatif).
+        $statusManual = $validated['status'] ?? null;
+        unset($validated['status']);
 
         // Bila jenis target berubah, bersihkan field yang tidak relevan agar
         // sisa data jenis lama tidak tercampur (mis. target angka tertinggal
@@ -400,13 +405,15 @@ class AdminRenaksiProgramController extends Controller
 
         $renaksiProgram->update($validated);
 
-        // Status kuantitatif selalu dihitung ulang dari target vs realisasi terkini;
-        // renaksi kualitatif kembali 'Belum diisi' saat jenisnya baru diubah
-        // (menunggu penilaian admin analis).
+        // Status kuantitatif selalu dihitung ulang dari target vs realisasi terkini.
+        // Status kualitatif memakai nilai manual bila dikirim; bila jenis target
+        // baru saja diubah dan status tidak dikirim, kembali ke 'Belum diisi'.
         if ($renaksiProgram->jenis_target === 'kuantitatif') {
             $renaksiProgram->update([
                 'status' => $this->calcStatus('kuantitatif', $renaksiProgram->target_nilai, $renaksiProgram->realisasi_nilai),
             ]);
+        } elseif ($statusManual !== null) {
+            $renaksiProgram->update(['status' => $statusManual]);
         } elseif (isset($validated['jenis_target'])) {
             $renaksiProgram->update(['status' => 'Belum diisi']);
         }
