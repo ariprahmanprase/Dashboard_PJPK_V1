@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { FilterOptions, DashboardFilters } from '@/types';
 import { RotateCcw } from 'lucide-react';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
@@ -9,6 +10,12 @@ interface Props {
   onReset?: () => void;
 }
 
+interface OpdOption {
+  id: number | string;
+  nama_opd?: string;
+  kode_opd?: string;
+}
+
 export default function FilterBar({ options, filters, onFilterChange, onReset }: Props) {
   const hasActiveFilter = Boolean(
     filters.opd_id || filters.pilar_id || filters.indikator_id || filters.status_tl || (filters.tahun && filters.tahun !== '2025')
@@ -17,6 +24,37 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
   const indikatorOptions = filters.pilar_id
     ? options?.indikator.filter(i => String(i.pilar_id) === filters.pilar_id)
     : options?.indikator;
+
+  // ── OPD yang mengampu (cascading) ──────────────────────────────
+  // Daftar OPD mengikuti filter pilar/indikator yang sedang dipilih:
+  //  - pilih indikator → hanya OPD pengampu indikator itu
+  //  - pilih pilar saja → OPD pengampu semua indikator dalam pilar itu
+  //  - tanpa keduanya  → semua OPD
+  // Data diambil live dari backend, jadi pembaruan renaksi/pengampu otomatis
+  // ikut tercermin. opd_id yang sudah tidak relevan otomatis di-reset.
+  const [opdOptions, setOpdOptions] = useState<OpdOption[]>(options?.opd ?? []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.pilar_id) params.set('pilar_id', filters.pilar_id);
+    if (filters.indikator_id) params.set('indikator_id', filters.indikator_id);
+    if (filters.tahun) params.set('tahun', filters.tahun);
+
+    let cancelled = false;
+    fetch(`/api/filters/opd?${params}`)
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((list: OpdOption[]) => {
+        if (cancelled) return;
+        setOpdOptions(list);
+        // Reset OPD terpilih bila tidak ada lagi di daftar relevan
+        if (filters.opd_id && !list.some(o => String(o.id) === String(filters.opd_id))) {
+          onFilterChange('opd_id', '');
+        }
+      })
+      .catch(() => { if (!cancelled) setOpdOptions(options?.opd ?? []); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.pilar_id, filters.indikator_id, filters.tahun]);
 
   const baseSelect: React.CSSProperties = {
     height: 38,
@@ -49,7 +87,7 @@ export default function FilterBar({ options, filters, onFilterChange, onReset }:
         ))}
       </select>
       <OpdSearchSelect
-        options={options?.opd ?? []}
+        options={opdOptions}
         value={filters.opd_id || ''}
         onChange={v => onFilterChange('opd_id', v)}
         emptyLabel="Semua OPD yang mengampu"

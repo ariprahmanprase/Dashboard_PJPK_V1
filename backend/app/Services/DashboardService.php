@@ -177,10 +177,16 @@ class DashboardService
 
         $totalIndikator = $indikatorQuery->count();
 
+        // ID indikator yang lolos filter — dipakai untuk membatasi OPD dari
+        // renaksi agar selaras dengan tabel/popup (fix: scorecard Total OPD
+        // sebelumnya mengabaikan filter indikator/pilar sehingga membengkak).
+        $filteredIndikatorIds = (clone $indikatorQuery)->pluck('id');
+
         // Total OPD = gabungan OPD pengampu (indikator_opd) + OPD yang renaksinya
         // tertaut pada tahun berjalan — selaras dengan tabel & chart per-OPD.
         $opdPengampu = (clone $opdQuery)->distinct()->pluck('opds.id');
         $opdRenaksi = $this->petaOpdDariRenaksi($tahun)
+            ->only($filteredIndikatorIds)
             ->flatten(1)
             ->pluck('opd_id')
             ->unique();
@@ -616,6 +622,15 @@ class DashboardService
 
         if (!$indikator) return null;
 
+        // OPD Pengampu = gabungan OPD pengampu (mandat, pivot indikator_opd)
+        // + OPD yang renaksinya tertaut pada indikator ini (kontribusi, mis.
+        // Dinas Sosial pada TFR) — selaras dengan kolom OPD di tabel/popup.
+        $tahunAktif = $indikator->renaksiPrograms->pluck('tahun')->filter()->sortDesc()->first() ?? '2025';
+        $opdDariRenaksi = $this->petaOpdDariRenaksi($tahunAktif);
+        $opdListGabung = $this->opdTerkaitIndikator($indikator, $tahunAktif, $opdDariRenaksi)
+            ->pluck('nama')
+            ->toArray();
+
         // Target & capaian per tahun (2025-2029)
         $tcs = TargetCapaian::where('indikator_id', $indikator->id)
             ->orderBy('tahun')
@@ -678,7 +693,7 @@ class DashboardService
             'kode'            => $indikator->kode,
             'nama_indikator'  => $indikator->nama_indikator,
             'pilar'           => $indikator->pilar->nama_pilar ?? '-',
-            'opd_list'        => $indikator->opds->pluck('nama_opd')->toArray(),
+            'opd_list'        => $opdListGabung,
             'satuan'          => $indikator->satuan,
             'sumber_data'     => $indikator->sumber_data,
             'baseline_2024'   => $indikator->baseline_2024,

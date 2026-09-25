@@ -5,6 +5,7 @@ import type { RenaksiProgramRow, RenaksiProgramSummary, FilterOptions, Indikator
 import RenaksiProgramTable from '@/components/RenaksiProgramTable';
 import ScorecardPopupModal from '@/components/ScorecardPopupModal';
 import RenaksiStatusBar from '@/components/RenaksiStatusBar';
+import PiePerOpd from '@/components/PiePerOpd';
 import { renaksiStatusStyle } from '@/lib/renaksiStatus';
 import OpdSearchSelect from '@/components/admin/OpdSearchSelect';
 import { usePersistentState, clearPersistent } from '@/hooks/usePersistentState';
@@ -60,8 +61,42 @@ export default function RencanaAksiPage() {
   const [programIndikatorList, setProgramIndikatorList] = useState<IndikatorOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ── OPD yang mengampu (cascading) ──────────────────────────────
+  // Daftar OPD mengikuti filter pilar/indikator yang dipilih (pengampu mandat
+  // + OPD dari renaksi tertaut), diambil live dari backend sehingga pembaruan
+  // data otomatis ikut. opdId yang sudah tidak relevan otomatis di-reset.
+  const [opdOptions, setOpdOptions] = useState<Array<{ id: number | string; nama_opd?: string; kode_opd?: string }>>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (pilarId) params.set('pilar_id', pilarId);
+    if (indikatorId) params.set('indikator_id', indikatorId);
+    if (tahun) params.set('tahun', tahun);
+
+    let cancelled = false;
+    apiFetch<Array<{ id: number | string; nama_opd?: string; kode_opd?: string }>>(`/api/filters/opd?${params}`)
+      .then(list => {
+        if (cancelled) return;
+        setOpdOptions(list);
+        if (opdId && !list.some(o => String(o.id) === String(opdId))) setOpdId('');
+      })
+      .catch(() => { if (!cancelled) setOpdOptions(filterOptions?.opd ?? []); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pilarId, indikatorId, tahun]);
+
   // Popup scorecard: daftar program per status
   const [scorecardPopup, setScorecardPopup] = useState<string | null>(null);
+
+  // Popup dari pie per-OPD: daftar program 1 OPD yang difilter status irisan
+  const [opdPiePopup, setOpdPiePopup] = useState<{ dinas: string; status: string } | null>(null);
+
+  const opdPiePopupRows = useMemo(() => {
+    if (!opdPiePopup) return [];
+    return programData.filter(
+      r => r.dinas === opdPiePopup.dinas && renaksiStatusStyle(r.status).label === opdPiePopup.status
+    );
+  }, [opdPiePopup, programData]);
 
   const scorecardPopupRows = useMemo(() => {
     if (!scorecardPopup) return [];
@@ -188,9 +223,9 @@ export default function RencanaAksiPage() {
               ))}
           </select>
 
-          {/* OPD yang mengampu — nama lengkap dari tabel opds, filter by opd_id, bisa dicari */}
+          {/* OPD yang mengampu — cascading mengikuti pilar/indikator, bisa dicari */}
           <OpdSearchSelect
-            options={filterOptions?.opd ?? []}
+            options={opdOptions}
             value={opdId}
             onChange={setOpdId}
             emptyLabel="Semua OPD yang mengampu"
@@ -296,6 +331,15 @@ export default function RencanaAksiPage() {
         />
       </div>
 
+      {/* ── Pie chart per OPD — satu pie per OPD, klik irisan = daftar per status ── */}
+      <div data-reveal data-reveal-delay="260">
+        <PiePerOpd
+          data={programData}
+          loading={loading && !programData.length}
+          onSliceClick={(dinas, status) => setOpdPiePopup({ dinas, status })}
+        />
+      </div>
+
       {/* ── Tabel Program ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} data-reveal>
         <div className="flex items-center gap-2.5">
@@ -325,6 +369,14 @@ export default function RencanaAksiPage() {
         title={scorecardPopup === 'Total OPD' ? 'Daftar OPD Pengampu' : scorecardPopup === 'Total Program' ? 'Semua Program' : `Program — ${scorecardPopup ?? ''}`}
         rows={scorecardPopupRows}
         onClose={() => setScorecardPopup(null)}
+      />
+
+      {/* ── Popup dari pie per-OPD: daftar program 1 OPD per status (klik baris → detail) ── */}
+      <ScorecardPopupModal
+        open={opdPiePopup !== null}
+        title={opdPiePopup ? `${opdPiePopup.dinas} — ${opdPiePopup.status}` : ''}
+        rows={opdPiePopupRows}
+        onClose={() => setOpdPiePopup(null)}
       />
     </div>
   );

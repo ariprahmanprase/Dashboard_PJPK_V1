@@ -138,7 +138,7 @@ export default function IndikatorDetailModal({ open, onClose, kode }: Props) {
           ) : detail ? (
             <div>
               {/* OPD */}
-              <Field label="OPD Penanggung Jawab">
+              <Field label="OPD Pengampu">
                 <div className="flex flex-wrap gap-1">
                   {detail.opd_list.map((opd, i) => (
                     <span
