@@ -34,7 +34,7 @@ export default function Layout({ children, activePage, onNavigate }: Props) {
           color: 'hsl(var(--ds-muted-foreground))',
         }}
       >
-        <span style={{ color: 'hsl(var(--ds-primary))', fontWeight: 600 }}>Dashboard PJPK</span>
+        <span style={{ color: 'hsl(var(--ds-primary))', fontWeight: 600 }}>Sipandu</span>
         {' '}— Kabupaten Sidoarjo · © 2026
       </footer>
     </div>

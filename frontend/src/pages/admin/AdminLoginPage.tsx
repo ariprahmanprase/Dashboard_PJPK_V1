@@ -96,24 +96,30 @@ export default function AdminLoginPage({ onSuccess }: Props) {
           />
 
           <div className="relative flex flex-col items-center md:items-start gap-4">
-          <img
-            src="/logo-sidoarjo.webp"
-            alt="Logo Kabupaten Sidoarjo"
-            style={{ width: 76, height: 76, objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))' }}
-          />
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo-sidoarjo.webp"
+              alt="Logo Kabupaten Sidoarjo"
+              style={{ width: 76, height: 76, objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))' }}
+            />
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 28, fontWeight: 200, lineHeight: 1, textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}>|</span>
+            <img
+              src="/logo-sipandu.png"
+              alt="Logo Sipandu"
+              style={{ width: 68, height: 68, objectFit: 'contain', borderRadius: '50%', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))' }}
+            />
+          </div>
           <h1
             className="text-2xl sm:text-3xl font-bold text-center md:text-left"
             style={{ color: '#ffffff', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}
           >
-            Dashboard PJPK
+            Sipandu
           </h1>
           <p
-            className="text-sm text-center md:text-left leading-relaxed"
-            style={{ color: 'rgba(255,255,255,0.88)', textShadow: '0 1px 6px rgba(0,0,0,0.3)' }}
+            className="text-sm font-medium text-center md:text-left leading-relaxed"
+            style={{ color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 6px rgba(0,0,0,0.3)', marginTop: -8 }}
           >
-            Masuk untuk melihat dashboard
-            <br />
-            Kabupaten Sidoarjo
+            Sistem Informasi Pantauan Data Pembangunan Kependudukan
           </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   Briefcase,
   Building2,
@@ -55,12 +55,12 @@ const MENUS: AdminMenuItem[] = [
   { key: 'renaksi', label: 'Admin Renaksi', icon: ClipboardList },
 ];
 
-// Admin Indikator — super admin & admin analis (di atas Admin Renaksi)
+// Admin Indikator â€” super admin & admin analis (di atas Admin Renaksi)
 const INDIKATOR_MENU: AdminMenuItem[] = [
   { key: 'report', label: 'Admin Indikator', icon: FileText },
 ];
 
-// Menu analisis AI — semua role (hak akses indikator/OPD dibatasi di backend)
+// Menu analisis AI â€” semua role (hak akses indikator/OPD dibatasi di backend)
 const AI_MENUS: AdminMenuItem[] = [
   { key: 'analisis-indikator', label: 'Analisis Indikator', icon: Sparkles },
   { key: 'portofolio-opd', label: 'Portofolio OPD', icon: Briefcase },
@@ -75,14 +75,14 @@ const AI_MENUS: AdminMenuItem[] = [
   { key: 'innovation', label: 'Inovasi', icon: Lightbulb },
 ];
 
-// Menu AI khusus role lintas dinas (bukan admin OPD) — sintesis seluruh pilar
+// Menu AI khusus role lintas dinas (bukan admin OPD) â€” sintesis seluruh pilar
 const AI_MENUS_LINTAS: AdminMenuItem[] = [
   { key: 'cross-pillar', label: 'Sintesis Pilar', icon: Layers },
 ];
 
-// Menu profil dihapus dari daftar menu — diganti blok user di bawah sidebar yang bisa diklik
+// Menu profil dihapus dari daftar menu â€” diganti blok user di bawah sidebar yang bisa diklik
 
-// Menu khusus admin analis: (kosong — Admin Indikator pindah ke atas via INDIKATOR_MENU)
+// Menu khusus admin analis: (kosong â€” Admin Indikator pindah ke atas via INDIKATOR_MENU)
 const ANALIS_MENUS: AdminMenuItem[] = [];
 
 // Menu khusus super admin
@@ -90,12 +90,12 @@ const SUPER_MENUS: AdminMenuItem[] = [
   { key: 'users', label: 'User', icon: Users },
 ];
 
-// Kelola OPD — khusus super admin, diletakkan tepat di bawah Admin Renaksi
+// Kelola OPD â€” khusus super admin, diletakkan tepat di bawah Admin Renaksi
 const OPD_MENU: AdminMenuItem[] = [
   { key: 'opds', label: 'OPD', icon: Building2 },
 ];
 
-/* ── Deteksi layar desktop (≥ lg = 1024px) untuk margin konten ── */
+/* â”€â”€ Deteksi layar desktop (â‰¥ lg = 1024px) untuk margin konten â”€â”€ */
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   useEffect(() => {
@@ -172,7 +172,7 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
         className="min-h-screen transition-all duration-300 ease-in-out"
         style={{ marginLeft: isDesktop ? sidebarW : 0 }}
       >
-        {/* Banner switch account — hanya tampil saat super admin sedang impersonate */}
+        {/* Banner switch account â€” hanya tampil saat super admin sedang impersonate */}
         <ImpersonateBanner currentUser={user} />
         <AdminHeader
           title={title}
@@ -186,7 +186,7 @@ export default function AdminLayout({ user, activePage, onNavigate, onLogout, ti
   );
 }
 
-/* ── Banner "Anda sedang melihat sebagai …" saat impersonate ── */
+/* â”€â”€ Banner "Anda sedang melihat sebagai â€¦" saat impersonate â”€â”€ */
 function ImpersonateBanner({ currentUser }: { currentUser: AdminUser }) {
   const impersonator = getImpersonator();
   if (!impersonator) return null;
@@ -224,7 +224,7 @@ function ImpersonateBanner({ currentUser }: { currentUser: AdminUser }) {
   );
 }
 
-/* ── Isi sidebar (dipakai desktop & mobile) ── */
+/* â”€â”€ Isi sidebar (dipakai desktop & mobile) â”€â”€ */
 function AdminSidebarContent({
   isExpanded,
   user,
@@ -262,9 +262,9 @@ function AdminSidebarContent({
         {isExpanded ? (
           <>
             <div className="flex items-center shrink-0 gap-3">
-              <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 34, height: 34 }} className="object-contain shrink-0" />
+              <img src="/logo-sipandu.png" alt="Logo Sipandu" style={{ width: 34, height: 34, borderRadius: '50%' }} className="object-contain shrink-0" />
               <div className="min-w-0">
-                <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Admin PJPK</h2>
+                <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Admin Sipandu</h2>
                 <p className="text-xs mt-0.5 leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>Kabupaten Sidoarjo</p>
               </div>
             </div>
@@ -285,7 +285,7 @@ function AdminSidebarContent({
           </>
         ) : (
           <>
-            <img src="/logo-sidoarjo.webp" alt="Logo Kabupaten Sidoarjo" style={{ width: 30, height: 30 }} className="object-contain shrink-0" />
+            <img src="/logo-sipandu.png" alt="Logo Sipandu" style={{ width: 30, height: 30, borderRadius: '50%' }} className="object-contain shrink-0" />
             <span className="hidden lg:block" style={{ color: 'var(--color-sidebar-muted)' }}>
               <PanelLeftOpen size={14} />
             </span>
@@ -301,7 +301,7 @@ function AdminSidebarContent({
           </p>
         )}
 
-        {/* Admin Indikator — super admin & admin analis, paling atas */}
+        {/* Admin Indikator â€” super admin & admin analis, paling atas */}
         {user.role !== 'admin_opd' &&
           INDIKATOR_MENU.map((m) => (
             <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
@@ -312,7 +312,7 @@ function AdminSidebarContent({
           <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
         ))}
 
-        {/* Kelola OPD (super admin) — tepat di bawah Admin Renaksi */}
+        {/* Kelola OPD (super admin) â€” tepat di bawah Admin Renaksi */}
         {user.role === 'super_admin' && OPD_MENU.map((m) => (
           <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
         ))}
@@ -392,7 +392,7 @@ function AdminSidebarContent({
   );
 }
 
-/* ── Satu item menu sidebar ── */
+/* â”€â”€ Satu item menu sidebar â”€â”€ */
 function MenuLink({
   m,
   isExpanded,
@@ -419,7 +419,7 @@ function MenuLink({
   );
 }
 
-/* ── Grup menu Analisis AI (collapsible) ── */
+/* â”€â”€ Grup menu Analisis AI (collapsible) â”€â”€ */
 function AiMenuGroup({
   isExpanded,
   user,
@@ -442,7 +442,7 @@ function AiMenuGroup({
 
   const items = [...AI_MENUS, ...(user.role !== 'admin_opd' ? AI_MENUS_LINTAS : [])];
 
-  // Sidebar dilipat: tampilkan ikon AI saja, klik → buka sidebar + grup
+  // Sidebar dilipat: tampilkan ikon AI saja, klik â†’ buka sidebar + grup
   if (!isExpanded) {
     return (
       <a
@@ -492,7 +492,7 @@ function AiMenuGroup({
   );
 }
 
-/* ── Header konten (mobile hamburger + judul + theme toggle) ── */
+/* â”€â”€ Header konten (mobile hamburger + judul + theme toggle) â”€â”€ */
 function AdminHeader({
   title,
   subtitle,

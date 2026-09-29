@@ -37,15 +37,16 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', color: 'hsl(var(--ds-foreground))', whiteSpace: 'nowrap' }}
         >
           <img
-            src="/logo-sidoarjo.webp"
-            alt="Logo Kabupaten Sidoarjo"
+            src="/logo-sipandu.png"
+            alt="Logo Sipandu"
             className="ds-brand-logo"
+            style={{ borderRadius: '50%' }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
-          <span>
-            Dashboard PJPK
-            <span style={{ display: 'block', fontSize: '0.625rem', fontWeight: 500, color: 'hsl(var(--ds-muted-foreground))', lineHeight: 1.2 }}>
-              Kabupaten Sidoarjo
+          <span style={{ textAlign: 'left' }}>
+            Sipandu
+            <span style={{ display: 'block', fontSize: '0.55rem', fontWeight: 500, color: 'hsl(var(--ds-muted-foreground))', lineHeight: 1.25, whiteSpace: 'normal', maxWidth: 200, textAlign: 'left' }}>
+              Sistem Informasi Pantauan Data Pembangunan Kependudukan
             </span>
           </span>
         </button>
