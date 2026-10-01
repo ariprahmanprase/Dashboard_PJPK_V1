@@ -137,17 +137,21 @@ Route::middleware('auth:sanctum')->group(function () {
         ->where('indikator', '[A-Za-z0-9\-]+')
         ->middleware('role:super_admin,admin_analis');
 
-    // Kelola user & hapus indikator — khusus super admin
-    Route::middleware('super_admin')->group(function () {
-        Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
-        Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
+    // Kelola OPD, hapus indikator & OPD options (dipakai Admin Report) — super admin & admin analis
+    Route::middleware('role:super_admin,admin_analis')->group(function () {
         Route::apiResource('/admin/opds', AdminOpdController::class)->except(['show']);
-
-        // Switch account (impersonate) — super admin masuk sebagai user lain
-        Route::post('/admin/users/{user}/impersonate', [AuthController::class, 'impersonate']);
+        Route::get('/admin/users/opd-options', [AdminUserController::class, 'opdOptions']);
 
         Route::delete('/admin/indikators/{indikator}', [AdminIndikatorController::class, 'destroy'])
             ->where('indikator', '[A-Za-z0-9\-]+');
+    });
+
+    // Kelola user & impersonate — khusus super admin
+    Route::middleware('super_admin')->group(function () {
+        Route::apiResource('/admin/users', AdminUserController::class)->except(['show']);
+
+        // Switch account (impersonate) — super admin masuk sebagai user lain
+        Route::post('/admin/users/{user}/impersonate', [AuthController::class, 'impersonate']);
     });
 });
 

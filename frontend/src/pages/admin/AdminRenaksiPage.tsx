@@ -243,11 +243,10 @@ function AuditInfo({ item }: { item: AdminRenaksi | null }) {
 }
 
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
-  const isSuperAdmin = user.role === 'super_admin';
-  // Admin analis: lihat semua + isi realisasi — tanpa tambah/hapus & tanpa filter dinas
-  const isAnalis = user.role === 'admin_analis';
-  const canCreate = user.role !== 'admin_analis';
-  const canDelete = user.role !== 'admin_analis';
+  // Admin analis disetarakan super admin (kecuali menu User) — hanya admin OPD yang dibatasi
+  const isSuperAdmin = user.role === 'super_admin' || user.role === 'admin_analis';
+  const canCreate = isSuperAdmin;
+  const canDelete = isSuperAdmin;
   const [items, setItems] = useState<AdminRenaksi[]>([]);
   const [indikatorOptions, setIndikatorOptions] = useState<IndikatorOption[]>([]);
   const [satuanOptions, setSatuanOptions] = useState<string[]>([]);
@@ -444,7 +443,7 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
               ))}
           </select>
 
-          {(isSuperAdmin || isAnalis) && (
+          {isSuperAdmin && (
             <OpdSearchSelect
               options={opdOptions}
               value={opdFilter}
@@ -611,7 +610,6 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
         <EditModal
           item={editing}
           isSuperAdmin={isSuperAdmin}
-          isAnalis={isAnalis}
           // Semua role mendapat daftar lengkap indikator (admin OPD boleh menautkan, super admin merevisi)
           indikatorOptions={allIndikatorOptions}
           satuanOptions={satuanOptions}
@@ -679,8 +677,6 @@ export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) 
 interface EditModalProps {
   item: AdminRenaksi;
   isSuperAdmin: boolean;
-  /** Admin analis: semua field disabled kecuali Status & Indikator */
-  isAnalis?: boolean;
   indikatorOptions: IndikatorOption[];
   satuanOptions: string[];
   onClose: () => void;
@@ -689,9 +685,9 @@ interface EditModalProps {
 
 const SATUAN_CUSTOM = '__custom__';
 
-function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
-  // Field target/realisasi/kendala/catatan hanya bisa diubah super admin & admin OPD
-  const canEditFields = !isAnalis;
+function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
+  // Field target/realisasi/kendala/catatan bisa diubah super admin & admin analis
+  const canEditFields = isSuperAdmin;
   // Tautan indikator bisa diubah semua role (admin OPD menautkan sendiri, super admin merevisi bila kurang tepat)
   const canEditIndikator = true;
   // Jenis target bisa diubah semua role (super admin & admin OPD) — field
@@ -816,7 +812,7 @@ function EditModal({ item, isSuperAdmin, isAnalis = false, indikatorOptions, sat
         >
           <div className="min-w-0">
             <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-              {isAnalis ? 'Tentukan Status & Indikator' : 'Isi Realisasi'}
+              Isi Realisasi
             </h2>
             <p className="text-xs sm:text-sm mt-2 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               {item.dinas} · {item.tahun} · {item.rencana_aksi}

@@ -313,7 +313,7 @@ function AdminSidebarContent({
         ))}
 
         {/* Kelola OPD (super admin) â€” tepat di bawah Admin Renaksi */}
-        {user.role === 'super_admin' && OPD_MENU.map((m) => (
+        {user.role !== 'admin_opd' && OPD_MENU.map((m) => (
           <MenuLink key={m.key} m={m} isExpanded={isExpanded} activePage={activePage} onNavigate={onNavigate} />
         ))}
 

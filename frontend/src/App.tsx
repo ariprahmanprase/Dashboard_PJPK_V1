@@ -138,8 +138,8 @@ function AdminArea() {
     return <AdminUsersPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
   }
 
-  // Kelola OPD khusus super admin
-  if (page === 'opds' && user.role === 'super_admin') {
+  // Kelola OPD — super admin & admin analis
+  if (page === 'opds' && user.role !== 'admin_opd') {
     return <AdminOpdsPage user={user} onLogout={handleLogout} onNavigate={setPage} />;
   }
 

@@ -106,10 +106,10 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
   useEffect(() => {
     apiFetch<FilterOptions>('/api/filters').then(setFilterOptions).catch(() => {});
     fetchPilarOptions().then(setPilarOptions).catch(() => setPilarOptions([]));
-    if (user.role === 'super_admin') {
+    if (user.role !== 'admin_opd') {
+      // Super admin & admin analis: pakai endpoint opd-options (di /admin/users, khusus super admin & analis)
       fetchUserOpdOptions().then(setOpdOptions).catch(() => setOpdOptions([]));
     } else {
-      // Admin analis: pakai endpoint renaksi opd-options (terbuka untuk semua role login)
       apiAuthFetch<{ data: OpdOption[] }>('/admin/renaksi-programs/opd-options')
         .then((d) => setOpdOptions(d.data))
         .catch(() => setOpdOptions([]));
@@ -301,7 +301,7 @@ export default function AdminReportPage({ user, onLogout, onNavigate }: Props) {
                           >
                             <Pencil size={13} /> Edit
                           </button>
-                          {user.role === 'super_admin' && (
+                          {user.role !== 'admin_opd' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); setDeleting(row); }}
                               className="flex items-center gap-2 rounded-lg border text-xs font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
