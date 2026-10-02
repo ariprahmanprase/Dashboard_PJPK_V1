@@ -183,8 +183,18 @@ class DashboardService
         $filteredIndikatorIds = (clone $indikatorQuery)->pluck('id');
 
         // Total OPD = gabungan OPD pengampu (indikator_opd) + OPD yang renaksinya
-        // tertaut pada tahun berjalan — selaras dengan tabel & chart per-OPD.
-        $opdPengampu = (clone $opdQuery)->distinct()->pluck('opds.id');
+        // tertaut pada tahun berjalan — selaras dengan kolom opd_list di tabel
+        // & popup "Daftar OPD Pengampu". Diambil langsung dari pivot +
+        // petaOpdDariRenaksi, BUKAN applyFiltersToOpd (tanpa filter fungsi itu
+        // mengembalikan SEMUA baris tabel opds, termasuk non-pengampu seperti
+        // BPJS/BPS, sehingga Total OPD membengkak jadi 19).
+        // Catatan: filter opd_id tidak diterapkan di sini karena daftar OPD
+        // tabel/popup menampilkan semua OPD terkait dari indikator yang lolos
+        // filter (perilaku yang sudah berjalan dan benar).
+        $opdPengampu = \Illuminate\Support\Facades\DB::table('indikator_opd')
+            ->whereIn('indikator_id', $filteredIndikatorIds)
+            ->distinct()
+            ->pluck('opd_id');
         $opdRenaksi = $this->petaOpdDariRenaksi($tahun)
             ->only($filteredIndikatorIds)
             ->flatten(1)

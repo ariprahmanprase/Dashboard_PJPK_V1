@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Loader2, Pencil, Plus, Search, Trash2, UserCheck, UserRoundCheck, Users, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Pencil, Plus, Search, Trash2, UserCheck, UserRoundCheck, Users, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import type { AdminPageName } from '@/components/admin/AdminLayout';
 import ConfirmCloseModal from '@/components/admin/ConfirmCloseModal';
@@ -499,6 +499,7 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
   const [username, setUsername] = useState(item?.username ?? '');
   const [email, setEmail] = useState(item?.email ?? '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [jabatan, setJabatan] = useState(item?.jabatan ?? '');
   const [role, setRole] = useState<'super_admin' | 'admin_opd' | 'admin_analis'>(item?.role ?? 'admin_opd');
 
@@ -684,16 +685,29 @@ function UserFormModal({ item, isSelf, opdOptions, onClose, onSaved }: UserFormM
           </Field>
 
           <Field label={isEdit ? 'Password baru (kosongkan jika tidak diganti)' : 'Password'}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required={!isEdit}
-              minLength={6}
-              placeholder={isEdit ? '••••••' : 'Minimal 6 karakter'}
-              className={inputClass}
-              style={inputStyle}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required={!isEdit}
+                minLength={6}
+                placeholder={isEdit ? '••••••' : 'Minimal 6 karakter'}
+                autoComplete="new-password"
+                className={`${inputClass} pr-11`}
+                style={inputStyle}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 transition-opacity hover:opacity-100"
+                style={{ color: 'var(--color-text-secondary)', opacity: 0.85, background: 'transparent', border: 'none', cursor: 'pointer' }}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
