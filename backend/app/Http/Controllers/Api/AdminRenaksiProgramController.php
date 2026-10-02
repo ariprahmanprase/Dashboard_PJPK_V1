@@ -345,8 +345,9 @@ class AdminRenaksiProgramController extends Controller
             $rules['realisasi'] = ['nullable', 'string'];
         }
 
-        // Super admin boleh mengubah target juga
-        if ($user->isSuperAdmin()) {
+        // Super admin & admin OPD boleh mengubah target juga.
+        // (Admin OPD sudah dibatasi hanya untuk renaksi dinasnya di atas.)
+        if ($user->isSuperAdmin() || $user->isAdminOpd()) {
             if ($jenisBaru === 'kuantitatif') {
                 $rules['target_nilai'] = ['nullable', 'numeric', 'min:0'];
                 $rules['target_satuan'] = ['nullable', 'string', 'max:50'];

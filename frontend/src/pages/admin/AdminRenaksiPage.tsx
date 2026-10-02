@@ -243,10 +243,13 @@ function AuditInfo({ item }: { item: AdminRenaksi | null }) {
 }
 
 export default function AdminRenaksiPage({ user, onLogout, onNavigate }: Props) {
-  // Admin analis disetarakan super admin (kecuali menu User) — hanya admin OPD yang dibatasi
+  // Admin analis disetarakan super admin (kecuali menu User). Admin OPD dibatasi
+  // hanya pada DINASNYA (scope backend), tapi tetap boleh mengelola renaksinya.
   const isSuperAdmin = user.role === 'super_admin' || user.role === 'admin_analis';
-  const canCreate = isSuperAdmin;
-  const canDelete = isSuperAdmin;
+  // Tambah & impor renaksi: semua role boleh (admin OPD otomatis untuk dinasnya)
+  const canCreate = true;
+  // Hapus: super admin & analis bebas; admin OPD boleh hapus renaksi dinasnya
+  const canDelete = true;
   const [items, setItems] = useState<AdminRenaksi[]>([]);
   const [indikatorOptions, setIndikatorOptions] = useState<IndikatorOption[]>([]);
   const [satuanOptions, setSatuanOptions] = useState<string[]>([]);
@@ -686,8 +689,9 @@ interface EditModalProps {
 const SATUAN_CUSTOM = '__custom__';
 
 function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClose, onSaved }: EditModalProps) {
-  // Field target/realisasi/kendala/catatan bisa diubah super admin & admin analis
-  const canEditFields = isSuperAdmin;
+  // Realisasi/kendala/catatan/dokumentasi boleh diisi super admin, admin analis,
+  // DAN admin OPD (backend sudah membatasi admin OPD hanya untuk dinasnya)
+  const canEditFields = true;
   // Tautan indikator bisa diubah semua role (admin OPD menautkan sendiri, super admin merevisi bila kurang tepat)
   const canEditIndikator = true;
   // Jenis target bisa diubah semua role (super admin & admin OPD) — field
@@ -854,14 +858,13 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
           {/* Target (read-only untuk admin OPD) */}
           {isKuantitatif ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Field label={`Target (${isSuperAdmin ? 'boleh diubah' : 'ditetapkan pusat'})`}>
+              <Field label="Target">
                 <input
                   type="number"
                   step="any"
                   min="0"
                   value={targetNilai}
                   onChange={(e) => setTargetNilai(e.target.value)}
-                  disabled={!isSuperAdmin}
                   className={inputClass}
                   style={inputStyle}
                 />
@@ -870,7 +873,6 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
                 <select
                   value={satuanChoice}
                   onChange={(e) => setSatuanChoice(e.target.value)}
-                  disabled={!isSuperAdmin}
                   className={inputClass}
                   style={inputStyle}
                 >
@@ -878,9 +880,9 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
                   {satuanOptions.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  {isSuperAdmin && <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>}
+                  <option value={SATUAN_CUSTOM}>＋ Tambahkan satuan…</option>
                 </select>
-                {isSuperAdmin && satuanChoice === SATUAN_CUSTOM && (
+                {satuanChoice === SATUAN_CUSTOM && (
                   <input
                     value={satuanCustom}
                     onChange={(e) => setSatuanCustom(e.target.value)}
@@ -893,11 +895,10 @@ function EditModal({ item, isSuperAdmin, indikatorOptions, satuanOptions, onClos
               </Field>
             </div>
           ) : (
-            <Field label={`Target kualitatif (${isSuperAdmin ? 'boleh diubah' : 'ditetapkan pusat'})`}>
+            <Field label="Target kualitatif">
               <textarea
                 value={targetTeks}
                 onChange={(e) => setTargetTeks(e.target.value)}
-                disabled={!isSuperAdmin}
                 rows={2}
                 className={inputClass}
                 style={inputStyle}
