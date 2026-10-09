@@ -3,6 +3,11 @@
 *.jpg
 *.jpeg
 
+# Exception: assets in public folder (logos, etc.)
+!frontend/public/*.png
+!frontend/public/*.webp
+!frontend/public/*.svg
+
 # OS
 .DS_Store
 Thumbs.db
