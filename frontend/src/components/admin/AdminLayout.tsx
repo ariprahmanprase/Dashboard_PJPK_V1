@@ -263,6 +263,10 @@ function AdminSidebarContent({
           <>
             <div className="flex items-center shrink-0 gap-3">
               <img src="/logo-sipandu-icon.png" alt="Logo" style={{ width: 34, height: 34 }} className="object-contain shrink-0" />
+              <div className="min-w-0">
+                <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Admin Sipandu</h2>
+                <p className="text-xs mt-0.5 leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>Kabupaten Sidoarjo</p>
+              </div>
             </div>
             <span
               className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors hidden lg:flex items-center justify-center shrink-0"

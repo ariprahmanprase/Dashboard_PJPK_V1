@@ -39,7 +39,7 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
           <img
             src="/logo-sipandu.png"
             alt="Logo"
-            className="ds-brand-logo"
+            style={{ height: 28, width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
         </button>
