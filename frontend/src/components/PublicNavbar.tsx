@@ -37,18 +37,12 @@ export default function PublicNavbar({ activePage, onNavigate }: Props) {
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', color: 'hsl(var(--ds-foreground))', whiteSpace: 'nowrap' }}
         >
           <img
-            src="/logo-sipandu.png"
-            alt="Logo Sipandu"
+            src="/logo-sipandu-icon.png"
+            alt="Logo"
             className="ds-brand-logo"
-            style={{ borderRadius: '50%' }}
+            style={{ width: 80, height: 'auto' }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
-          <span style={{ textAlign: 'left' }}>
-            Sipandu
-            <span style={{ display: 'block', fontSize: '0.55rem', fontWeight: 500, color: 'hsl(var(--ds-muted-foreground))', lineHeight: 1.25, whiteSpace: 'normal', maxWidth: 200, textAlign: 'left' }}>
-              Sistem Informasi Pantauan Data Pembangunan Kependudukan
-            </span>
-          </span>
         </button>
 
         {/* Menu tengah (pill) */}

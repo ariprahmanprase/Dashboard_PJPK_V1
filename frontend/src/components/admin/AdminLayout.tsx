@@ -262,11 +262,7 @@ function AdminSidebarContent({
         {isExpanded ? (
           <>
             <div className="flex items-center shrink-0 gap-3">
-              <img src="/logo-sipandu.png" alt="Logo Sipandu" style={{ width: 34, height: 34, borderRadius: '50%' }} className="object-contain shrink-0" />
-              <div className="min-w-0">
-                <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--color-sidebar-brand)' }}>Admin Sipandu</h2>
-                <p className="text-xs mt-0.5 leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>Kabupaten Sidoarjo</p>
-              </div>
+              <img src="/logo-sipandu-icon.png" alt="Logo" style={{ width: 34, height: 34 }} className="object-contain shrink-0" />
             </div>
             <span
               className="p-1.5 rounded-lg hover:bg-slate-200/30 dark:hover:bg-slate-700/50 transition-colors hidden lg:flex items-center justify-center shrink-0"
@@ -285,7 +281,7 @@ function AdminSidebarContent({
           </>
         ) : (
           <>
-            <img src="/logo-sipandu.png" alt="Logo Sipandu" style={{ width: 30, height: 30, borderRadius: '50%' }} className="object-contain shrink-0" />
+            <img src="/logo-sipandu-icon.png" alt="Logo" style={{ width: 30, height: 30 }} className="object-contain shrink-0" />
             <span className="hidden lg:block" style={{ color: 'var(--color-sidebar-muted)' }}>
               <PanelLeftOpen size={14} />
             </span>
